@@ -7,9 +7,10 @@ import dotenv from 'dotenv'
 import connectDB from './config/database.js'
 import authRoutes from './routes/auth.js'
 import productRoutes from './routes/products.js'
-import orderRoutes from './routes/orders.js'
+import orderRoutes from './routes/order\s.js'
 import userRoutes from './routes/users.js'
 import { errorHandler } from './middleware/errorHandler.js'
+// import authRoutes from './routes/auth.js'
 
 dotenv.config()
 
