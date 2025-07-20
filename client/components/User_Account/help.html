@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Account - Help & Support</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="nav-item" onclick="navigateToPage('index.html')">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('notifications.html')">
+                <i class="fas fa-bell"></i>
+                <span>Notification</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('security.html')">
+                <i class="fas fa-shield-alt"></i>
+                <span>Security</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('appearance.html')">
+                <i class="fas fa-palette"></i>
+                <span>Appearance</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('my-orders.html')">
+                <i class="fas fa-shopping-bag"></i>
+                <span>My Orders</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('addresses.html')">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Addresses</span>
+            </div>
+            <div class="nav-item active">
+                <i class="fas fa-question-circle"></i>
+                <span>Help</span>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="profile-header">
+                <h1>Help & Support</h1>
+            </div>
+
+            <div class="profile-form">
+                <div class="help-section">
+                    <h2><i class="fas fa-question-circle" style="margin-right: 10px; color: #7dc242;"></i>Frequently Asked Questions</h2>
+                    
+                    <div class="faq-item">
+                        <h3>How do I update my profile information?</h3>
+                        <p>Navigate to the Profile section using the sidebar menu. You can edit your personal information, upload a new profile picture, and save your changes.</p>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <h3>How do I change my password?</h3>
+                        <p>Go to the Security section where you can change your password, enable two-factor authentication, and manage your login sessions.</p>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <h3>How do I manage my notifications?</h3>
+                        <p>Visit the Notifications section to customize which notifications you receive via email, SMS, or push notifications.</p>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <h3>Where can I view my order history?</h3>
+                        <p>Check the My Orders section to see all your past purchases, track current orders, and manage returns or exchanges.</p>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h2><i class="fas fa-headset" style="margin-right: 10px; color: #7dc242;"></i>Contact Support</h2>
+                    
+                    <div class="contact-options">
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <h4>Email Support</h4>
+                                <p>Send us an email at <strong>support@example.com</strong></p>
+                                <span class="response-time">Response time: 24-48 hours</span>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <div>
+                                <h4>Phone Support</h4>
+                                <p>Call us at <strong>1-800-123-4567</strong></p>
+                                <span class="response-time">Available: Mon-Fri 9AM-6PM EST</span>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-item">
+                            <i class="fas fa-comments"></i>
+                            <div>
+                                <h4>Live Chat</h4>
+                                <p>Chat with our support team in real-time</p>
+                                <button class="btn btn-save" style="margin-top: 10px;">Start Chat</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h2><i class="fas fa-book" style="margin-right: 10px; color: #7dc242;"></i>Account Management</h2>
+                    
+                    <div class="help-links">
+                        <a href="#" class="help-link">
+                            <i class="fas fa-user-cog"></i>
+                            <span>Account Settings Guide</span>
+                        </a>
+                        <a href="#" class="help-link">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Privacy & Security Best Practices</span>
+                        </a>
+                        <a href="#" class="help-link">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Payment Methods & Billing</span>
+                        </a>
+                        <a href="#" class="help-link">
+                            <i class="fas fa-truck"></i>
+                            <span>Shipping & Delivery Information</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

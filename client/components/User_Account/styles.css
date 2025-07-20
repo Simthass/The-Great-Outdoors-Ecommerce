@@ -1,0 +1,148 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f4;
+    margin: 0;
+    display: flex;
+}
+.container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+.sidebar {
+    background-color: #7dc242;
+    width: 250px;
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 100vh;
+}
+.nav-item {
+    padding: 15px 25px;
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    width: calc(100% - 50px);
+    margin: 2px 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border-radius: 0;
+    box-sizing: border-box;
+}
+.nav-item i {
+    margin-right: 12px;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.nav-item span {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nav-item:hover {
+    background-color: #66a337;
+    transform: translateX(5px);
+}
+.nav-item.active {
+    background-color: #5c8b2c;
+    font-weight: 600;
+    border-left: 4px solid #4a7024;
+}
+.main-content {
+    flex: 1;
+    padding: 40px;
+}
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.profile-avatar {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+.avatar-upload-btn {
+    background: none;
+    border: none;
+    color: green;
+    cursor: pointer;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+.profile-form {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.form-row {
+    display: flex;
+    justify-content: space-between;
+}
+.form-group {
+    flex: 1;
+    margin-right: 10px;
+}
+.form-group:last-child {
+    margin-right: 0;
+}
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+}
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.password-input {
+    position: relative;
+}
+.toggle-password {
+    background-color: transparent;
+    border: none;
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.btn-cancel {
+    background-color: transparent;
+    border: 2px solid #ccc;
+    margin-right: 10px;
+    transition: background-color 0.3s, color 0.3s;
+}
+.btn-cancel:hover {
+    background-color: #ccc;
+    color: #fff;
+}
+.btn-save {
+    background-color: #7dc242;
+    color: white;
+    transition: background-color 0.3s;
+}
+.btn-save:hover {
+    background-color: #66a337;
+}

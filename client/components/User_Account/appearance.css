@@ -1,0 +1,243 @@
+/* Appearance CSS */
+
+body {
+    background-color: #f4f4f4;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    display: flex;
+}
+
+.container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.sidebar {
+    background-color: #7dc242;
+    width: 250px;
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 100vh;
+}
+
+.nav-item {
+    padding: 15px 25px;
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    width: calc(100% - 50px);
+    margin: 2px 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border-radius: 0;
+    box-sizing: border-box;
+}
+
+.nav-item i {
+    margin-right: 12px;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.nav-item span {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-item:hover {
+    background-color: #66a337;
+    transform: translateX(5px);
+}
+
+.nav-item.active {
+    background-color: #5c8b2c;
+    font-weight: 600;
+    border-left: 4px solid #4a7024;
+}
+
+.main-content {
+    flex: 1;
+    background-color: white;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.appearance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.appearance-section {
+    margin-bottom: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.btn {
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-secondary {
+    background-color: #cccccc;
+    color: black;
+}
+
+.btn-primary {
+    background-color: #006400;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.8;
+}
+
+.appearance-card {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.theme-options, .mode-options, .layout-settings, .typography-settings, .accessibility-settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.theme-option, .mode-option, .layout-option, .typography-option, .accessibility-option {
+    flex: 1 1 calc(33.333% - 30px);
+    margin: 10px 0;
+}
+
+.size-btn {
+    background-color: #eeeeee;
+    border: 1px solid #cccccc;
+    padding: 5px 10px;
+}
+
+.size-btn:hover {
+    background-color: #dddddd;
+}
+
+.preview-button {
+    background-color: #006400;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.preview-button:hover {
+    background-color: #004d00;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #66bb6a;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.live-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.preview-sidebar-full, .preview-main-content {
+    background-color: #f4f4f9;
+    border-radius: 5px;
+    padding: 15px;
+}
+
+.preview-sidebar-full {
+    display: flex;
+    gap: 15px;
+    justify-content: space-around;
+}
+
+.preview-nav-item {
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #006400;
+    color: white;
+}
+
+.preview-nav-item:hover {
+    background-color: #004d00;
+}
+
+.preview-header-full {
+    border-bottom: 1px solid #cccccc;
+    padding-bottom: 10px;
+}
+
+.preview-card-full {
+    margin-top: 10px;
+}
+
+.range-value {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.range-slider {
+    width: 100%;
+}

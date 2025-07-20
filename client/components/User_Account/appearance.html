@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appearance - User Account</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="appearance.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="nav-item" onclick="navigateToPage('index.html')">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('notifications.html')">
+                <i class="fas fa-bell"></i>
+                <span>Notification</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('security.html')">
+                <i class="fas fa-shield-alt"></i>
+                <span>Security</span>
+            </div>
+            <div class="nav-item active">
+                <i class="fas fa-palette"></i>
+                <span>Appearance</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('my-orders.html')">
+                <i class="fas fa-shopping-bag"></i>
+                <span>My Orders</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('addresses.html')">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Addresses</span>
+            </div>
+            <div class="nav-item" onclick="navigateToPage('help.html')">
+                <i class="fas fa-question-circle"></i>
+                <span>Help</span>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="appearance-header">
+                <h1>Appearance Settings</h1>
+                <div class="profile-avatar">
+                    <img src="https://via.placeholder.com/60x60/cccccc/666666?text=Avatar" alt="Profile Avatar">
+                </div>
+            </div>
+
+            <!-- Theme Selection -->
+            <div class="appearance-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-paint-brush"></i> Theme</h2>
+                </div>
+                <div class="appearance-card">
+                    <div class="card-content">
+                        <h3>Color Theme</h3>
+                        <p>Choose your preferred color scheme</p>
+                        <div class="theme-options">
+                            <div class="theme-option" data-theme="default">
+                                <div class="theme-preview default">
+                                    <div class="preview-sidebar"></div>
+                                    <div class="preview-content">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-card"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-info">
+                                    <h4>Default Green</h4>
+                                    <p>Original green theme</p>
+                                </div>
+                                <input type="radio" name="theme" value="default" id="theme-default" checked>
+                            </div>
+                            
+                            <div class="theme-option" data-theme="blue">
+                                <div class="theme-preview blue">
+                                    <div class="preview-sidebar"></div>
+                                    <div class="preview-content">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-card"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-info">
+                                    <h4>Ocean Blue</h4>
+                                    <p>Professional blue theme</p>
+                                </div>
+                                <input type="radio" name="theme" value="blue" id="theme-blue">
+                            </div>
+                            
+                            <div class="theme-option" data-theme="purple">
+                                <div class="theme-preview purple">
+                                    <div class="preview-sidebar"></div>
+                                    <div class="preview-content">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-card"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-info">
+                                    <h4>Royal Purple</h4>
+                                    <p>Elegant purple theme</p>
+                                </div>
+                                <input type="radio" name="theme" value="purple" id="theme-purple">
+                            </div>
+                            
+                            <div class="theme-option" data-theme="orange">
+                                <div class="theme-preview orange">
+                                    <div class="preview-sidebar"></div>
+                                    <div class="preview-content">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-card"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-info">
+                                    <h4>Sunset Orange</h4>
+                                    <p>Warm orange theme</p>
+                                </div>
+                                <input type="radio" name="theme" value="orange" id="theme-orange">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dark Mode -->
+            <div class="appearance-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-moon"></i> Display Mode</h2>
+                </div>
+                <div class="appearance-card">
+                    <div class="card-content">
+                        <div class="mode-options">
+                            <div class="mode-option">
+                                <div class="mode-preview light">
+                                    <i class="fas fa-sun"></i>
+                                </div>
+                                <div class="mode-info">
+                                    <h4>Light Mode</h4>
+                                    <p>Clean and bright interface</p>
+                                </div>
+                                <input type="radio" name="display-mode" value="light" id="mode-light" checked>
+                            </div>
+                            
+                            <div class="mode-option">
+                                <div class="mode-preview dark">
+                                    <i class="fas fa-moon"></i>
+                                </div>
+                                <div class="mode-info">
+                                    <h4>Dark Mode</h4>
+                                    <p>Easy on the eyes in low light</p>
+                                </div>
+                                <input type="radio" name="display-mode" value="dark" id="mode-dark">
+                            </div>
+                            
+                            <div class="mode-option">
+                                <div class="mode-preview auto">
+                                    <i class="fas fa-adjust"></i>
+                                </div>
+                                <div class="mode-info">
+                                    <h4>Auto</h4>
+                                    <p>Matches your system preference</p>
+                                </div>
+                                <input type="radio" name="display-mode" value="auto" id="mode-auto">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layout Options -->
+            <div class="appearance-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-layout-alt"></i> Layout</h2>
+                </div>
+                <div class="appearance-card">
+                    <div class="card-content">
+                        <div class="layout-settings">
+                            <div class="layout-option">
+                                <div class="option-info">
+                                    <h4>Sidebar Style</h4>
+                                    <p>Choose how the navigation sidebar appears</p>
+                                </div>
+                                <select class="layout-select" id="sidebarStyle">
+                                    <option value="fixed" selected>Fixed (Always visible)</option>
+                                    <option value="collapsible">Collapsible (Can be hidden)</option>
+                                    <option value="compact">Compact (Icons only)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="layout-option">
+                                <div class="option-info">
+                                    <h4>Content Width</h4>
+                                    <p>Adjust the maximum width of page content</p>
+                                </div>
+                                <select class="layout-select" id="contentWidth">
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="wide">Wide</option>
+                                    <option value="full">Full Width</option>
+                                </select>
+                            </div>
+                            
+                            <div class="layout-option">
+                                <div class="option-info">
+                                    <h4>Animation Effects</h4>
+                                    <p>Enable or disable UI animations and transitions</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="enableAnimations" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Font & Typography -->
+            <div class="appearance-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-font"></i> Typography</h2>
+                </div>
+                <div class="appearance-card">
+                    <div class="card-content">
+                        <div class="typography-settings">
+                            <div class="typography-option">
+                                <div class="option-info">
+                                    <h4>Font Size</h4>
+                                    <p>Adjust the base font size for better readability</p>
+                                </div>
+                                <div class="font-size-controls">
+                                    <button class="size-btn" onclick="changeFontSize(-1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <span class="font-size-display" id="fontSizeDisplay">Medium</span>
+                                    <button class="size-btn" onclick="changeFontSize(1)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="typography-option">
+                                <div class="option-info">
+                                    <h4>Font Family</h4>
+                                    <p>Choose your preferred font style</p>
+                                </div>
+                                <select class="typography-select" id="fontFamily">
+                                    <option value="system" selected>System Default</option>
+                                    <option value="arial">Arial</option>
+                                    <option value="helvetica">Helvetica</option>
+                                    <option value="georgia">Georgia</option>
+                                    <option value="times">Times New Roman</option>
+                                </select>
+                            </div>
+                            
+                            <div class="typography-option">
+                                <div class="option-info">
+                                    <h4>Line Height</h4>
+                                    <p>Adjust spacing between lines of text</p>
+                                </div>
+                                <input type="range" class="range-slider" id="lineHeight" min="1.2" max="2.0" step="0.1" value="1.6">
+                                <div class="range-value" id="lineHeightValue">1.6</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accessibility -->
+            <div class="appearance-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-universal-access"></i> Accessibility</h2>
+                </div>
+                <div class="appearance-card">
+                    <div class="card-content">
+                        <div class="accessibility-settings">
+                            <div class="accessibility-option">
+                                <div class="option-info">
+                                    <h4>High Contrast</h4>
+                                    <p>Increase contrast for better visibility</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="highContrast">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="accessibility-option">
+                                <div class="option-info">
+                                    <h4>Reduce Motion</h4>
+                                    <p>Minimize animations and transitions</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="reduceMotion">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="accessibility-option">
+                                <div class="option-info">
+                                    <h4>Focus Indicators</h4>
+                                    <p>Enhanced focus outlines for keyboard navigation</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="focusIndicators" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="appearance-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-eye"></i> Live Preview</h2>
+                    <button class="btn btn-secondary" onclick="resetToDefaults()">
+                        <i class="fas fa-undo"></i> Reset to Defaults
+                    </button>
+                </div>
+                <div class="appearance-card">
+                    <div class="card-content">
+                        <div class="live-preview" id="livePreview">
+                            <div class="preview-sidebar-full">
+                                <div class="preview-nav-item active">
+                                    <i class="fas fa-user"></i>
+                                    <span>Profile</span>
+                                </div>
+                                <div class="preview-nav-item">
+                                    <i class="fas fa-bell"></i>
+                                    <span>Notifications</span>
+                                </div>
+                                <div class="preview-nav-item">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Settings</span>
+                                </div>
+                            </div>
+                            <div class="preview-main-content">
+                                <div class="preview-header-full">
+                                    <h3>Sample Page Title</h3>
+                                </div>
+                                <div class="preview-card-full">
+                                    <h4>Sample Card</h4>
+                                    <p>This is how your content will look with the selected appearance settings. You can see the colors, fonts, and layout in real-time.</p>
+                                    <button class="preview-button">Sample Button</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="save-settings">
+                <button class="btn btn-primary" onclick="saveAppearanceSettings()">
+                    <i class="fas fa-save"></i> Save Appearance Settings
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script src="appearance.js"></script>
+</body>
+</html>
