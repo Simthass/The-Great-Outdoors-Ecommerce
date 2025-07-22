@@ -1,119 +1,129 @@
 import React from "react";
-import { ShoppingBag, Search, Bold } from "lucide-react";
-import { flatMap } from "lodash";
+import { Search } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 const Header = () => {
+  const location = useLocation();
+  const isHome = location.pathname === "/"; // true if on homepage
+  const linkColor = isHome ? "text-[#ffffff]" : "text-[#111111]";
+
   return (
-    <header 
-      className="w-full bg-cover bg-center bg-no-repeat bg-fixed" >
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between px-6 py-4 font-jakarta text-white">
-        
+    <header
+      className={`w-full bg-cover bg-center bg-no-repeat bg-fixed ${
+        !isHome ? "mb-[20px]" : ""
+      }`}
+    >
+      <div className="max-w-7xl flex flex-wrap items-center justify-between px-6 py-4 font-jakarta mt-[-20px]">
         {/* Logo */}
         <div className="flex items-center space-x-2 ml-[75px] mt-[20px]">
-          <img 
-            src="/TGO-Logo.png" 
-            alt="Logo" 
-            className="w-10 h-10" 
-            height={63} 
-            width={132}
-          />
+          <Link to="/">
+            <img
+              src="/TGO-Logo.png"
+              alt="Logo"
+              className="w-10 h-10"
+              height={63}
+              width={132}
+            />
+          </Link>
         </div>
 
         {/* Navigation */}
         <nav className="flex items-center justify-center text-base mt-[40px]">
-          <ul className="flex items-center justify-center gap-[60px] w-full list-none" >
+          <ul className="flex items-center justify-center gap-[60px] w-full list-none">
             <li className="ml-[100px]">
-              <a 
-                href="#" 
-                className="text-white font-medium hover:text-[#8DC53E] hover:font-extrabold hover:underline transition-all duration-200 no-underline"
-                style={{color:'white'}}
+              <Link
+                to="/"
+                className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline`}
               >
                 Home
-              </a>
+              </Link>
+            </li>
+            <div className="flex items-center">
+              <li>
+                <Link
+                  to="/shop"
+                  className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline mr-[5px]`}
+                >
+                  Shop
+                </Link>
+              </li>
+              <img
+                src="/dropdown-arrow.svg"
+                alt="Dropdown"
+                height={7}
+                width={12}
+                className="mt-[3px]"
+              />
+            </div>
+            <li>
+              <Link
+                to="/aboutUs"
+                className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline`}
+              >
+                About Us
+              </Link>
             </li>
             <li>
-              <a 
-                href="#" 
-                className="text-white font-medium hover:text-[#8DC53E] hover:font-extrabold hover:underline transition-all duration-200 no-underline"
-                style={{color:'white'}}
+              <Link
+                to="/contact"
+                className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline`}
               >
-                Shop
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#" 
-                className="text-white font-medium hover:text-[#8DC53E] hover:font-extrabold hover:underline transition-all duration-200 no-underline"
-                style={{color:'white'}}
-              >
-                About us
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#" 
-                className="text-white font-medium hover:text-[#8DC53E] hover:font-extrabold hover:underline transition-all duration-200 no-underline"
-                style={{color:'white'}}
-              >
-                Contact us
-              </a>
+                Contact Us
+              </Link>
             </li>
             <li className="mr-[100px]">
-              <a 
-                href="#" 
-                className="text-white font-medium hover:text-[#8DC53E] hover:font-extrabold hover:underline transition-all duration-200 no-underline"
-                style={{color:'white'}}
+              <Link
+                to="/events"
+                className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline`}
               >
                 Events
-              </a>
+              </Link>
             </li>
           </ul>
         </nav>
 
         {/* Right Buttons */}
         <div className="flex items-center gap-x-[40px] mr-[75px] mt-[40px]">
-          <button
-            className="bg-[#8DC53E] text-white font-semibold hover:bg-[#7AB32E] transition-colors duration-200"
-            style={{
-              height: '45px',
-              width: '163px',
-              borderRadius: '5px',
-              borderBottomRightRadius: '25px',
-              boxShadow: 'none',
-              border: 'none', 
-              fontSize: '16px',
-              color: 'white',
-              fontFamily:"inherit"
-            }}
-          >
-            Register Now
-          </button>
+          <Link to="/register">
+            <button
+              className="bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none"
+              style={{
+                height: "45px",
+                width: "163px",
+                borderRadius: "5px",
+                borderBottomRightRadius: "25px",
+                fontSize: "16px",
+              }}
+            >
+              Register Now
+            </button>
+          </Link>
 
           <button
-            className="bg-[#8DC53E] text-white flex items-center justify-center hover:bg-[#7AB32E] transition-colors duration-200"
+            className="bg-[#8DC53E] text-[#ffffff] flex items-center justify-center hover:bg-[#7AB32E] transition-colors duration-200 border-none"
             style={{
-              height: '45px',
-              width: '50px',
-              borderRadius: '5px',
-              boxShadow: 'none',
-              border: 'none',
-              fontSize: '16px',
-              color: 'white'
+              height: "45px",
+              width: "50px",
+              borderRadius: "5px",
+              fontSize: "16px",
             }}
           >
             <Search size={20} />
           </button>
 
-          <div className="text-white hover:text-[#8DC53E] transition-colors duration-200">
-           <img 
-            src="/cart.svg" 
-            alt="Cart icon" 
-            className="w-10 h-10" 
-            height={24} 
-            width={24}
-          />
-
-           </div>
+          <Link to="/cart">
+            <div
+              className={`${linkColor} hover:text-[#8DC53E] transition-colors duration-200`}
+            >
+              <img
+                src="/cart.svg"
+                alt="Cart icon"
+                className="w-10 h-10"
+                height={24}
+                width={24}
+              />
+            </div>
+          </Link>
         </div>
       </div>
     </header>

@@ -1,31 +1,71 @@
-import React from 'react';
-import Header from './components/header'; // Import the Header component
-import { Bold } from 'lucide-react';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+
+import TopBar from "./components/topBar";
+import Header from "./components/header";
+import HomeHero from "./components/homeHero";
+import Footer from "./components/footer";
+
+import Home from "./pages/Home";
+import Shop from "./pages/Shop";
+import About from "./pages/aboutUs";
+import Contact from "./pages/contactus";
+// import Events from "./pages/Events";
+// import Register from "./pages/Register";
+// import Cart from "./pages/Cart";
+
+// Wrapper to show TopBar and HomeHero only on the home page
+const Layout = ({ children }) => {
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+
+  return (
+    <div className="min-h-screen font-sans text-gray-800">
+      {/* Top Section - Only on Home */}
+      {isHome ? (
+        <div
+          className="bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/hero-background.png')",
+          }}
+        >
+          <TopBar />
+          <Header />
+          <HomeHero />
+        </div>
+      ) : (
+        // For other pages, show Header without background
+        <Header />
+      )}
+
+      {/* Page content */}
+      <div className="bg-white">{children}</div>
+
+      <Footer />
+    </div>
+  );
+};
 
 const App = () => {
   return (
-    // This div will serve as the main container for your entire application.
-    // The background image for the hero section should be applied here
-    // so that the semi-transparent header can sit on top of it.
-    <div
-      className="min-h-screen bg-cover bg-center font-sans text-gray-800"
-      style={{
-        backgroundImage: "url('/hero-background.png')",
-        backgroundAttachment: 'fixed', // Makes the background fixed while scrolling
-      }}
-    >
-      {/* The Header component */}
-      <Header />
-
-      {/* Main content of your page will go here */}
-      <main className="relative z-10 p-8 text-center text-white min-h-[calc(100vh-76px)] ">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 mt-[110px]" style={{fontSize:70, color:'white', fontWeight:Bold}}>Gear Up for Your <br></br>Next Adventures Trip</h1>
-        <p style={{lineHeight:2, color:'white',fontSize:15}}>Discover premium outdoor equipment for camping, hiking, and adventure sports. From mountain peaks to <br></br>forest trails, we've got everything you need to explore the great outdoors.</p>
-      </main>
-
-      {/* You can add a Footer component here later */}
-      {/* <Footer /> */}
-    </div>
+    <Router>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/aboutUs" element={<About />} />
+          <Route path="/contactus" element={<Contact />} />
+          {/* <Route path="/events" element={<Events />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/cart" element={<Cart />} /> */}
+        </Routes>
+      </Layout>
+    </Router>
   );
 };
 
