@@ -13,17 +13,11 @@ const Header = () => {
         !isHome ? "mb-[20px]" : ""
       }`}
     >
-      <div className="max-w-7xl flex flex-wrap items-center justify-between px-6 py-4 font-jakarta mt-[-20px]">
+      <div className=" flex flex-wrap items-center justify-between mt-[-20px]">
         {/* Logo */}
-        <div className="flex items-center space-x-2 ml-[75px] mt-[20px]">
+        <div className="flex items-center space-x-2 ml-[70px] mt-[20px]">
           <Link to="/">
-            <img
-              src="/TGO-Logo.png"
-              alt="Logo"
-              className="w-10 h-10"
-              height={63}
-              width={132}
-            />
+            <img src="/TGO-Logo.png" alt="Logo" className="w-32 h-16" />
           </Link>
         </div>
 
@@ -33,7 +27,7 @@ const Header = () => {
             <li className="ml-[100px]">
               <Link
                 to="/"
-                className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline`}
+                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
               >
                 Home
               </Link>
@@ -42,7 +36,7 @@ const Header = () => {
               <li>
                 <Link
                   to="/shop"
-                  className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline mr-[5px]`}
+                  className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline mr-[5px]`}
                 >
                   Shop
                 </Link>
@@ -58,7 +52,7 @@ const Header = () => {
             <li>
               <Link
                 to="/aboutUs"
-                className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline`}
+                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
               >
                 About Us
               </Link>
@@ -66,7 +60,7 @@ const Header = () => {
             <li>
               <Link
                 to="/contact"
-                className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline`}
+                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
               >
                 Contact Us
               </Link>
@@ -74,7 +68,7 @@ const Header = () => {
             <li className="mr-[100px]">
               <Link
                 to="/events"
-                className={`${linkColor} font-medium hover:font-extrabold hover:underline transition-all duration-200 no-underline`}
+                className={`${linkColor}  hover:font-bold hover:underline transition-all duration-200 no-underline`}
               >
                 Events
               </Link>
@@ -115,13 +109,7 @@ const Header = () => {
             <div
               className={`${linkColor} hover:text-[#8DC53E] transition-colors duration-200`}
             >
-              <img
-                src="/cart.svg"
-                alt="Cart icon"
-                className="w-10 h-10"
-                height={24}
-                width={24}
-              />
+              <img src="/cart.svg" alt="Cart icon" className="w-7 h-7" />
             </div>
           </Link>
         </div>
