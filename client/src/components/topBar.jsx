@@ -2,11 +2,8 @@ import React from "react";
 
 const TopBar = () => {
   return (
-    <div>
-      <div
-        className="max-w-7xl flex flex-wrap items-center justify-between ml-[80px] mr-[77px] pt-[10px]"
-        style={{ color: "white" }}
-      >
+    <div className="">
+      <div className=" w-auto h-12 flex flex-wrap items-center justify-between ml-[75px] mr-[77px] pt-[10px] text-white">
         <div className="flex">
           <a
             href="mailto:Tgo@tgolk.com"
@@ -27,7 +24,7 @@ const TopBar = () => {
           </div>
         </div>
         <div>
-          <p className="text-sm font-medium ml-[-150px]">
+          <p className="text-base ml-[-150px]">
             🎉 Free Standard Shipping for Orders Over Rs. 5000!
           </p>
         </div>

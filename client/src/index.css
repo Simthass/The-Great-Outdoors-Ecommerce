@@ -1,14 +1,14 @@
 /* Tailwind CSS directives */
-@tailwind base;
-@tailwind components;
+/* @import "tailwindcss"; */
+@import "tailwindcss";
 @tailwind utilities;
 body {
   margin: 0;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
