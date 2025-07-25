@@ -139,7 +139,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-      <div className="text-center ml-[75px] mr-[75px]  ">
+      <div id="hot-this-week" className="text-center ml-[75px] mr-[75px]">
         <p className="text-[30px] font-bold mb-[50px]">Hot This Week</p>
         <div className="flex flex-wrap items-center justify-between mb-7">
           <div className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]">
@@ -312,8 +312,8 @@ const Home = () => {
         </div>
       </div>
       <div>
-        <div className="ml-[75px] mr-[75px] mb-[70px] mt-[30px] overflow-hidden ">
-          <img src="/Sale-banner.png" alt="" className=" w-full h-full" />
+        <div className="ml-[75px] mr-[75px] mb-[70px] mt-[30px] overflow-hidden">
+          <img src="/Sale-banner.png" alt="" className="w-full h-full" />
         </div>
       </div>
       <div className="">
@@ -375,7 +375,7 @@ const Home = () => {
             <p className="text-[20px] mb-[10px] text-[#797979] font-bold">
               About the Great Outdoors
             </p>
-            <p className="text-4xl font-bold leading-12 ">
+            <p className="text-4xl font-bold leading-12">
               Fast and Easy Ways to <br /> Get Your Gear
             </p>
             <p className="text-[18px] leading-8 mb-5 mt-3">
@@ -388,7 +388,7 @@ const Home = () => {
               <input
                 type="text"
                 placeholder="Enter Your Email Address"
-                className="w-[310px] h-[45px] pl-[20px] bg-[#ECEAEA]/50 border border-transparent placeholder:text-gray-600 outline-none rounded-[5px] "
+                className="w-[310px] h-[45px] pl-[20px] bg-[#ECEAEA]/50 border border-transparent placeholder:text-gray-600 outline-none rounded-[5px]"
               />
 
               <button
@@ -514,7 +514,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-      <div className="text-center ml-[75px] mr-[75px]  ">
+      <div className="text-center ml-[75px] mr-[75px]">
         <p className="text-[30px] mb-[50px]" style={{ fontWeight: "bold" }}>
           FEATURED PRODUCTS
         </p>

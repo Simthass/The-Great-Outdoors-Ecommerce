@@ -6,7 +6,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === "/";
-  const linkColor = isHome ? "text-[#ffffff]" : "text-black";
+  const linkColor = isHome ? "text-[#ffffff]" : "text-[#111111]";
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -18,7 +18,7 @@ const Header = () => {
         !isHome ? "mb-[20px]" : ""
       }`}
     >
-      {/* Large Desktop View (1400px+) */}
+      {/* Large Desktop View (1400px+) - Original Layout */}
       <div className="hidden 2xl:flex flex-wrap items-center justify-between mt-[-20px]">
         {/* Logo */}
         <div className="flex items-center space-x-2 ml-[70px] mt-[20px]">
@@ -28,8 +28,7 @@ const Header = () => {
         </div>
 
         {/* Navigation */}
-        {/* Navigation */}
-        <nav className="hidden xl:flex items-center justify-center text-base mt-[40px]">
+        <nav className="flex items-center justify-center text-base mt-[40px]">
           <ul className="flex items-center justify-center gap-[60px] w-full list-none">
             <li className="ml-[100px]">
               <Link
@@ -83,7 +82,7 @@ const Header = () => {
           </ul>
         </nav>
 
-        {/* Right Buttons */}
+        {/* Right Buttons - ALL VISIBLE */}
         <div className="flex items-center gap-x-[40px] mr-[75px] mt-[40px]">
           <Link to="/register">
             <button
@@ -111,6 +110,7 @@ const Header = () => {
           >
             <Search size={20} />
           </button>
+
           {/* All cart icon instances should be updated with this logic */}
           <Link to="/cart">
             <div
@@ -122,14 +122,16 @@ const Header = () => {
                 src="/cart.svg"
                 alt="Cart icon"
                 className="w-7 h-7"
-                style={{ filter: isHome ? "none" : "brightness(0)" }}
+                style={{
+                  filter: isHome ? "none" : "brightness(0)",
+                }}
               />
             </div>
           </Link>
         </div>
       </div>
 
-      {/* Desktop View (1200px-1399px) - Hide right buttons first */}
+      {/* Desktop View (1024px-1399px) - Full navigation, all buttons visible */}
       <div className="hidden xl:flex 2xl:hidden flex-wrap items-center justify-between mt-[-20px]">
         {/* Logo */}
         <div className="flex items-center space-x-2 ml-[50px] mt-[20px]">
@@ -139,7 +141,7 @@ const Header = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="hidden lg:flex items-center justify-center text-base mt-[40px]">
+        <nav className="flex items-center justify-center text-base mt-[40px]">
           <ul className="flex items-center justify-center gap-[40px] w-full list-none">
             <li className="ml-[80px]">
               <Link
@@ -193,13 +195,136 @@ const Header = () => {
           </ul>
         </nav>
 
-        {/* Right Section - Cart & Hamburger */}
-        <div className="flex items-center gap-4 mr-[50px] mt-[40px]">
+        {/* Right Buttons - ALL VISIBLE */}
+        <div className="flex items-center gap-x-[30px] mr-[50px] mt-[40px]">
+          <Link to="/register">
+            <button
+              className="bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none"
+              style={{
+                height: "45px",
+                width: "163px",
+                borderRadius: "5px",
+                borderBottomRightRadius: "25px",
+                fontSize: "16px",
+              }}
+            >
+              Register Now
+            </button>
+          </Link>
+
+          <button
+            className="bg-[#8DC53E] text-[#ffffff] flex items-center justify-center hover:bg-[#7AB32E] transition-colors duration-200 border-none"
+            style={{
+              height: "45px",
+              width: "50px",
+              borderRadius: "5px",
+              fontSize: "16px",
+            }}
+          >
+            <Search size={20} />
+          </button>
+
+          {/* All cart icon instances should be updated with this logic */}
           <Link to="/cart">
             <div
-              className={`${linkColor} hover:text-[#8DC53E] transition-colors duration-200`}
+              className={`${
+                isHome ? "text-white" : "text-black"
+              } hover:text-[#8DC53E] transition-colors duration-200`}
             >
-              <img src="/cart.svg" alt="Cart icon" className="w-7 h-7" />
+              <img
+                src="/cart.svg"
+                alt="Cart icon"
+                className="w-7 h-7"
+                style={{
+                  filter: isHome ? "none" : "brightness(0)",
+                }}
+              />
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Smaller Desktop View (768px-1023px) - Register & Search move to hamburger */}
+      <div className="hidden lg:flex xl:hidden items-center justify-between px-8 py-4 mt-[-20px]">
+        {/* Logo */}
+        <div className="flex items-center ml-[30px] mt-[20px]">
+          <Link to="/">
+            <img src="/TGO-Logo.png" alt="Logo" className="w-30 h-15" />
+          </Link>
+        </div>
+
+        {/* Full Navigation */}
+        <nav className="flex items-center text-base mt-[40px]">
+          <ul className="flex items-center gap-[30px] list-none">
+            <li>
+              <Link
+                to="/"
+                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
+              >
+                Home
+              </Link>
+            </li>
+            <div className="flex items-center">
+              <li>
+                <Link
+                  to="/shop"
+                  className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline mr-[5px]`}
+                >
+                  Shop
+                </Link>
+              </li>
+              <img
+                src="/dropdown-arrow.svg"
+                alt="Dropdown"
+                height={7}
+                width={12}
+                className="mt-[3px]"
+              />
+            </div>
+            <li>
+              <Link
+                to="/aboutUs"
+                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
+              >
+                About Us
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/contact"
+                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
+              >
+                Contact Us
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/events"
+                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
+              >
+                Events
+              </Link>
+            </li>
+          </ul>
+        </nav>
+
+        {/* Right Section - Cart & Hamburger (Register & Search in menu) */}
+        <div className="flex items-center gap-4 mr-[30px] mt-[40px]">
+          {/* All cart icon instances should be updated with this logic */}
+          <Link to="/cart">
+            <div
+              className={`${
+                isHome ? "text-white" : "text-black"
+              } hover:text-[#8DC53E] transition-colors duration-200`}
+            >
+              <img
+                src="/cart.svg"
+                alt="Cart icon"
+                className="w-7 h-7"
+                style={{
+                  filter: isHome ? "none" : "brightness(0)",
+                }}
+              />
             </div>
           </Link>
 
@@ -213,8 +338,8 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Tablet View (768px-1199px) - Hide more navigation items */}
-      <div className="hidden md:flex xl:hidden items-center justify-between px-8 py-4">
+      {/* Tablet View (640px-767px) - Some navigation items move to hamburger */}
+      <div className="hidden md:flex lg:hidden items-center justify-between px-6 py-4">
         {/* Logo */}
         <div className="flex items-center">
           <Link to="/">
@@ -223,7 +348,7 @@ const Header = () => {
         </div>
 
         {/* Limited Navigation */}
-        <nav className="hidden sm:flex items-center text-base">
+        <nav className="flex items-center text-base">
           <ul className="flex items-center gap-6 list-none">
             <li>
               <Link
@@ -246,11 +371,21 @@ const Header = () => {
 
         {/* Right Section - Cart & Hamburger */}
         <div className="flex items-center gap-4">
+          {/* All cart icon instances should be updated with this logic */}
           <Link to="/cart">
             <div
-              className={`${linkColor} hover:text-[#8DC53E] transition-colors duration-200`}
+              className={`${
+                isHome ? "text-white" : "text-black"
+              } hover:text-[#8DC53E] transition-colors duration-200`}
             >
-              <img src="/cart.svg" alt="Cart icon" className="w-7 h-7" />
+              <img
+                src="/cart.svg"
+                alt="Cart icon"
+                className="w-7 h-7"
+                style={{
+                  filter: isHome ? "none" : "brightness(0)",
+                }}
+              />
             </div>
           </Link>
 
@@ -264,7 +399,7 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile View (below 768px) */}
+      {/* Mobile View (below 640px) */}
       <div className="md:hidden flex items-center justify-between px-4 sm:px-6 py-4">
         {/* Logo */}
         <div className="flex items-center">
@@ -279,14 +414,20 @@ const Header = () => {
 
         {/* Right Section - Cart & Hamburger */}
         <div className="flex items-center gap-4">
+          {/* All cart icon instances should be updated with this logic */}
           <Link to="/cart">
             <div
-              className={`${linkColor} hover:text-[#8DC53E] transition-colors duration-200`}
+              className={`${
+                isHome ? "text-white" : "text-black"
+              } hover:text-[#8DC53E] transition-colors duration-200`}
             >
               <img
                 src="/cart.svg"
                 alt="Cart icon"
-                className="w-6 h-6 sm:w-7 sm:h-7"
+                className="w-7 h-7"
+                style={{
+                  filter: isHome ? "none" : "brightness(0)",
+                }}
               />
             </div>
           </Link>
@@ -303,7 +444,7 @@ const Header = () => {
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div className="2xl:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
+        <div className="xl:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
           <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
             {/* Menu Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -374,6 +515,7 @@ const Header = () => {
                     style={{
                       height: "45px",
                       borderRadius: "5px",
+                      borderBottomRightRadius: "25px",
                       fontSize: "16px",
                     }}
                   >

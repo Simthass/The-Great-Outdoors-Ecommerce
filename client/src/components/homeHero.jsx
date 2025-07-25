@@ -1,4 +1,5 @@
 import React from "react";
+import ScrollLink from "./ScrollLink";
 
 const homeHero = () => {
   return (
@@ -48,19 +49,21 @@ const homeHero = () => {
       </div>
 
       {/* CTA Button */}
-      <button
-        className="bg-[#FFA81D] text-black font-bold font-inherit rounded-[5px] hover:bg-[#E3981F] hover:rounded-[5px] transition-all duration-300 ease-in-out cursor-pointer mb-12"
-        style={{
-          height: "45px",
-          width: "170px",
-          borderBottomRightRadius: "25px",
-          boxShadow: "none",
-          border: "none",
-          fontSize: "15px",
-        }}
-      >
-        EXPLORE NOW
-      </button>
+      <ScrollLink to="/#hot-this-week">
+        <button
+          className="bg-[#FFA81D] text-black font-bold font-inherit rounded-[5px] hover:bg-[#E3981F] hover:rounded-[5px] transition-all duration-300 ease-in-out cursor-pointer mb-12"
+          style={{
+            height: "45px",
+            width: "170px",
+            borderBottomRightRadius: "25px",
+            boxShadow: "none",
+            border: "none",
+            fontSize: "15px",
+          }}
+        >
+          EXPLORE NOW
+        </button>
+      </ScrollLink>
     </div>
   );
 };
