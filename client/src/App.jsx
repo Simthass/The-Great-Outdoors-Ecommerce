@@ -17,7 +17,7 @@ import About from "./pages/aboutUs";
 import Contact from "./pages/contactus";
 // import Events from "./pages/Events";
 // import Register from "./pages/Register";
-// import Cart from "./pages/Cart";
+import Cart from "./pages/cart";
 
 // Wrapper to show TopBar and HomeHero only on the home page
 const Layout = ({ children }) => {
@@ -61,8 +61,8 @@ const App = () => {
           <Route path="/aboutUs" element={<About />} />
           <Route path="/contactus" element={<Contact />} />
           {/* <Route path="/events" element={<Events />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/cart" element={<Cart />} /> */}
+          <Route path="/register" element={<Register />} />*/}
+          <Route path="/cart" element={<Cart />} />
         </Routes>
       </Layout>
     </Router>
