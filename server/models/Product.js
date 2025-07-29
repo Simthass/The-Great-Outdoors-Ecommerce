@@ -1,11 +1,11 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const productSchema = mongoose.Schema(
   {
-    category: { // categoryID (Foreign Key) - References Category
+    category: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: 'Category',
+      ref: "Category",
     },
     productName: {
       type: String,
@@ -24,8 +24,8 @@ const productSchema = mongoose.Schema(
       type: Number,
       required: false,
     },
-    dimensions: { // Storing as a string or a nested object if more complex
-      type: String, // e.g., "10x5x2 cm"
+    dimensions: {
+      type: String,
       required: false,
     },
     brand: {
@@ -45,17 +45,15 @@ const productSchema = mongoose.Schema(
       required: true,
       default: true,
     },
-    // Assuming product images will be stored as URLs
     imageUrl: {
       type: String,
-      required: false, // Can be true if every product must have an image
-    }
+      required: false,
+    },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 
-const Product = mongoose.model('Product', productSchema);
-
-module.exports = Product;
+const Product = mongoose.model("Product", productSchema);
+export default Product;
