@@ -1,5 +1,31 @@
 const mongoose = require('mongoose');
 
+const OrderItemSchema = new mongoose.Schema({
+    productId: {
+        type: String,
+        required: true
+    },
+    productName: {
+        type: String,
+        required: true
+    },
+    quantity: {
+        type: Number,
+        required: true,
+        min: 1
+    },
+    price: {
+        type: Number,
+        required: true,
+        min: 0
+    },
+    total: {
+        type: Number,
+        required: true,
+        min: 0
+    }
+});
+
 const orderSchema = mongoose.Schema(
   {
     user: { // userID (Foreign Key) - References User
@@ -80,11 +106,23 @@ const orderSchema = mongoose.Schema(
       type: Date,
       required: false,
     },
+    items: [OrderItemSchema],
+    notes: {
+      type: String
+    }
   },
   {
     timestamps: true, // Adds createdAt and updatedAt
   }
 );
+
+// Generate unique order ID
+orderSchema.pre('save', function(next) {
+    if (!this.orderId) {
+        this.orderId = 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    }
+    next();
+});
 
 const Order = mongoose.model('Order', orderSchema);
 

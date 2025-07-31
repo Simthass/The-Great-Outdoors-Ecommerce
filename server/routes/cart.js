@@ -1,219 +1,185 @@
-import express from "express";
-import Cart from "../models/Cart.js";
-import Product from "../models/Product.js";
-import mongoose from "mongoose";
-
+const express = require('express');
 const router = express.Router();
 
-// Helper to transform cart data
-const transformCart = (cart) => {
-  if (!cart) return { items: [] };
+// In-memory cart storage (for demo purposes)
+// In production, you might want to use Redis, MongoDB sessions, or user-specific storage
+let carts = {};
 
-  const cartObj = cart.toObject();
-
-  return {
-    ...cartObj,
-    items: cartObj.items.map((item) => {
-      console.log("Transforming item:", item); // Debug log
-      return {
-        _id: item._id,
-        quantity: item.quantity,
-        price: item.price,
-        product: item.product
-          ? {
-              _id: item.product._id,
-              productName: item.product.productName || "Unknown Product",
-              price: item.product.price || 0,
-              imageUrl: item.product.imageUrl || "/products/placeholder.jpg",
-              brand: item.product.brand || "Unknown Brand",
-            }
-          : null,
-      };
-    }),
-  };
-};
-
-// Get or create cart middleware
-const getCart = async (req, res, next) => {
-  try {
-    let cart;
-
-    if (!req.session.cartId) {
-      cart = new Cart({ items: [] });
-      await cart.save();
-      req.session.cartId = cart._id.toString();
-      console.log("Created new cart with ID:", cart._id);
-    } else {
-      console.log("Looking for cart with ID:", req.session.cartId);
-
-      cart = await Cart.findById(req.session.cartId).populate({
-        path: "items.product",
-        select: "productName price imageUrl brand",
-      });
-
-      if (!cart) {
-        console.log("Cart not found, creating new one");
-        cart = new Cart({ items: [] });
-        await cart.save();
-        req.session.cartId = cart._id.toString();
-      }
+// GET cart by session/user ID
+router.get('/:sessionId', (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const cart = carts[sessionId] || { items: [], totalAmount: 0 };
+        res.json(cart);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-
-    req.cart = cart;
-    next();
-  } catch (error) {
-    console.error("Cart middleware error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-// Get cart
-router.get("/", getCart, async (req, res) => {
-  try {
-    console.log("Getting cart:", req.cart);
-    console.log("Cart items:", req.cart.items);
-
-    // Re-populate to ensure we have the latest product data
-    await req.cart.populate({
-      path: "items.product",
-      select: "productName price imageUrl brand",
-    });
-
-    const transformedCart = transformCart(req.cart);
-    console.log("Transformed cart:", transformedCart);
-
-    res.json(transformedCart);
-  } catch (error) {
-    console.error("Get cart error:", error);
-    res.status(500).json({ message: error.message });
-  }
 });
 
-// Add to cart
-router.post("/add", getCart, async (req, res) => {
-  try {
-    const { productId, quantity = 1 } = req.body;
+// ADD item to cart
+router.post('/:sessionId/add', (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const { productId, productName, price, quantity = 1 } = req.body;
 
-    console.log(
-      "Adding to cart - Product ID:",
-      productId,
-      "Quantity:",
-      quantity
-    );
+        if (!productId || !productName || !price) {
+            return res.status(400).json({ 
+                message: 'Product ID, name, and price are required' 
+            });
+        }
 
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res.status(400).json({ message: "Invalid product ID" });
+        // Initialize cart if it doesn't exist
+        if (!carts[sessionId]) {
+            carts[sessionId] = { items: [], totalAmount: 0 };
+        }
+
+        const cart = carts[sessionId];
+        
+        // Check if item already exists in cart
+        const existingItemIndex = cart.items.findIndex(item => item.productId === productId);
+        
+        if (existingItemIndex > -1) {
+            // Update quantity if item exists
+            cart.items[existingItemIndex].quantity += quantity;
+            cart.items[existingItemIndex].total = cart.items[existingItemIndex].quantity * cart.items[existingItemIndex].price;
+        } else {
+            // Add new item to cart
+            cart.items.push({
+                productId,
+                productName,
+                price: parseFloat(price),
+                quantity: parseInt(quantity),
+                total: parseFloat(price) * parseInt(quantity)
+            });
+        }
+
+        // Recalculate total amount
+        cart.totalAmount = cart.items.reduce((total, item) => total + item.total, 0);
+
+        res.json(cart);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
-
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    console.log("Found product:", product.productName);
-
-    const existingItem = req.cart.items.find(
-      (item) => item.product && item.product._id.toString() === productId
-    );
-
-    if (existingItem) {
-      existingItem.quantity += parseInt(quantity);
-      console.log("Updated existing item quantity:", existingItem.quantity);
-    } else {
-      req.cart.items.push({
-        product: productId,
-        quantity: parseInt(quantity),
-        price: product.price,
-      });
-      console.log("Added new item to cart");
-    }
-
-    const updatedCart = await req.cart.save();
-
-    // Re-populate the cart with product details
-    await updatedCart.populate({
-      path: "items.product",
-      select: "productName price imageUrl brand",
-    });
-
-    console.log("Cart after populate:", updatedCart.items);
-
-    const transformedCart = transformCart(updatedCart);
-    console.log("Sending response:", transformedCart);
-
-    res.json(transformedCart);
-  } catch (error) {
-    console.error("Add to cart error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
 });
 
-// Update item quantity
-router.put("/update/:itemId", getCart, async (req, res) => {
-  try {
-    const { itemId } = req.params;
-    const { quantity } = req.body;
+// UPDATE item quantity in cart
+router.put('/:sessionId/item/:productId', (req, res) => {
+    try {
+        const { sessionId, productId } = req.params;
+        const { quantity } = req.body;
 
-    console.log("Updating item:", itemId, "New quantity:", quantity);
+        if (!quantity || quantity < 0) {
+            return res.status(400).json({ message: 'Valid quantity is required' });
+        }
 
-    if (!quantity || quantity < 1) {
-      return res.status(400).json({ message: "Invalid quantity" });
+        if (!carts[sessionId]) {
+            return res.status(404).json({ message: 'Cart not found' });
+        }
+
+        const cart = carts[sessionId];
+        const itemIndex = cart.items.findIndex(item => item.productId === productId);
+
+        if (itemIndex === -1) {
+            return res.status(404).json({ message: 'Item not found in cart' });
+        }
+
+        if (quantity === 0) {
+            // Remove item if quantity is 0
+            cart.items.splice(itemIndex, 1);
+        } else {
+            // Update quantity
+            cart.items[itemIndex].quantity = parseInt(quantity);
+            cart.items[itemIndex].total = cart.items[itemIndex].quantity * cart.items[itemIndex].price;
+        }
+
+        // Recalculate total amount
+        cart.totalAmount = cart.items.reduce((total, item) => total + item.total, 0);
+
+        res.json(cart);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
+});
 
-    const item = req.cart.items.id(itemId);
-    if (!item) {
-      return res.status(404).json({ message: "Item not found" });
+// REMOVE item from cart
+router.delete('/:sessionId/item/:productId', (req, res) => {
+    try {
+        const { sessionId, productId } = req.params;
+
+        if (!carts[sessionId]) {
+            return res.status(404).json({ message: 'Cart not found' });
+        }
+
+        const cart = carts[sessionId];
+        const itemIndex = cart.items.findIndex(item => item.productId === productId);
+
+        if (itemIndex === -1) {
+            return res.status(404).json({ message: 'Item not found in cart' });
+        }
+
+        // Remove item
+        cart.items.splice(itemIndex, 1);
+
+        // Recalculate total amount
+        cart.totalAmount = cart.items.reduce((total, item) => total + item.total, 0);
+
+        res.json(cart);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-
-    item.quantity = parseInt(quantity);
-    const updatedCart = await req.cart.save();
-
-    await updatedCart.populate({
-      path: "items.product",
-      select: "productName price imageUrl brand",
-    });
-
-    res.json(transformCart(updatedCart));
-  } catch (error) {
-    console.error("Update cart error:", error);
-    res.status(500).json({ message: error.message });
-  }
 });
 
-// Remove item
-router.delete("/remove/:itemId", getCart, async (req, res) => {
-  try {
-    const { itemId } = req.params;
-
-    console.log("Removing item:", itemId);
-
-    req.cart.items = req.cart.items.filter(
-      (item) => item._id.toString() !== itemId
-    );
-
-    const updatedCart = await req.cart.save();
-
-    await updatedCart.populate({
-      path: "items.product",
-      select: "productName price imageUrl brand",
-    });
-
-    res.json(transformCart(updatedCart));
-  } catch (error) {
-    console.error("Remove item error:", error);
-    res.status(500).json({ message: error.message });
-  }
+// CLEAR entire cart
+router.delete('/:sessionId', (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        
+        carts[sessionId] = { items: [], totalAmount: 0 };
+        
+        res.json({ message: 'Cart cleared successfully', cart: carts[sessionId] });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
-// Clear cart
-router.delete("/clear", getCart, async (req, res) => {
-  try {
-    req.cart.items = [];
-    const updatedCart = await req.cart.save();
-    res.json(transformCart(updatedCart));
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+// CHECKOUT - Convert cart to order
+router.post('/:sessionId/checkout', async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const { customerInfo } = req.body;
+
+        if (!carts[sessionId] || carts[sessionId].items.length === 0) {
+            return res.status(400).json({ message: 'Cart is empty' });
+        }
+
+        if (!customerInfo) {
+            return res.status(400).json({ message: 'Customer information is required' });
+        }
+
+        const cart = carts[sessionId];
+        
+        // Create order data
+        const orderData = {
+            customerInfo,
+            items: cart.items,
+            totalAmount: cart.totalAmount
+        };
+
+        // Here you would typically create an order using your Order model
+        // For now, we'll just return the order data
+        // You can integrate this with the orders route later
+
+        // Clear cart after checkout
+        carts[sessionId] = { items: [], totalAmount: 0 };
+
+        res.json({
+            message: 'Checkout successful',
+            orderData,
+            cart: carts[sessionId]
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
-export default router;
+module.exports = router;
