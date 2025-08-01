@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import Order from '../models/Order';
+import Order from '../models/Order.js';
 
 // GET all orders
 router.get('/', async (req, res) => {

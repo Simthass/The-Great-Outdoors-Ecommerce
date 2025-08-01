@@ -21,6 +21,7 @@ import Shop from "./pages/shop";
 import About from "./pages/aboutUs";
 import Contact from "./pages/contactus";
 import AdminProduct from "./pages/Admin/AdminProduct";
+import Order from "./pages/Admin/Order";
 import Cart from "./pages/cart";
 import Register from "./pages/register";
 import Login from "./pages/login";
@@ -149,6 +150,7 @@ const App = () => {
             <Route path="/aboutUs" element={<About />} />
             <Route path="/contactus" element={<Contact />} />
             <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
+            <Route path="/Admin/Order" element={<Order />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />

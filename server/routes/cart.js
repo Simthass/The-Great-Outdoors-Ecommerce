@@ -1,4 +1,4 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
 // In-memory cart storage (for demo purposes)
@@ -182,4 +182,4 @@ router.post('/:sessionId/checkout', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

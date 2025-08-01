@@ -150,21 +150,34 @@ try {
   console.log("✅ Database connected successfully");
 } catch (error) {
   console.error("❌ Database connection failed:", error.message);
-  console.log("🛑 Server cannot start without database connection");
-  process.exit(1);
+  console.log("⚠️  Server will start without database for testing purposes");
+  console.log("💡 Please set up MongoDB to use database features:");
+  console.log("   1. MongoDB Atlas: https://www.mongodb.com/atlas");
+  console.log("   2. Local MongoDB: https://www.mongodb.com/try/download/community");
+  console.log("   3. Update MONGO_URI in server/.env file");
+  
+  // For development: continue without database
+  if (process.env.NODE_ENV === 'development') {
+    console.log("🔧 Development mode: Starting server without database...");
+    dbConnected = false; // Continue with limited functionality
+  } else {
+    process.exit(1);
+  }
 }
 
-// Register routes only after successful database connection
-if (dbConnected) {
-  console.log("📋 Registering routes...");
+// Register routes (with database status warning if not connected)
+console.log("📋 Registering routes...");
 
-  app.use("/api/auth", authRoutes);
-  app.use("/api/products", productRoutes);
-  app.use("/api/orders", orderRoutes);
-  app.use("/api/users", userRoutes);
-  app.use("/api/categories", categoryRoutes);
-  app.use("/api/cart", cartRoutes);
+if (!dbConnected) {
+  console.log("⚠️  Database routes will return errors until database is connected");
 }
+
+app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/cart", cartRoutes);
 
 // 404 handler for undefined routes
 app.all("*", (req, res) => {
