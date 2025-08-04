@@ -4,33 +4,29 @@ import { defaultIfEmpty, firstValueFrom } from "rxjs";
 const Footer = () => {
   return (
     <div>
-      <div className="flex flex-wrap justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center mt-10">
         <hr className="w-[637px]" />
         <img src="/TGO-Logo.png" alt="" className="w-[132px] h-[63px]" />
         <hr className="w-[637px]" />
       </div>
-      <div className="mr-[120px] ml-[120px] flex flex-wrap justify-between items-center">
-        <div className="leading-[1.8] text-[16px]">
-          <p className="text-[18px]" style={{ fontWeight: "bold" }}>
-            CATEGORY
-          </p>
+      <div className="mr-[120px] ml-[120px] flex flex-wrap justify-between items-center mt-5 mb-5 leading-2">
+        <div className="leading-10 text-[16px]">
+          <p className="text-[18px] font-bold">CATEGORY</p>
           <p>Hicking & Trekking</p>
           <p>Fishing</p>
           <p>Footwear</p>
           <p>Camping & Outdoor Living</p>
           <p>Shooting & Archery</p>
         </div>
-        <div className="leading-[1.8] text-[16px]">
-          <p className="text-[18px]" style={{ fontWeight: "bold" }}>
-            TOP BRANDS
-          </p>
+        <div className="leading-10 text-[16px]">
+          <p className="text-[18px] font-bold">TOP BRANDS</p>
           <p>Flint and Tinde</p>
           <p>Proof</p>
           <p>Relwen</p>
           <p>Wellen</p>
           <p>Taylor Stitch</p>
         </div>
-        <div className="leading-[1.8] text-[16px]">
+        <div className="leading-10 text-[16px]">
           <p className="text-[18px]" style={{ fontWeight: "bold" }}>
             ACCOUNT
           </p>
@@ -44,7 +40,7 @@ const Footer = () => {
           <p className="text-[18px]" style={{ fontWeight: "bold" }}>
             CONTACT US
           </p>
-          <div className="">
+          <div className="leading-12">
             <div className="flex flex-wrap">
               <img src="/home.svg" alt="" className="mr-[15px]" />
               <p>35T, 1st Floor, Liberty Plaza, Colombo-03</p>
@@ -65,10 +61,14 @@ const Footer = () => {
         </div>
       </div>
       <div>
-        <hr className="w-[1400px] mb-[30px]" />
+        <hr className="w-auto mb-[30px] mr-20 ml-20" />
         <div className="flex flex-wrap justify-between items-center mr-[100px] ml-[100px]">
-          <div className="flex-1 flex items-center justify-center flex-col border-r">
-            <img src="/chat-black.svg" alt="" className="w-[60px] h-[60px]" />
+          <div className="flex-1 flex items-center justify-center flex-col border-r leading-10">
+            <img
+              src="/chat-black.svg"
+              alt=""
+              className="w-[60px] h-[60px] mb-3"
+            />
             <p className="text-[20px]" style={{ fontWeight: "bold" }}>
               Need Help?
             </p>
@@ -98,8 +98,8 @@ const Footer = () => {
               </button>
             </a>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <img src="/Mobile.svg" alt="" className="w-[50px] h-[50px]" />
+          <div className="flex-1 flex flex-col items-center justify-center leading-10">
+            <img src="/Mobile.svg" alt="" className="w-[50px] h-[50px] mb-3" />
             <p className="text-[20px]" style={{ fontWeight: "bold" }}>
               Call us- 94764078448
             </p>
@@ -144,8 +144,12 @@ const Footer = () => {
               </div>
             </div>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center border-l">
-            <img src="/location.svg" alt="" className="w-[50px] h-[50px]" />
+          <div className="flex-1 flex flex-col items-center justify-center border-l leading-10">
+            <img
+              src="/location.svg"
+              alt=""
+              className="w-[50px] h-[50px] mb-3"
+            />
             <p className="text-[20px]" style={{ fontWeight: "bold" }}>
               Store Locator
             </p>
@@ -176,7 +180,7 @@ const Footer = () => {
             </button>
           </div>
         </div>
-        <hr className="w-[1400px] mt-[30px] mb-[30px]" />
+        <hr className="w-auto mr-20 ml-20 mt-[30px] mb-[30px]" />
       </div>
       <div className="w-full h-[30px] bg-[#8DC53E] flex items-center justify-center">
         <p className="text-[14px] text-[#ffffff]">

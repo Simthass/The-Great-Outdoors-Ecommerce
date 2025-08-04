@@ -1,20 +1,45 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
-const cartSchema = mongoose.Schema(
+const cartItemSchema = mongoose.Schema(
   {
-    user: { // userID (Foreign Key) - References User
+    product: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: 'User',
-      unique: true, // One cart per user (1:1 relationship)
+      ref: "Product",
     },
-    // Cart items will be in a separate collection (CartItem) and linked by cartID
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+      default: 1,
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 
-const Cart = mongoose.model('Cart', cartSchema);
+const cartSchema = mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+    },
+    items: [cartItemSchema],
+    sessionId: {
+      type: String,
+      required: false,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-module.exports = Cart;
+const Cart = mongoose.model("Cart", cartSchema);
+export default Cart;

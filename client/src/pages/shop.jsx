@@ -3,6 +3,10 @@ import { Search } from "lucide-react";
 import { Link } from "react-router-dom"; // ✅ For SPA routing
 
 const Shop = () => {
-  return <div></div>;
+  return (
+    <div>
+      <p className="text-8xl">Hello </p>
+    </div>
+  );
 };
 export default Shop;

@@ -1,15 +1,17 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const categorySchema = mongoose.Schema(
   {
     categoryName: {
       type: String,
       required: true,
-      unique: true, // Category names should ideally be unique
+      unique: true,
+      trim: true,
     },
     description: {
       type: String,
       required: false,
+      trim: true,
     },
     isActive: {
       type: Boolean,
@@ -18,10 +20,9 @@ const categorySchema = mongoose.Schema(
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 
-const Category = mongoose.model('Category', categorySchema);
-
-module.exports = Category;
+const Category = mongoose.model("Category", categorySchema);
+export default Category;
