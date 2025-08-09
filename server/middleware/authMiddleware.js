@@ -1,7 +1,8 @@
+// middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
-import User from "./models/User.js";
+import User from "../models/User.js";
 
-const authenticateUser = async (req, res, next) => {
+export const authenticateUser = async (req, res, next) => {
   try {
     const token = req.header("Authorization")?.replace("Bearer ", "");
 
@@ -23,4 +24,9 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
-export { authenticateUser };
+export const checkUserActive = (req, res, next) => {
+  if (!req.user.isActive) {
+    return res.status(403).json({ message: "Account is deactivated" });
+  }
+  next();
+};

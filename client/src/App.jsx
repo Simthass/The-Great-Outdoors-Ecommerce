@@ -14,6 +14,8 @@ import TopBar from "./components/topBar";
 import Header from "./components/header";
 import HomeHero from "./components/homeHero";
 import Footer from "./components/footer";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Sidebar from "./components/Sidebar";
 
 // Pages
 import Home from "./pages/Home";
@@ -21,9 +23,15 @@ import Shop from "./pages/shop";
 import About from "./pages/aboutUs";
 import Contact from "./pages/contactus";
 import AdminProduct from "./pages/Admin/AdminProduct";
+import Order from "./pages/Admin/Order";
 import Cart from "./pages/cart";
 import Register from "./pages/register";
 import Login from "./pages/login";
+import ForgotPassword from "./pages/forgotPassword";
+import ResetPassword from "./pages/resetPassword";
+import Profile from "./pages/userProfile";
+import Settings from "./pages/userSettings";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -152,6 +160,23 @@ const App = () => {
             <Route path="/cart" element={<Cart />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgotPassword" element={<ForgotPassword />} />
+            <Route
+              path="/resetPassword/:resettoken"
+              element={<ResetPassword />}
+            />
+            <Route
+              path="/AdminProduct"
+              element={
+                <ProtectedRoute requiredRole="Admin">
+                  <AdminProduct />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/userProfile" element={<Profile />} />
+            <Route path="/userSettings" element={<Settings />} />
+            <Route path="/Admin/Order" element={<Order />} />
+            <Route path="/AdminDashboard" element={<AdminDashboard />} />
           </Routes>
         </Layout>
       </Router>
