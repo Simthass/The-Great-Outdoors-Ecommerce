@@ -10,6 +10,7 @@ import connectDB from "./config/database.js";
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
 import orderRoutes from "./routes/orders.js";
+import inventoryRoutes from "./routes/inventory.js";
 import userRoutes from "./routes/users.js";
 import categoryRoutes from "./routes/categories.js";
 import cartRoutes from "./routes/cart.js";
@@ -188,6 +189,7 @@ if (dbConnected) {
   app.use("/api/auth", authRoutes);
   app.use("/api/products", productRoutes);
   app.use("/api/orders", orderRoutes);
+  app.use("/api/inventory", inventoryRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/cart", cartRoutes);

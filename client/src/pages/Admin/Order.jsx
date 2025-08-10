@@ -1,10 +1,65 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const Order = () => {
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState("orderManagement");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Mock order data for demonstration
+  const mockOrderData = [
+    {
+      _id: "001",
+      orderId: "#001",
+      customerName: "John Doe",
+      customerEmail: "john@example.com",
+      totalAmount: 150,
+      orderStatus: "Shipped",
+      orderDate: new Date('2024-01-10'),
+      items: [
+        { productName: "ElkHorn Compound Bow Set", quantity: 1, price: 150 }
+      ]
+    },
+    {
+      _id: "002", 
+      orderId: "#002",
+      customerName: "Jane Smith",
+      customerEmail: "jane@example.com",
+      totalAmount: 200,
+      orderStatus: "Pending",
+      orderDate: new Date('2024-01-11'),
+      items: [
+        { productName: "Coleman Sundome Tents", quantity: 2, price: 100 }
+      ]
+    },
+    {
+      _id: "003",
+      orderId: "#003", 
+      customerName: "Mike Johnson",
+      customerEmail: "mike@example.com",
+      totalAmount: 120,
+      orderStatus: "Delivered",
+      orderDate: new Date('2024-01-09'),
+      items: [
+        { productName: "30L Backpack", quantity: 4, price: 30 }
+      ]
+    },
+    {
+      _id: "004",
+      orderId: "#004",
+      customerName: "Emily Davis", 
+      customerEmail: "emily@example.com",
+      totalAmount: 90,
+      orderStatus: "Cancelled",
+      orderDate: new Date('2024-01-08'),
+      items: [
+        { productName: "50L Backpack", quantity: 3, price: 30 }
+      ]
+    }
+  ];
 
   const stats = {
     totalProducts: 150,
@@ -49,10 +104,13 @@ const Order = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await mockOrderAPI.getAllOrders();
-        if (response.success && response.data) {
-          setOrders(response.data);
-        }
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Load mock data
+        setOrders(mockOrderData);
+        
       } catch (error) {
         console.error("Failed to fetch orders", error);
         setError("Failed to fetch orders");
@@ -66,20 +124,18 @@ const Order = () => {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      const response = await mockOrderAPI.updateOrderStatus(orderId, newStatus);
-
-      if (response.success) {
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === orderId ? { ...order, orderStatus: newStatus } : order
-          )
-        );
-      } else {
-        setError(response.message || "Failed to update order status");
-      }
+      // Update local state for demonstration
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === orderId ? { ...order, orderStatus: newStatus } : order
+        )
+      );
+      
+      toast.success(`Order ${orderId} status updated to ${newStatus}`);
+      
     } catch (error) {
       console.error("Failed to update order status", error);
-      setError("Failed to update order status");
+      toast.error("Failed to update order status");
     }
   };
 
