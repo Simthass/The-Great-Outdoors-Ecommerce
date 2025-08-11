@@ -32,34 +32,49 @@ export const getUserSettings = async (req, res) => {
       .populate("addresses");
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
+    // Get user addresses separately for better control
+    const addresses = await Address.find({ user: req.user._id })
+      .sort({ isDefault: -1, createdAt: -1 })
+      .lean();
+
+    // Get recent orders
     const orders = await Order.find({ user: req.user._id })
       .sort({ orderDate: -1 })
-      .limit(5)
+      .limit(10)
       .select("_id orderId orderDate totalAmount orderStatus items")
       .lean();
 
+    // Ensure proper notification structure
+    const notifications = user.notifications || {
+      emailNotifications: true,
+      pushNotifications: false,
+      smsNotifications: true,
+      orderUpdates: true,
+      promotions: false,
+    };
+
     res.json({
-      notifications: user.notifications || {
-        email: true,
-        push: false,
-        sms: true,
-        orders: true,
-        promotions: false,
-      },
-      appearance: user.appearance || {
-        theme: "light",
-        language: "english",
-        fontSize: "medium",
-      },
-      addresses: user.addresses || [],
+      success: true,
+      notifications: notifications,
+      addresses: addresses || [],
       orders: orders || [],
+      profile: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        profileImage: user.profileImage,
+      },
     });
   } catch (error) {
     console.error("Error getting user settings:", error);
     res.status(500).json({
+      success: false,
       message: "Server error",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
@@ -69,70 +84,58 @@ export const getUserSettings = async (req, res) => {
 // Update notification settings
 export const updateNotificationSettings = async (req, res) => {
   try {
-    const { email, push, sms, orders, promotions } = req.body;
+    const {
+      emailNotifications,
+      pushNotifications,
+      smsNotifications,
+      orderUpdates,
+      promotions,
+    } = req.body;
 
-    // Validate input
-    if (
-      typeof email !== "boolean" ||
-      typeof push !== "boolean" ||
-      typeof sms !== "boolean" ||
-      typeof orders !== "boolean" ||
-      typeof promotions !== "boolean"
-    ) {
-      return res.status(400).json({
-        message: "All notification settings must be boolean values",
+    console.log("Received notification update request:", req.body);
+
+    // Validate input and set defaults
+    const notifications = {
+      emailNotifications:
+        emailNotifications !== undefined ? emailNotifications : true,
+      pushNotifications:
+        pushNotifications !== undefined ? pushNotifications : false,
+      smsNotifications:
+        smsNotifications !== undefined ? smsNotifications : true,
+      orderUpdates: orderUpdates !== undefined ? orderUpdates : true,
+      promotions: promotions !== undefined ? promotions : false,
+    };
+
+    console.log("Processed notifications object:", notifications);
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
       });
     }
 
-    const updatedUser = await updateUserSettings(req.user._id, {
-      notifications: { email, push, sms, orders, promotions },
-    });
+    // Update notifications
+    user.notifications = notifications;
+    user.markModified("notifications");
+
+    const updatedUser = await user.save();
+
+    console.log("Updated user notifications:", updatedUser.notifications);
 
     res.json({
+      success: true,
       message: "Notification settings updated successfully",
-      notifications: updatedUser.notifications,
+      data: {
+        notifications: updatedUser.notifications,
+      },
     });
   } catch (error) {
     console.error("Error updating notification settings:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to update notification settings",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
-};
-
-// Update appearance settings
-export const updateAppearanceSettings = async (req, res) => {
-  try {
-    const { theme, language, fontSize } = req.body;
-
-    // Validate input
-    const validThemes = ["light", "dark", "system"];
-    const validLanguages = ["english", "spanish", "french", "german"];
-    const validFontSizes = ["small", "medium", "large"];
-
-    if (
-      !validThemes.includes(theme) ||
-      !validLanguages.includes(language) ||
-      !validFontSizes.includes(fontSize)
-    ) {
-      return res.status(400).json({
-        message: "Invalid appearance settings values",
-      });
-    }
-
-    const updatedUser = await updateUserSettings(req.user._id, {
-      appearance: { theme, language, fontSize },
-    });
-
-    res.json({
-      message: "Appearance settings updated successfully",
-      appearance: updatedUser.appearance,
-    });
-  } catch (error) {
-    console.error("Error updating appearance settings:", error);
-    res.status(500).json({
-      message: "Failed to update appearance settings",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -145,36 +148,48 @@ export const updatePassword = async (req, res) => {
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
+        success: false,
         message: "Current password and new password are required",
       });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({
+        success: false,
         message: "New password must be at least 6 characters long",
       });
     }
 
     const user = await User.findById(req.user._id).select("+password");
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
     const isMatch = await user.matchPassword(currentPassword);
     if (!isMatch) {
-      return res.status(400).json({ message: "Current password is incorrect" });
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
     }
 
     user.password = newPassword;
     await user.save();
 
     res.json({
+      success: true,
       message: "Password updated successfully",
-      token: generateToken(user._id),
+      data: {
+        token: generateToken(user._id),
+      },
     });
   } catch (error) {
     console.error("Error updating password:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to update password",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
@@ -184,11 +199,18 @@ export const updatePassword = async (req, res) => {
 // Address management
 export const getAddresses = async (req, res) => {
   try {
-    const addresses = await Address.find({ user: req.user._id }).lean();
-    res.json(addresses);
+    const addresses = await Address.find({ user: req.user._id })
+      .sort({ isDefault: -1, createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: addresses,
+    });
   } catch (error) {
     console.error("Error getting addresses:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to fetch addresses",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
@@ -211,6 +233,7 @@ export const addAddress = async (req, res) => {
     // Validate required fields
     if (!addressType || !addressLine1 || !city || !province || !postalCode) {
       return res.status(400).json({
+        success: false,
         message: "Missing required address fields",
       });
     }
@@ -225,7 +248,7 @@ export const addAddress = async (req, res) => {
 
     const address = new Address({
       user: req.user._id,
-      addressType,
+      addressType: addressType || "Home",
       addressLine1,
       addressLine2: addressLine2 || "",
       city,
@@ -243,12 +266,14 @@ export const addAddress = async (req, res) => {
     });
 
     res.status(201).json({
+      success: true,
       message: "Address added successfully",
       address,
     });
   } catch (error) {
     console.error("Error adding address:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to add address",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
@@ -271,6 +296,7 @@ export const updateAddress = async (req, res) => {
     // Validate required fields
     if (!addressType || !addressLine1 || !city || !province || !postalCode) {
       return res.status(400).json({
+        success: false,
         message: "Missing required address fields",
       });
     }
@@ -299,16 +325,21 @@ export const updateAddress = async (req, res) => {
     );
 
     if (!address) {
-      return res.status(404).json({ message: "Address not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Address not found",
+      });
     }
 
     res.json({
+      success: true,
       message: "Address updated successfully",
       address,
     });
   } catch (error) {
     console.error("Error updating address:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to update address",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
@@ -323,7 +354,10 @@ export const deleteAddress = async (req, res) => {
     });
 
     if (!address) {
-      return res.status(404).json({ message: "Address not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Address not found",
+      });
     }
 
     // Remove address from user's addresses array
@@ -340,10 +374,14 @@ export const deleteAddress = async (req, res) => {
       }
     }
 
-    res.json({ message: "Address deleted successfully" });
+    res.json({
+      success: true,
+      message: "Address deleted successfully",
+    });
   } catch (error) {
     console.error("Error deleting address:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to delete address",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
@@ -366,16 +404,21 @@ export const setDefaultAddress = async (req, res) => {
     );
 
     if (!address) {
-      return res.status(404).json({ message: "Address not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Address not found",
+      });
     }
 
     res.json({
+      success: true,
       message: "Default address updated successfully",
       address,
     });
   } catch (error) {
     console.error("Error setting default address:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to set default address",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
@@ -388,12 +431,17 @@ export const getUserOrders = async (req, res) => {
     const orders = await Order.find({ user: req.user._id })
       .sort({ orderDate: -1 })
       .select("_id orderId orderDate totalAmount orderStatus items")
+      .populate("items.product", "name images price")
       .lean();
 
-    res.json(orders);
+    res.json({
+      success: true,
+      data: orders,
+    });
   } catch (error) {
     console.error("Error getting user orders:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to fetch orders",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
@@ -404,14 +452,20 @@ export const getUserOrders = async (req, res) => {
 export const getHelpInfo = async (req, res) => {
   try {
     res.json({
-      contactEmail: "support@yourapp.com",
-      contactPhone: "1-800-123-4567",
-      faqLink: "https://yourapp.com/faq",
-      liveChatAvailable: true,
+      success: true,
+      data: {
+        contactEmail: "support@yourapp.com",
+        contactPhone: "1-800-123-4567",
+        faqLink: "https://yourapp.com/faq",
+        liveChatAvailable: true,
+        supportHours: "Monday - Friday: 9AM - 6PM",
+        responseTime: "Within 24 hours",
+      },
     });
   } catch (error) {
     console.error("Error getting help info:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to fetch help information",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });

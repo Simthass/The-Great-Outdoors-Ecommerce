@@ -16,6 +16,8 @@ import { logout } from "../store/slices/authSlice";
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState("/default-profile.jpg");
+  const [imageLoading, setImageLoading] = useState(false);
   const profileMenuRef = useRef(null);
   const location = useLocation();
   const dispatch = useDispatch();
@@ -28,6 +30,47 @@ const Header = () => {
 
   // Check if user is admin
   const isAdmin = isAuthenticated && user && user.role === "Admin";
+
+  // Fetch user profile image when component mounts or user changes
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (isAuthenticated && user) {
+        try {
+          setImageLoading(true);
+          const token = localStorage.getItem("token");
+          const response = await fetch("/api/users/profile", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data.profileImage) {
+              // Construct the full image URL
+              const imageUrl = data.data.profileImage.startsWith("http")
+                ? data.data.profileImage
+                : `http://localhost:5000${data.data.profileImage}`;
+              setProfileImage(imageUrl);
+            } else {
+              setProfileImage("/default-profile.jpg");
+            }
+          } else {
+            setProfileImage("/default-profile.jpg");
+          }
+        } catch (error) {
+          console.error("Error fetching profile image:", error);
+          setProfileImage("/default-profile.jpg");
+        } finally {
+          setImageLoading(false);
+        }
+      } else {
+        setProfileImage("/default-profile.jpg");
+      }
+    };
+
+    fetchProfileImage();
+  }, [isAuthenticated, user]);
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -61,6 +104,7 @@ const Header = () => {
     dispatch(logout());
     setIsProfileMenuOpen(false);
     setIsMenuOpen(false);
+    setProfileImage("/default-profile.jpg"); // Reset to default on logout
     navigate("/");
   };
 
@@ -74,15 +118,42 @@ const Header = () => {
     return initials;
   };
 
+  // Handle image error by falling back to initials
+  const handleImageError = (e) => {
+    console.log("Profile image failed to load, falling back to initials");
+    e.target.style.display = "none";
+    e.target.nextElementSibling.style.display = "flex";
+  };
+
   const ProfileMenu = () => (
     <div className="relative" ref={profileMenuRef}>
       <button
         onClick={toggleProfileMenu}
         className={`${linkColor} hover:text-[#8DC53E] transition-colors duration-200 p-2 rounded-full`}
       >
-        {user?.firstName || user?.lastName ? (
-          <div className="bg-[#8DC53E] rounded-full w-[50px] h-[50px] flex items-center justify-center text-white font-semibold text-sm cursor-pointer">
-            {getUserInitials()}
+        {isAuthenticated && (user?.firstName || user?.lastName) ? (
+          <div className="relative w-[50px] h-[50px] rounded-full overflow-hidden">
+            {imageLoading ? (
+              <div className="bg-gray-300 animate-pulse rounded-full w-full h-full flex items-center justify-center">
+                <User size={24} className="text-gray-500" />
+              </div>
+            ) : (
+              <>
+                <img
+                  src={profileImage}
+                  alt="Profile"
+                  className="w-full h-full object-cover cursor-pointer rounded-full border-2 border-white"
+                  onError={handleImageError}
+                  style={{ display: "block" }}
+                />
+                <div
+                  className="bg-[#8DC53E] rounded-full w-full h-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer absolute top-0 left-0"
+                  style={{ display: "none" }}
+                >
+                  {getUserInitials()}
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <User size={24} />
@@ -284,11 +355,39 @@ const Header = () => {
 
             <div className="flex flex-col p-6 space-y-6">
               {isAuthenticated && (
-                <div className="pb-4 border-b border-gray-200">
-                  <p className="text-gray-800 font-medium">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p className="text-gray-500 text-sm">{user?.email}</p>
+                <div className="pb-4 border-b border-gray-200 flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden">
+                    {imageLoading ? (
+                      <div className="bg-gray-300 animate-pulse rounded-full w-full h-full flex items-center justify-center">
+                        <User size={16} className="text-gray-500" />
+                      </div>
+                    ) : (
+                      <>
+                        <img
+                          src={profileImage}
+                          alt="Profile"
+                          className="w-full h-full object-cover rounded-full"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.nextElementSibling.style.display = "flex";
+                          }}
+                          style={{ display: "block" }}
+                        />
+                        <div
+                          className="bg-[#8DC53E] rounded-full w-full h-full flex items-center justify-center text-white font-semibold text-xs"
+                          style={{ display: "none" }}
+                        >
+                          {getUserInitials()}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-gray-800 font-medium">
+                      {user?.firstName} {user?.lastName}
+                    </p>
+                    <p className="text-gray-500 text-sm">{user?.email}</p>
+                  </div>
                 </div>
               )}
 

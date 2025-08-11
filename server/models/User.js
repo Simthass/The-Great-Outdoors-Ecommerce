@@ -63,10 +63,10 @@ const userSchema = mongoose.Schema(
       default: true,
     },
     notifications: {
-      email: { type: Boolean, default: true },
-      push: { type: Boolean, default: false },
-      sms: { type: Boolean, default: true },
-      orders: { type: Boolean, default: true },
+      emailNotifications: { type: Boolean, default: true },
+      pushNotifications: { type: Boolean, default: false },
+      smsNotifications: { type: Boolean, default: true },
+      orderUpdates: { type: Boolean, default: true },
       promotions: { type: Boolean, default: false },
     },
     appearance: {

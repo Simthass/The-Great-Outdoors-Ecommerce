@@ -3,14 +3,14 @@ import express from "express";
 import {
   getUserSettings,
   updateNotificationSettings,
-  updateAppearanceSettings,
   updatePassword,
-  //  getUserAddresses,
+  getAddresses,
   addAddress,
   updateAddress,
   deleteAddress,
   setDefaultAddress,
-  //  getHelpInfo,
+  getUserOrders,
+  getHelpInfo,
 } from "../controllers/settingsController.js";
 import {
   authenticateUser,
@@ -29,20 +29,20 @@ router.get("/", getUserSettings);
 // Notification settings
 router.put("/notifications", updateNotificationSettings);
 
-// Appearance settings
-router.put("/appearance", updateAppearanceSettings);
-
 // Password settings
 router.put("/password", updatePassword);
 
 // Address routes
-//router.get("/addresses", getUserAddresses);
+router.get("/addresses", getAddresses);
 router.post("/addresses", addAddress);
 router.put("/addresses/:id", updateAddress);
 router.delete("/addresses/:id", deleteAddress);
 router.put("/addresses/:id/default", setDefaultAddress);
 
+// Order routes
+router.get("/orders", getUserOrders);
+
 // Help routes
-//router.get("/help", getHelpInfo);
+router.get("/help", getHelpInfo);
 
 export default router;

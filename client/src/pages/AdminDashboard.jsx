@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom"; // ✅ import Link
+import { Link } from "react-router-dom";
 
 const AdminDashboard = () => {
   return (
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
         </Link>
 
         {/* Inventory Management */}
-        <Link to="/admin/inventory">
+        <Link to="/Admin/Inventory">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Inventory-Management.png')" }}

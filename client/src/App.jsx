@@ -32,7 +32,7 @@ import ResetPassword from "./pages/resetPassword";
 import Profile from "./pages/userProfile";
 import Settings from "./pages/userSettings";
 import AdminDashboard from "./pages/AdminDashboard";
-
+import Inventory from "./pages/Admin/Inventory";
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
     "/hero-background.png",
@@ -177,6 +177,7 @@ const App = () => {
             <Route path="/userSettings" element={<Settings />} />
             <Route path="/Admin/Order" element={<Order />} />
             <Route path="/AdminDashboard" element={<AdminDashboard />} />
+            <Route path="/Admin/Inventory" element={<Inventory />} />
           </Routes>
         </Layout>
       </Router>
