@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+<<<<<<< HEAD
 import api from "../../utils/api";
 
 const Order = () => {
@@ -31,10 +32,74 @@ const Order = () => {
   const [activeTab, setActiveTab] = useState('orderManagement');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+=======
+import { toast } from "react-toastify";
+
+const Order = () => {
+  const [orders, setOrders] = useState([]);
+  const [activeTab, setActiveTab] = useState("orderManagement");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Mock order data for demonstration
+  const mockOrderData = [
+    {
+      _id: "001",
+      orderId: "#001",
+      customerName: "John Doe",
+      customerEmail: "john@example.com",
+      totalAmount: 150,
+      orderStatus: "Shipped",
+      orderDate: new Date('2024-01-10'),
+      items: [
+        { productName: "ElkHorn Compound Bow Set", quantity: 1, price: 150 }
+      ]
+    },
+    {
+      _id: "002", 
+      orderId: "#002",
+      customerName: "Jane Smith",
+      customerEmail: "jane@example.com",
+      totalAmount: 200,
+      orderStatus: "Pending",
+      orderDate: new Date('2024-01-11'),
+      items: [
+        { productName: "Coleman Sundome Tents", quantity: 2, price: 100 }
+      ]
+    },
+    {
+      _id: "003",
+      orderId: "#003", 
+      customerName: "Mike Johnson",
+      customerEmail: "mike@example.com",
+      totalAmount: 120,
+      orderStatus: "Delivered",
+      orderDate: new Date('2024-01-09'),
+      items: [
+        { productName: "30L Backpack", quantity: 4, price: 30 }
+      ]
+    },
+    {
+      _id: "004",
+      orderId: "#004",
+      customerName: "Emily Davis", 
+      customerEmail: "emily@example.com",
+      totalAmount: 90,
+      orderStatus: "Cancelled",
+      orderDate: new Date('2024-01-08'),
+      items: [
+        { productName: "50L Backpack", quantity: 3, price: 30 }
+      ]
+    }
+  ];
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
 
   const stats = {
     totalProducts: 150,
     lowStock: 23,
+<<<<<<< HEAD
     outOfStock: 5
   };
 
@@ -48,16 +113,62 @@ const Order = () => {
     { name: "30L Backpack", quantity: 10, price: 30, actions: "Edit" },
     { name: "40L Backpack", quantity: 0, price: 30, actions: "Edit" },
     { name: "50L Backpack", quantity: 4, price: 30, actions: "Edit" }
+=======
+    outOfStock: 5,
+  };
+
+  const inventoryItems = [
+    {
+      name: "ElkHorn Compound Bow Set",
+      quantity: 3,
+      price: 20,
+      actions: "Edit",
+    },
+    { name: "Hawksbill Long Bow Set", quantity: 1, price: 15, actions: "Edit" },
+    {
+      name: "Sentinel Recurve Bow Set",
+      quantity: 4,
+      price: 25,
+      actions: "Edit",
+    },
+    {
+      name: "Upland Compound Bow Set",
+      quantity: 2,
+      price: 30,
+      actions: "Edit",
+    },
+    { name: "Coleman Sundome Tents", quantity: 10, price: 30, actions: "Edit" },
+    {
+      name: "Decathlon Quechua 2 Seconds Easy 3-person Tent",
+      quantity: 9,
+      price: 30,
+      actions: "Edit",
+    },
+    { name: "30L Backpack", quantity: 10, price: 30, actions: "Edit" },
+    { name: "40L Backpack", quantity: 0, price: 30, actions: "Edit" },
+    { name: "50L Backpack", quantity: 4, price: 30, actions: "Edit" },
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
   ];
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
+<<<<<<< HEAD
         const response = await api.get("/orders");
         if (response.data && response.data.length > 0) {
           setOrders(response.data);
         }
+=======
+        setError(null);
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Load mock data
+        setOrders(mockOrderData);
+        
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
       } catch (error) {
         console.error("Failed to fetch orders", error);
         setError("Failed to fetch orders");
@@ -71,6 +182,7 @@ const Order = () => {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
+<<<<<<< HEAD
       const response = await api.patch(`/orders/${orderId}/status`, {
         status: newStatus
       });
@@ -85,11 +197,26 @@ const Order = () => {
     } catch (error) {
       console.error("Failed to update order status", error);
       setError("Failed to update order status");
+=======
+      // Update local state for demonstration
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === orderId ? { ...order, orderStatus: newStatus } : order
+        )
+      );
+      
+      toast.success(`Order ${orderId} status updated to ${newStatus}`);
+      
+    } catch (error) {
+      console.error("Failed to update order status", error);
+      toast.error("Failed to update order status");
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
     }
   };
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
+<<<<<<< HEAD
       case 'shipped':
       case 'delivered':
         return 'text-green-600';
@@ -101,13 +228,32 @@ const Order = () => {
         return 'text-red-600';
       default:
         return 'text-gray-600';
+=======
+      case "shipped":
+      case "delivered":
+        return "text-green-600";
+      case "pending":
+      case "processing":
+        return "text-yellow-600";
+      case "cancelled":
+      case "refunded":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
     }
   };
 
   const getRowColor = (quantity) => {
+<<<<<<< HEAD
     if (quantity === 0) return 'bg-red-200';
     if (quantity <= 4) return 'bg-yellow-200';
     return 'bg-white';
+=======
+    if (quantity === 0) return "bg-red-200";
+    if (quantity <= 4) return "bg-yellow-200";
+    return "bg-white";
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
   };
 
   if (loading) {
@@ -138,6 +284,7 @@ const Order = () => {
       {/* Navigation Tabs */}
       <div className="bg-white border-b">
         <div className="flex space-x-8 px-8 py-4">
+<<<<<<< HEAD
           <button 
             className={`px-4 py-2 font-medium ${
               activeTab === 'inventoryManagement' 
@@ -155,6 +302,25 @@ const Order = () => {
                 : 'text-gray-600 hover:text-blue-600'
             }`}
             onClick={() => setActiveTab('orderManagement')}
+=======
+          <button
+            className={`px-4 py-2 font-medium ${
+              activeTab === "inventoryManagement"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-600 hover:text-blue-600"
+            }`}
+            onClick={() => setActiveTab("inventoryManagement")}
+          >
+            Inventory Management
+          </button>
+          <button
+            className={`px-4 py-2 font-medium ${
+              activeTab === "orderManagement"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-600 hover:text-blue-600"
+            }`}
+            onClick={() => setActiveTab("orderManagement")}
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
           >
             Order Management
           </button>
@@ -179,11 +345,16 @@ const Order = () => {
 
         {/* Main Content */}
         <div className="flex-1 p-8">
+<<<<<<< HEAD
           {activeTab === 'inventoryManagement' && (
+=======
+          {activeTab === "inventoryManagement" && (
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
             <div>
               {/* Stats Cards */}
               <div className="grid grid-cols-3 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-lg shadow">
+<<<<<<< HEAD
                   <h3 className="text-gray-500 text-sm font-medium">Total Products</h3>
                   <p className="text-3xl font-bold text-gray-900">{stats.totalProducts}</p>
                 </div>
@@ -194,13 +365,43 @@ const Order = () => {
                 <div className="bg-red-100 p-6 rounded-lg shadow">
                   <h3 className="text-gray-500 text-sm font-medium">Out of Stock</h3>
                   <p className="text-3xl font-bold text-red-600">{stats.outOfStock}</p>
+=======
+                  <h3 className="text-gray-500 text-sm font-medium">
+                    Total Products
+                  </h3>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats.totalProducts}
+                  </p>
+                </div>
+                <div className="bg-yellow-100 p-6 rounded-lg shadow">
+                  <h3 className="text-gray-500 text-sm font-medium">
+                    Low Stock
+                  </h3>
+                  <p className="text-3xl font-bold text-yellow-600">
+                    {stats.lowStock}
+                  </p>
+                </div>
+                <div className="bg-red-100 p-6 rounded-lg shadow">
+                  <h3 className="text-gray-500 text-sm font-medium">
+                    Out of Stock
+                  </h3>
+                  <p className="text-3xl font-bold text-red-600">
+                    {stats.outOfStock}
+                  </p>
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
                 </div>
               </div>
 
               {/* Inventory Management Table */}
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b">
+<<<<<<< HEAD
                   <h2 className="text-xl font-semibold">Inventory Management</h2>
+=======
+                  <h2 className="text-xl font-semibold">
+                    Inventory Management
+                  </h2>
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -227,7 +428,11 @@ const Order = () => {
                             {item.name}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+<<<<<<< HEAD
                             {item.quantity.toString().padStart(2, '0')}
+=======
+                            {item.quantity.toString().padStart(2, "0")}
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             ${item.price}
@@ -246,7 +451,11 @@ const Order = () => {
             </div>
           )}
 
+<<<<<<< HEAD
           {activeTab === 'orderManagement' && (
+=======
+          {activeTab === "orderManagement" && (
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
             <div>
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b">
@@ -285,10 +494,19 @@ const Order = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <select
                               value={order.orderStatus}
+<<<<<<< HEAD
                               onChange={(e) => updateOrderStatus(order._id, e.target.value)}
                               className={`text-sm font-medium px-2 py-1 rounded border ${
                                 getStatusColor(order.orderStatus)
                               }`}
+=======
+                              onChange={(e) =>
+                                updateOrderStatus(order._id, e.target.value)
+                              }
+                              className={`text-sm font-medium px-2 py-1 rounded border ${getStatusColor(
+                                order.orderStatus
+                              )}`}
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
                             >
                               <option value="Pending">Pending</option>
                               <option value="Processing">Processing</option>

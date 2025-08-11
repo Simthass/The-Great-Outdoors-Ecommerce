@@ -1,462 +1,253 @@
-// routes/auth.js - Production ready authentication routes
 import express from "express";
 import User from "../models/User.js";
+<<<<<<< HEAD
 import jwt from "jsonwebtoken";
 import { body, validationResult } from "express-validator";
+=======
+import { protect, generateToken } from "../middleware/auth.js";
+import { sendPasswordResetEmail } from "../config/email.js";
+import crypto from "crypto";
+import path from "path";
+import fs from "fs";
+import { promisify } from "util";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+>>>>>>> 2ea1a0e48f5027ef2d66d3b71f6b60a587c60672
 
 const router = express.Router();
+const unlinkAsync = promisify(fs.unlink);
 
-// JWT token generation
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || "fallback_secret", {
-    expiresIn: process.env.JWT_EXPIRE || "30d",
-  });
-};
+// Helper function to handle file uploads safely
+const handleFileUpload = (file) => {
+  try {
+    if (!file || !file.tempFilePath) {
+      console.error("No file or temp file path provided");
+      return null;
+    }
 
-// Input validation middleware
-const validateLogin = [
-  body("email")
-    .isEmail()
-    .withMessage("Please provide a valid email address")
-    .normalizeEmail(),
-  body("password")
-    .notEmpty()
-    .withMessage("Password is required")
-    .isLength({ min: 1 })
-    .withMessage("Password cannot be empty"),
-];
+    // Ensure the upload directory exists
+    const uploadDir = path.join(__dirname, "../public/uploads/profiles");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+      console.log(`Created directory: ${uploadDir}`);
+    }
 
-const validateRegistration = [
-  body("firstName")
-    .trim()
-    .notEmpty()
-    .withMessage("First name is required")
-    .isLength({ min: 2, max: 50 })
-    .withMessage("First name must be between 2 and 50 characters"),
+    // Get file extension
+    const ext = path.extname(file.name) || ".jpg";
+    const filename = `profile-${Date.now()}${ext}`;
+    const filePath = path.join(uploadDir, filename);
 
-  body("lastName")
-    .trim()
-    .notEmpty()
-    .withMessage("Last name is required")
-    .isLength({ min: 2, max: 50 })
-    .withMessage("Last name must be between 2 and 50 characters"),
+    console.log(`Moving file from ${file.tempFilePath} to ${filePath}`);
 
-  body("email")
-    .isEmail()
-    .withMessage("Please provide a valid email address")
-    .normalizeEmail(),
+    // Move the file
+    fs.renameSync(file.tempFilePath, filePath);
 
-  body("password")
-    .isLength({ min: 6 })
-    .withMessage("Password must be at least 6 characters long")
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage(
-      "Password must contain at least one lowercase letter, one uppercase letter, and one number"
-    ),
-];
+    // Verify the file exists
+    if (!fs.existsSync(filePath)) {
+      console.error("File was not moved successfully");
+      return null;
+    }
 
-// Handle validation errors
-const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const errorMessages = errors.array().map((error) => error.msg);
-    return res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      errors: errorMessages,
-    });
+    console.log(`File successfully saved to ${filePath}`);
+    return `/uploads/profiles/${filename}`;
+  } catch (error) {
+    console.error("File upload error:", error);
+    return null;
   }
-  next();
 };
 
-// @desc    Register new user
+// @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
-router.post(
-  "/register",
-  validateRegistration,
-  handleValidationErrors,
-  async (req, res) => {
-    console.log("📝 REGISTER ROUTE HIT");
-
-    try {
-      const { firstName, lastName, email, password, phoneNumber, address } =
-        req.body;
-
-      console.log("📤 Registration attempt for:", email);
-
-      // Check if user already exists
-      const existingUser = await User.findOne({ email: email.toLowerCase() });
-      if (existingUser) {
-        console.log("❌ User already exists:", email);
-        return res.status(400).json({
-          success: false,
-          message: "A user with this email address already exists",
-        });
-      }
-
-      // Create new user
-      const user = await User.create({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.toLowerCase().trim(),
-        password, // This will be hashed by the pre-save middleware
-        phoneNumber: phoneNumber?.trim() || "",
-        address: address?.trim() || "",
-        role: "Customer",
-        isActive: true,
-      });
-
-      // Generate token
-      const token = generateToken(user._id);
-
-      console.log("✅ User registered successfully:", user.email);
-
-      res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-        data: {
-          _id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          address: user.address,
-          role: user.role,
-          isActive: user.isActive,
-          token,
-        },
-      });
-    } catch (error) {
-      console.error("❌ Registration error:", error);
-
-      // Handle duplicate key error
-      if (error.code === 11000) {
-        return res.status(400).json({
-          success: false,
-          message: "Email address is already registered",
-        });
-      }
-
-      // Handle validation errors
-      if (error.name === "ValidationError") {
-        const messages = Object.values(error.errors).map((err) => err.message);
-        return res.status(400).json({
-          success: false,
-          message: "Validation failed",
-          errors: messages,
-        });
-      }
-
-      res.status(500).json({
-        success: false,
-        message: "Server error during registration",
-        error:
-          process.env.NODE_ENV === "development"
-            ? error.message
-            : "Internal server error",
-      });
-    }
-  }
-);
-
-// @desc    Authenticate user & get token
-// @route   POST /api/auth/login
-// @access  Public
-router.post(
-  "/login",
-  validateLogin,
-  handleValidationErrors,
-  async (req, res) => {
-    console.log("🔑 LOGIN ROUTE HIT");
-
-    try {
-      const { email, password } = req.body;
-
-      console.log("📤 Login attempt for:", email);
-
-      // Find user by email and include password field for comparison
-      const user = await User.findOne({ email: email.toLowerCase() }).select(
-        "+password"
-      );
-
-      if (!user) {
-        console.log("❌ User not found:", email);
-        return res.status(401).json({
-          success: false,
-          message: "Invalid email or password",
-        });
-      }
-
-      console.log("👤 User found:", {
-        id: user._id,
-        email: user.email,
-        isActive: user.isActive,
-        role: user.role,
-      });
-
-      // Check if account is locked
-      if (user.isLocked && user.isLocked()) {
-        console.log("🔒 Account is locked:", email);
-        return res.status(423).json({
-          success: false,
-          message:
-            "Account is temporarily locked due to too many failed login attempts. Please try again later.",
-        });
-      }
-
-      // Check if user account is active
-      if (!user.isActive) {
-        console.log("❌ Account is inactive:", email);
-        return res.status(403).json({
-          success: false,
-          message: "Your account has been deactivated. Please contact support.",
-        });
-      }
-
-      // Verify password
-      const isPasswordValid = await user.matchPassword(password);
-      console.log("🔐 Password validation result:", isPasswordValid);
-
-      if (!isPasswordValid) {
-        console.log("❌ Invalid password for user:", email);
-
-        // Increment login attempts
-        if (user.incLoginAttempts) {
-          await user.incLoginAttempts();
-        }
-
-        return res.status(401).json({
-          success: false,
-          message: "Invalid email or password",
-        });
-      }
-
-      // Reset login attempts on successful login
-      if (user.resetLoginAttempts) {
-        await user.resetLoginAttempts();
-      }
-
-      // Update last login
-      user.lastLogin = new Date();
-      await user.save();
-
-      // Generate JWT token
-      const token = generateToken(user._id);
-
-      console.log("✅ Login successful for:", user.email);
-
-      res.json({
-        success: true,
-        message: "Login successful",
-        data: {
-          _id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          address: user.address,
-          role: user.role,
-          isActive: user.isActive,
-          lastLogin: user.lastLogin,
-          token,
-        },
-      });
-    } catch (error) {
-      console.error("❌ Login error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Server error during login",
-        error:
-          process.env.NODE_ENV === "development"
-            ? error.message
-            : "Internal server error",
-      });
-    }
-  }
-);
-
-// @desc    Forgot password
-// @route   POST /api/auth/forgot-password
-// @access  Public
-router.post("/forgot-password", async (req, res) => {
-  console.log("🔄 FORGOT PASSWORD ROUTE HIT");
-
+router.post("/register", async (req, res) => {
   try {
-    const { email } = req.body;
+    console.log("Register request received:", req.body);
 
-    if (!email) {
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      phoneNumber,
+      address,
+      city,
+      state,
+    } = req.body;
+
+    // Validation
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please provide email address",
+        message: "Please provide all required fields",
       });
     }
 
-    console.log("📤 Password reset request for:", email);
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
+      });
+    }
 
     // Check if user exists
-    const user = await User.findOne({ email: email.toLowerCase() });
-
-    if (!user) {
-      console.log("❌ User not found for password reset:", email);
-      // Don't reveal if user exists or not for security
-      return res.json({
-        success: true,
-        message:
-          "If an account with that email exists, we have sent a password reset link.",
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists with this email",
       });
     }
 
-    // Generate reset token (you can implement email sending later)
-    const resetToken = jwt.sign(
-      { id: user._id, purpose: "password_reset" },
-      process.env.JWT_SECRET || "fallback_secret",
-      { expiresIn: "1h" }
-    );
-
-    console.log("🔗 Password reset token generated for:", user.email);
-    console.log("Reset token:", resetToken); // In production, you'd email this
-
-    // In a real app, you would:
-    // 1. Save the reset token to user document with expiration
-    // 2. Send email with reset link containing the token
-    // For now, we'll just return success
-
-    res.json({
-      success: true,
-      message:
-        "If an account with that email exists, we have sent a password reset link.",
-      // In development, include the token for testing
-      ...(process.env.NODE_ENV === "development" && { resetToken }),
+    // Create user
+    const user = await User.create({
+      firstName,
+      lastName,
+      email: email.toLowerCase(),
+      password,
+      phoneNumber,
+      address,
+      city,
+      state,
     });
-  } catch (error) {
-    console.error("❌ Forgot password error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error during password reset request",
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    console.log("User registered successfully:", {
+      id: user._id,
+      email: user.email,
+      role: user.role,
     });
-  }
-});
 
-// @desc    Logout user
-// @route   POST /api/auth/logout
-// @access  Public
-router.post("/logout", (req, res) => {
-  console.log("🚪 LOGOUT ROUTE HIT");
-
-  // In a stateless JWT setup, logout is mainly handled client-side
-  // by removing the token from storage
-  res.json({
-    success: true,
-    message: "Logged out successfully",
-  });
-});
-
-// @desc    Verify JWT token
-// @route   GET /api/auth/verify
-// @access  Private
-router.get("/verify", async (req, res) => {
-  console.log("🔍 VERIFY TOKEN ROUTE HIT");
-
-  try {
-    const token = req.headers.authorization?.split(" ")[1];
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided",
-      });
-    }
-
-    console.log("🔐 Verifying token:", token.substring(0, 20) + "...");
-
-    // Verify token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "fallback_secret"
-    );
-
-    // Get user details
-    const user = await User.findById(decoded.id).select("-password");
-
-    if (!user) {
-      console.log("❌ Token valid but user not found:", decoded.id);
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token - user not found",
-      });
-    }
-
-    if (!user.isActive) {
-      console.log("❌ Token valid but user inactive:", user.email);
-      return res.status(401).json({
-        success: false,
-        message: "User account is inactive",
-      });
-    }
-
-    console.log("✅ Token verified for user:", user.email);
-
-    res.json({
+    res.status(201).json({
       success: true,
-      message: "Token is valid",
+      message: "User registered successfully",
       data: {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        address: user.address,
-        role: user.role,
-        isActive: user.isActive,
-        lastLogin: user.lastLogin,
+        token,
+        user: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          address: user.address,
+          city: user.city,
+          state: user.state,
+          profileImage: user.profileImage,
+          bio: user.bio,
+          role: user.role,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+        },
       },
     });
   } catch (error) {
-    console.error("❌ Token verification error:", error);
-
-    if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
-    }
-
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({
-        success: false,
-        message: "Token has expired",
-      });
-    }
-
+    console.error("Registration error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error during token verification",
+      message: "Server error during registration",
     });
   }
 });
 
-// @desc    Get current user profile (alternative to verify)
-// @route   GET /api/auth/me
-// @access  Private
-router.get("/me", async (req, res) => {
-  console.log("👤 GET CURRENT USER ROUTE HIT");
-
+// @desc    Login user
+// @route   POST /api/auth/login
+// @access  Public
+router.post("/login", async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    console.log("Login request received:", { email: req.body.email });
 
-    if (!token) {
-      return res.status(401).json({
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({
         success: false,
-        message: "Access denied. No token provided.",
+        message: "Please provide email and password",
       });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "fallback_secret"
+    // Check if user exists and include password for comparison
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      "+password"
     );
-    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      console.log("User not found with email:", email);
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: "Account is deactivated",
+      });
+    }
+
+    // Check password
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      console.log("Password mismatch for user:", email);
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    console.log("Login successful for user:", {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    });
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      data: {
+        token,
+        user: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          address: user.address,
+          city: user.city,
+          state: user.state,
+          profileImage: user.profileImage,
+          bio: user.bio,
+          role: user.role,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during login",
+    });
+  }
+});
+
+// @desc    Get user profile
+// @route   GET /api/auth/profile
+// @access  Private
+router.get("/profile", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select(
+      "-password -resetPasswordToken -resetPasswordExpire"
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -465,25 +256,340 @@ router.get("/me", async (req, res) => {
       });
     }
 
-    console.log("✅ Current user retrieved:", user.email);
-
     res.json({
       success: true,
-      data: user,
+      data: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        city: user.city,
+        state: user.state,
+        profileImage: user.profileImage || "/default-profile.jpg",
+        bio: user.bio,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+      },
     });
   } catch (error) {
-    console.error("❌ Get current user error:", error);
+    console.error("Get profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching profile",
+    });
+  }
+});
 
-    if (
-      error.name === "JsonWebTokenError" ||
-      error.name === "TokenExpiredError"
-    ) {
-      return res.status(401).json({
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+router.put("/profile", protect, async (req, res) => {
+  try {
+    const { firstName, lastName, phoneNumber, address, city, state, bio } =
+      req.body;
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: "Invalid or expired token",
+        message: "User not found",
       });
     }
 
+    // Update allowed fields
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
+    user.address = address || user.address;
+    user.city = city || user.city;
+    user.state = state || user.state;
+    user.bio = bio || user.bio;
+
+    const updatedUser = await user.save();
+
+    res.json({
+      success: true,
+      data: {
+        token: generateToken(updatedUser._id),
+        user: {
+          _id: updatedUser._id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+          phoneNumber: updatedUser.phoneNumber,
+          address: updatedUser.address,
+          city: updatedUser.city,
+          state: updatedUser.state,
+          profileImage: updatedUser.profileImage,
+          bio: updatedUser.bio,
+          role: updatedUser.role,
+          isActive: updatedUser.isActive,
+          createdAt: updatedUser.createdAt,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating profile",
+    });
+  }
+});
+
+// @desc    Update profile image
+// @route   PUT /api/auth/profile/image
+// @access  Private
+router.put("/profile/image", protect, async (req, res) => {
+  try {
+    if (!req.files || !req.files.image) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload an image file",
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Delete old image if it exists and isn't default
+    if (user.profileImage && !user.profileImage.includes("default-profile")) {
+      try {
+        const oldImagePath = path.join(
+          __dirname,
+          "../public",
+          user.profileImage
+        );
+        if (fs.existsSync(oldImagePath)) {
+          await unlinkAsync(oldImagePath);
+        }
+      } catch (err) {
+        console.error("Error deleting old profile image:", err);
+      }
+    }
+
+    // Process new image
+    const imagePath = handleFileUpload(req.files.image);
+    if (!imagePath) {
+      return res.status(400).json({
+        success: false,
+        message: "Failed to process uploaded image",
+      });
+    }
+
+    // Update user with new image path
+    user.profileImage = imagePath;
+    await user.save();
+
+    res.json({
+      success: true,
+      data: {
+        profileImage: user.profileImage,
+      },
+    });
+  } catch (error) {
+    console.error("Profile image update error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating profile image",
+    });
+  }
+});
+
+// @desc    Change password
+// @route   PUT /api/auth/profile/password
+// @access  Private
+router.put("/profile/password", protect, async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide all password fields",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Verify current password
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    // Generate new token
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: "Password updated successfully",
+      data: {
+        token: token,
+      },
+    });
+  } catch (error) {
+    console.error("Password change error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while changing password",
+    });
+  }
+});
+
+// @desc    Logout user
+// @route   POST /api/auth/logout
+// @access  Public
+router.post("/logout", (req, res) => {
+  res.json({
+    success: true,
+    message: "Logout successful",
+  });
+});
+
+// @desc    Forgot password
+// @route   POST /api/auth/forgot-password
+// @access  Public
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide an email address",
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No user found with that email address",
+      });
+    }
+
+    const resetToken = user.getResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
+
+    try {
+      await sendPasswordResetEmail(user.email, resetToken);
+      res.json({
+        success: true,
+        message: "Password reset email sent successfully",
+      });
+    } catch (error) {
+      console.error("Email send error:", error);
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({
+        success: false,
+        message: "Email could not be sent",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+});
+
+// @desc    Reset password
+// @route   PUT /api/auth/reset-password/:resettoken
+// @access  Public
+router.put("/reset-password/:resettoken", async (req, res) => {
+  try {
+    const { password, confirmPassword } = req.body;
+
+    if (!password || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide password and confirm password",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(req.params.resettoken)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "Server error",
