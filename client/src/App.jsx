@@ -16,6 +16,7 @@ import HomeHero from "./components/homeHero";
 import Footer from "./components/footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Sidebar from "./components/Sidebar";
+import { HelmetProvider } from "react-helmet-async";
 
 // Pages
 import Home from "./pages/Home";
@@ -33,6 +34,8 @@ import Profile from "./pages/userProfile";
 import Settings from "./pages/userSettings";
 import AdminDashboard from "./pages/AdminDashboard";
 import Inventory from "./pages/Admin/Inventory";
+import NotFoundPage from "./pages/404";
+
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
     "/hero-background.png",
@@ -148,40 +151,43 @@ const Layout = ({ children }) => {
 
 const App = () => {
   return (
-    <Provider store={store}>
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/aboutUs" element={<About />} />
-            <Route path="/contactus" element={<Contact />} />
-            <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgotPassword" element={<ForgotPassword />} />
-            <Route
-              path="/resetPassword/:resettoken"
-              element={<ResetPassword />}
-            />
-            <Route
-              path="/AdminProduct"
-              element={
-                <ProtectedRoute requiredRole="Admin">
-                  <AdminProduct />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/userProfile" element={<Profile />} />
-            <Route path="/userSettings" element={<Settings />} />
-            <Route path="/Admin/Order" element={<Order />} />
-            <Route path="/AdminDashboard" element={<AdminDashboard />} />
-            <Route path="/Admin/Inventory" element={<Inventory />} />
-          </Routes>
-        </Layout>
-      </Router>
-    </Provider>
+    <HelmetProvider>
+      <Provider store={store}>
+        <Router>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/aboutUs" element={<About />} />
+              <Route path="/contactus" element={<Contact />} />
+              <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/forgotPassword" element={<ForgotPassword />} />
+              <Route
+                path="/resetPassword/:resettoken"
+                element={<ResetPassword />}
+              />
+              <Route
+                path="/AdminProduct"
+                element={
+                  <ProtectedRoute requiredRole="Admin">
+                    <AdminProduct />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/userProfile" element={<Profile />} />
+              <Route path="/userSettings" element={<Settings />} />
+              <Route path="/Admin/Order" element={<Order />} />
+              <Route path="/AdminDashboard" element={<AdminDashboard />} />
+              <Route path="/Admin/Inventory" element={<Inventory />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </Provider>
+    </HelmetProvider>
   );
 };
 
