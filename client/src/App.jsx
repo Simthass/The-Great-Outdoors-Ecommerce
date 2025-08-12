@@ -35,6 +35,9 @@ import Settings from "./pages/userSettings";
 import AdminDashboard from "./pages/AdminDashboard";
 import Inventory from "./pages/Admin/Inventory";
 import NotFoundPage from "./pages/404";
+import Checkout from "./components/Checkout";
+import OrderConfirmation from "./components/OrderConfirmation";
+import UserOrders from "./components/UserOrders";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -182,6 +185,10 @@ const App = () => {
               <Route path="/Admin/Order" element={<Order />} />
               <Route path="/AdminDashboard" element={<AdminDashboard />} />
               <Route path="/Admin/Inventory" element={<Inventory />} />
+              {/* Order Management Routes */}
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+              <Route path="/my-orders" element={<UserOrders />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Layout>

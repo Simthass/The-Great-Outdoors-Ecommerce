@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const paymentSchema = mongoose.Schema(
   {
@@ -15,6 +15,8 @@ const paymentSchema = mongoose.Schema(
     paymentAmount: {
       type: Number,
       required: true,
+      min: [0, 'Payment amount cannot be negative'],
+      set: (v) => parseFloat(v.toFixed(2)), // Ensure 2 decimal places
     },
     paymentDate: {
       type: Date,
@@ -37,6 +39,17 @@ const paymentSchema = mongoose.Schema(
       type: Object, // Can be a JSON object
       required: false,
     },
+    refundAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Refund amount cannot be negative'],
+      set: (v) => parseFloat(v.toFixed(2)),
+    },
+    refundReason: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+    },
   },
   {
     timestamps: true, // Adds createdAt and updatedAt
@@ -45,4 +58,4 @@ const paymentSchema = mongoose.Schema(
 
 const Payment = mongoose.model('Payment', paymentSchema);
 
-module.exports = Payment;
+export default Payment;

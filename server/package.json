@@ -9,7 +9,8 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "seed:admin": "node seeds/adminSeed.js",
-    "seed:Inventory": "node seeds/adminSeed.js && node seeds/inventorySeeder.js"
+    "seed:Inventory": "node seeds/adminSeed.js && node seeds/inventorySeeder.js",
+    "seed:orders": "node seeds/orderSeeder.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
