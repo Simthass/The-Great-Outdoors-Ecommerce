@@ -20,6 +20,8 @@ import {
   Edit,
   Trash2,
   User,
+  AlertTriangle,
+  UserX,
 } from "lucide-react";
 
 const UserSettings = () => {
@@ -27,9 +29,12 @@ const UserSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [profileImage, setProfileImage] = useState("/default-user.png");
 
@@ -130,6 +135,42 @@ const UserSettings = () => {
       toast.error(errorMessage);
     } finally {
       setOrdersLoading(false);
+    }
+  };
+
+  // Delete Account Function
+  const handleDeleteAccount = async () => {
+    if (!deleteConfirm) {
+      toast.error("Please confirm account deletion");
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+      setErrors({});
+
+      await api.delete("/users/account", {
+        data: { confirmDelete: true },
+      });
+
+      toast.success("Account deleted successfully");
+
+      // Clear local storage and redirect
+      localStorage.removeItem("token");
+      setTimeout(() => {
+        navigate("/", { replace: true });
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete account";
+      setErrors({ delete: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
+      setDeleteConfirm(false);
     }
   };
 
@@ -343,6 +384,127 @@ const UserSettings = () => {
       setSaveLoading(false);
     }
   };
+
+  // Render Delete Account Modal
+  const renderDeleteModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Delete Account
+            </h3>
+          </div>
+          <button
+            onClick={() => {
+              setShowDeleteModal(false);
+              setDeleteConfirm(false);
+            }}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+            <p className="text-red-800 text-sm">
+              <strong>Warning:</strong> This action cannot be undone. This will
+              permanently delete your account and remove all your data from our
+              servers.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-gray-700 text-sm">
+              The following data will be permanently deleted:
+            </p>
+            <ul className="text-gray-600 text-sm space-y-1 ml-4">
+              <li>• Your profile information</li>
+              <li>• All saved addresses</li>
+              <li>• Order history</li>
+              <li>• Account settings</li>
+              <li>• Profile image</li>
+            </ul>
+          </div>
+
+          <div className="flex items-start space-x-2 pt-4">
+            <input
+              type="checkbox"
+              id="deleteConfirm"
+              checked={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.checked)}
+              className="w-4 h-4 text-red-600 rounded focus:ring-red-500 mt-1"
+            />
+            <label htmlFor="deleteConfirm" className="text-sm text-gray-700">
+              I understand that this action cannot be undone and I want to
+              permanently delete my account.
+            </label>
+          </div>
+
+          {errors.delete && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {errors.delete}
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-4 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteConfirm(false);
+              }}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={!deleteConfirm || deleteLoading}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {deleteLoading ? "Deleting..." : "Delete Account"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render Account Tab
+  const renderAccountTab = () => (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        Account Settings
+      </h2>
+
+      <div className="space-y-6">
+        {/* Danger Zone */}
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-start space-x-3">
+            <UserX className="h-6 w-6 text-red-600 mt-1" />
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-red-900 mb-2">
+                Delete Account
+              </h3>
+              <p className="text-red-700 text-sm mb-4">
+                Once you delete your account, there is no going back. Please be
+                certain.
+              </p>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   // Render Notification Tab
   const renderNotificationTab = () => (
@@ -1013,6 +1175,7 @@ const UserSettings = () => {
     { id: "Security", label: "Security", icon: Shield },
     { id: "My Orders", label: "My Orders", icon: Package },
     { id: "Addresses", label: "Addresses", icon: MapPin },
+    { id: "Account", label: "Account", icon: UserX }, // New Account tab
     { id: "Help", label: "Help", icon: HelpCircle },
   ];
 
@@ -1075,6 +1238,7 @@ const UserSettings = () => {
                   {activeTab === "Security" && renderSecurityTab()}
                   {activeTab === "My Orders" && renderMyOrdersTab()}
                   {activeTab === "Addresses" && renderAddressesTab()}
+                  {activeTab === "Account" && renderAccountTab()}
                   {activeTab === "Help" && (
                     <div className="space-y-6">
                       <h2 className="text-xl font-semibold text-gray-900">
@@ -1124,6 +1288,9 @@ const UserSettings = () => {
 
       {/* Address Form Modal */}
       {showAddressForm && renderAddressForm()}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && renderDeleteModal()}
     </div>
   );
 };

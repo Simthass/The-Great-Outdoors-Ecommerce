@@ -8,6 +8,7 @@ import fs from "fs";
 import { promisify } from "util";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import Address from "../models/Address.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -392,6 +393,61 @@ router.put("/reset-password/:resettoken", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error",
+    });
+  }
+});
+// @desc    Delete user account
+// @route   DELETE /api/users/account
+// @access  Private
+router.delete("/account", protect, async (req, res) => {
+  try {
+    const { confirmDelete } = req.body;
+
+    if (!confirmDelete) {
+      return res.status(400).json({
+        success: false,
+        message: "Please confirm account deletion",
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Delete user's profile image if it exists and isn't default
+    if (user.profileImage && !user.profileImage.includes("default-profile")) {
+      try {
+        const imagePath = path.join(__dirname, "../public", user.profileImage);
+        if (fs.existsSync(imagePath)) {
+          await unlinkAsync(imagePath);
+        }
+      } catch (err) {
+        console.error("Error deleting profile image:", err);
+      }
+    }
+
+    // Delete all user addresses
+    await Address.deleteMany({ user: req.user.id });
+
+    // Delete any orders (if you have an Order model)
+    // await Order.deleteMany({ user: req.user.id });
+
+    // Delete the user account
+    await User.findByIdAndDelete(req.user.id);
+
+    res.json({
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    console.error("Account deletion error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting account",
     });
   }
 });
