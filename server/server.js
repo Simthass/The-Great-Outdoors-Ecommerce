@@ -13,6 +13,7 @@ import orderRoutes from "./routes/orders.js";
 import userRoutes from "./routes/users.js";
 import categoryRoutes from "./routes/categories.js";
 import cartRoutes from "./routes/cart.js";
+import paymentRoutes from "./routes/payments.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import fileUpload from "express-fileupload";
 import { fileURLToPath } from "url";
@@ -191,6 +192,7 @@ if (dbConnected) {
   app.use("/api/users", userRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/cart", cartRoutes);
+  app.use("/api/payments", paymentRoutes);
   app.use("/api/settings", settingsRoutes);
 }
 
@@ -218,7 +220,15 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 // Start server
-const server = app.listen(PORT, "0.0.0.0", () => {});
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`\n🚀 The Great Outdoors E-Commerce Backend Server is running!`);
+  console.log(`📍 Server URL: http://localhost:${PORT}`);
+  console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
+  console.log(`📊 API Routes: http://localhost:${PORT}/api/`);
+  console.log(`⏰ Started at: ${new Date().toISOString()}`);
+  console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`💾 Database: ${dbConnected ? 'Connected' : 'Disconnected'}`);
+});
 
 // Enhanced error handling
 server.on("error", (error) => {

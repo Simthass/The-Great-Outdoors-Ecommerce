@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const paymentSchema = mongoose.Schema(
   {
@@ -15,6 +15,7 @@ const paymentSchema = mongoose.Schema(
     paymentAmount: {
       type: Number,
       required: true,
+      set: (v) => parseFloat(v.toFixed(2)), // Ensure 2 decimal places
     },
     paymentDate: {
       type: Date,
@@ -24,7 +25,7 @@ const paymentSchema = mongoose.Schema(
     paymentStatus: {
       type: String,
       required: true,
-      enum: ['Pending', 'Completed', 'Failed', 'Refunded'],
+      enum: ['Pending', 'Paid', 'Failed', 'Refunded'],
       default: 'Pending',
     },
     transactionID: {
@@ -37,12 +38,44 @@ const paymentSchema = mongoose.Schema(
       type: Object, // Can be a JSON object
       required: false,
     },
+    currency: {
+      type: String,
+      default: 'CAD',
+      required: true
+    },
+    refundAmount: {
+      type: Number,
+      default: 0,
+      set: (v) => parseFloat(v.toFixed(2))
+    },
+    refundDate: {
+      type: Date
+    },
+    notes: {
+      type: String,
+      maxlength: 500
+    }
   },
   {
     timestamps: true, // Adds createdAt and updatedAt
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
 
-const Payment = mongoose.model('Payment', paymentSchema);
+// Virtual for net amount (payment amount - refund amount)
+paymentSchema.virtual('netAmount').get(function() {
+  return this.paymentAmount - this.refundAmount;
+});
 
-module.exports = Payment;
+// Generate transaction ID if not provided
+paymentSchema.pre('save', function(next) {
+  if (!this.transactionID && this.paymentStatus === 'Paid') {
+    this.transactionID = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+  }
+  next();
+});
+
+const Payment = mongoose.models.Payment || mongoose.model('Payment', paymentSchema);
+
+export default Payment;

@@ -5,6 +5,7 @@ import Product from "../models/Product.js";
 import Inventory from "../models/Inventory.js";
 import Order from "../models/Order.js";
 import User from "../models/User.js";
+import Category from "../models/Category.js";
 
 dotenv.config();
 
@@ -145,10 +146,39 @@ const seedDatabase = async () => {
     console.log("🗑️ Clearing existing data...");
     await Product.deleteMany({});
     await Inventory.deleteMany({});
+    await Category.deleteMany({});
 
-    // Create products
+    // Create categories first
+    console.log("📁 Creating categories...");
+    const categories = [
+      { categoryName: "Archery", description: "Bows, arrows, and archery accessories" },
+      { categoryName: "Camping", description: "Tents, sleeping bags, and camping gear" },
+      { categoryName: "Hiking", description: "Backpacks, hiking boots, and outdoor gear" }
+    ];
+    const createdCategories = await Category.insertMany(categories);
+    console.log(`✅ Created ${createdCategories.length} categories`);
+
+    // Create category lookup map
+    const categoryMap = {};
+    createdCategories.forEach(cat => {
+      categoryMap[cat.categoryName] = cat._id;
+    });
+
+    // Transform sampleProducts to match the Product model
     console.log("🏭 Creating products...");
-    const createdProducts = await Product.insertMany(sampleProducts);
+    const transformedProducts = sampleProducts.map(product => ({
+      productName: product.name,
+      description: product.description,
+      price: product.price,
+      category: categoryMap[product.category],
+      imageUrl: product.imageUrl,
+      weight: product.weight,
+      dimensions: product.dimensions,
+      brand: "The Great Outdoors", // Add default brand
+      isActive: true
+    }));
+
+    const createdProducts = await Product.insertMany(transformedProducts);
     console.log(`✅ Created ${createdProducts.length} products`);
 
     // Create inventory records for each product
@@ -164,142 +194,8 @@ const seedDatabase = async () => {
     const createdInventory = await Promise.all(inventoryPromises);
     console.log(`✅ Created ${createdInventory.length} inventory records`);
 
-    // Create sample user if not exists
-    console.log("👤 Creating sample user...");
-    let sampleUser = await User.findOne({ email: "john.doe@example.com" });
-    if (!sampleUser) {
-      sampleUser = new User({
-        fullName: "John Doe",
-        email: "john.doe@example.com",
-        password: "hashedpasswordhere", // In real app, this would be properly hashed
-        phone: "+1234567890",
-        role: "customer",
-        isActive: true,
-        emailVerified: true,
-      });
-      await sampleUser.save();
-      console.log("✅ Created sample user");
-    } else {
-      console.log("👤 Sample user already exists");
-    }
-
-    // Create sample orders
-    console.log("🛒 Creating sample orders...");
-    const sampleOrders = [
-      {
-        user: sampleUser._id,
-        items: [
-          {
-            productId: createdProducts[0]._id,
-            productName: createdProducts[0].name,
-            quantity: 1,
-            price: createdProducts[0].price,
-            total: createdProducts[0].price,
-            sku: createdProducts[0].sku,
-          },
-        ],
-        totalAmount: createdProducts[0].price,
-        tax: createdProducts[0].price * 0.08,
-        shippingCost: 10,
-        discount: 0,
-        orderStatus: "Shipped",
-        paymentStatus: "Paid",
-        paymentMethod: "Credit Card",
-        shippingAddress: {
-          addressLine1: "123 Main St",
-          city: "Toronto",
-          province: "Ontario",
-          postalCode: "M1A 1A1",
-          country: "Canada",
-        },
-      },
-      {
-        user: sampleUser._id,
-        items: [
-          {
-            productId: createdProducts[4]._id,
-            productName: createdProducts[4].name,
-            quantity: 2,
-            price: createdProducts[4].price,
-            total: createdProducts[4].price * 2,
-            sku: createdProducts[4].sku,
-          },
-        ],
-        totalAmount: createdProducts[4].price * 2,
-        tax: createdProducts[4].price * 2 * 0.08,
-        shippingCost: 15,
-        discount: 0,
-        orderStatus: "Pending",
-        paymentStatus: "Paid",
-        paymentMethod: "Credit Card",
-        shippingAddress: {
-          addressLine1: "456 Oak Ave",
-          city: "Vancouver",
-          province: "British Columbia",
-          postalCode: "V1A 1A1",
-          country: "Canada",
-        },
-      },
-      {
-        user: sampleUser._id,
-        items: [
-          {
-            productId: createdProducts[6]._id,
-            productName: createdProducts[6].name,
-            quantity: 4,
-            price: createdProducts[6].price,
-            total: createdProducts[6].price * 4,
-            sku: createdProducts[6].sku,
-          },
-        ],
-        totalAmount: createdProducts[6].price * 4,
-        tax: createdProducts[6].price * 4 * 0.08,
-        shippingCost: 12,
-        discount: 20,
-        orderStatus: "Delivered",
-        paymentStatus: "Paid",
-        paymentMethod: "Debit Card",
-        actualDelivery: new Date(),
-        shippingAddress: {
-          addressLine1: "789 Pine Rd",
-          city: "Calgary",
-          province: "Alberta",
-          postalCode: "T1A 1A1",
-          country: "Canada",
-        },
-      },
-      {
-        user: sampleUser._id,
-        items: [
-          {
-            productId: createdProducts[8]._id,
-            productName: createdProducts[8].name,
-            quantity: 3,
-            price: createdProducts[8].price,
-            total: createdProducts[8].price * 3,
-            sku: createdProducts[8].sku,
-          },
-        ],
-        totalAmount: createdProducts[8].price * 3,
-        tax: createdProducts[8].price * 3 * 0.08,
-        shippingCost: 18,
-        discount: 0,
-        orderStatus: "Cancelled",
-        paymentStatus: "Refunded",
-        paymentMethod: "Credit Card",
-        shippingAddress: {
-          addressLine1: "321 Elm St",
-          city: "Montreal",
-          province: "Quebec",
-          postalCode: "H1A 1A1",
-          country: "Canada",
-        },
-      },
-    ];
-
-    await Order.deleteMany({}); // Clear existing orders
-    const createdOrders = await Order.insertMany(sampleOrders);
-    console.log(`✅ Created ${createdOrders.length} sample orders`);
+    console.log("⚠️ Skipping order creation for now...");
+    const createdOrders = [];
 
     console.log("🎉 Database seeding completed successfully!");
     console.log("📊 Summary:");
