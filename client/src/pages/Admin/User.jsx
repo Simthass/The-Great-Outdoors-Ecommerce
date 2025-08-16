@@ -8,8 +8,10 @@ import {
   Calendar,
   User,
   ChevronUp,
+  FileText,
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
+import { useNavigate } from "react-router-dom";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -32,6 +34,8 @@ const UserManagement = () => {
 
   // Ref for scrolling to top
   const topRef = useRef(null);
+
+  const navigate = useNavigate();
 
   // Fetch user profile for sidebar
   const fetchUserProfile = async () => {
@@ -322,7 +326,6 @@ const UserManagement = () => {
               </div>
             </div>
           </div>
-
           {/* Filters and Search */}
           <div className="bg-white rounded-lg shadow-sm border p-6 m-6">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
@@ -338,7 +341,7 @@ const UserManagement = () => {
                     placeholder="Search by name or email..."
                     value={searchTerm}
                     onChange={handleSearch}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-10"
                   />
                 </div>
               </div>
@@ -346,12 +349,12 @@ const UserManagement = () => {
               {/* Role Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filter by Role
+                  Role
                 </label>
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-10"
                 >
                   <option value="all">All Roles</option>
                   <option value="Customer">Customer</option>
@@ -368,7 +371,7 @@ const UserManagement = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-10"
                 >
                   <option value="createdAt">Date Joined</option>
                   <option value="firstName">First Name</option>
@@ -386,26 +389,34 @@ const UserManagement = () => {
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-10"
                 >
                   <option value="desc">Newest First</option>
                   <option value="asc">Oldest First</option>
                 </select>
               </div>
 
-              {/* Clear Filters */}
-              <div className="flex justify-end">
+              {/* Buttons */}
+              <div className="flex flex-col gap-2">
                 <button
                   onClick={clearFilters}
-                  className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center gap-2"
+                  className="bg-gray-100 text-gray-700 px-3 py-2.5 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center gap-1 h-10 text-sm"
                 >
                   <Filter className="h-4 w-4" />
                   Clear Filters
                 </button>
+                <button
+                  className="bg-[#8DC53E] text-white px-3 py-2.5 rounded-lg hover:bg-[#7AB32E] transition-colors duration-200 flex items-center justify-center gap-1 h-10 text-sm cursor-pointer"
+                  onClick={() =>
+                    navigate("../Admin/ReportGeneration/userReport")
+                  }
+                >
+                  <FileText className="h-4 w-4" />
+                  Generate Report
+                </button>
               </div>
             </div>
           </div>
-
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 mx-6">
