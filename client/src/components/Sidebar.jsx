@@ -114,17 +114,19 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
   const handleNavClick = (key) => {
     if (key === "dashboard") {
       navigate("/AdminDashboard");
-    } else if (key == "users") {
+    } else if (key === "users") {
       navigate("/Admin/User");
-    } else if (key == "employee") {
+    } else if (key === "employees") {
       navigate("/Admin/Employee");
-    } else if (key == "inventory") {
+    } else if (key === "inventory") {
       navigate("/Admin/Inventory");
-    } else if (key == "review") {
+    } else if (key === "orders") {
+      navigate("/Admin/Orders");
+    } else if (key === "reviews") {
       navigate("/Admin/Review");
-    } else if (key == "product") {
+    } else if (key === "Products") {
       navigate("/Admin/Product");
-    } else if (key == "report") {
+    } else if (key === "reports") {
       navigate("/Admin/ReportGeneration/userReport");
     }
   };
@@ -150,7 +152,7 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
     <aside
       className={`bg-green-600 text-white h-screen sticky top-0
                   flex flex-col justify-between
-                  transition-[width] duration-300 ease-in-out
+                  transition-[width] duration-300 ease-in-out rounded-br-lg rounded-tr-lg
                   ${isExpanded ? "w-65" : "w-20"}`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
