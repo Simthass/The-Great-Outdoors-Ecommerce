@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Home,
   Users,
@@ -7,6 +8,7 @@ import {
   FileText,
   ShoppingBag,
   UserCog,
+  PackagePlus,
   ShoppingCart,
   User,
 } from "lucide-react";
@@ -15,6 +17,7 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [profileImage, setProfileImage] = useState("/default-profile.jpg");
   const [imageLoading, setImageLoading] = useState(false);
+  const navigate = useNavigate();
 
   const navigationItems = [
     {
@@ -52,6 +55,12 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
       label: "Review Management",
       key: "reviews",
       active: currentPage === "reviews",
+    },
+    {
+      icon: PackagePlus,
+      label: "Product Management",
+      key: "Products",
+      active: currentPage === "Products",
     },
     {
       icon: FileText,
@@ -103,7 +112,21 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
   }, [userProfile]);
 
   const handleNavClick = (key) => {
-    onPageChange(key);
+    if (key === "dashboard") {
+      navigate("/AdminDashboard");
+    } else if (key == "users") {
+      navigate("/Admin/User");
+    } else if (key == "employee") {
+      navigate("/Admin/Employee");
+    } else if (key == "inventory") {
+      navigate("/Admin/Inventory");
+    } else if (key == "review") {
+      navigate("/Admin/Review");
+    } else if (key == "product") {
+      navigate("/Admin/Product");
+    } else if (key == "report") {
+      navigate("/Admin/ReportGeneration/userReport");
+    }
   };
 
   // Function to get user initials as fallback
@@ -128,7 +151,7 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
       className={`bg-green-600 text-white h-screen sticky top-0
                   flex flex-col justify-between
                   transition-[width] duration-300 ease-in-out
-                  ${isExpanded ? "w-56" : "w-20"}`}
+                  ${isExpanded ? "w-65" : "w-20"}`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
@@ -147,9 +170,15 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
             return (
               <button
                 key={i}
-                onClick={() => handleNavClick(item.key)}
+                onClick={() => {
+                  if (item.path) {
+                    window.location.href = item.path;
+                  } else {
+                    handleNavClick(item.key);
+                  }
+                }}
                 className={`group rounded-lg h-12 
-                            flex items-center transition-all duration-200
+                            flex items-center transition-all duration-200 cursor-pointer
                             ${
                               active
                                 ? "bg-green-500"
