@@ -158,8 +158,22 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
       {/* Top */}
       <div>
         {/* Logo */}
-        <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center mt-6 mb-8 mx-auto">
-          <ShoppingBag className="w-6 h-6 text-green-600" />
+        <div
+          className={`
+    h-12 rounded-lg flex items-center justify-center mt-6 mb-8 mx-auto
+    transition-all duration-300 ease-in-out border-2
+    ${isExpanded ? "w-40 px-4" : "w-12"}
+  `}
+        >
+          <img
+            src="/TGO-Logo.png"
+            alt="Company Logo"
+            className={`
+      object-contain
+      ${isExpanded ? "h-8 w-auto" : "h-6 w-auto"}
+      transition-all duration-300 ease-in-out
+    `}
+          />
         </div>
 
         {/* Nav */}
