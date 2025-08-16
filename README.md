@@ -38,7 +38,7 @@
 
 ```bash
 # 1️⃣ Clone repository
-git clone https://github.com/cyber-nexus/great-outdoors-ecommerce.git
+git clone https://github.com/Simthass/The-Great-Outdoors-Ecommerce.git
 
 # 2️⃣ Navigate to project
 cd great-outdoors-ecommerce
