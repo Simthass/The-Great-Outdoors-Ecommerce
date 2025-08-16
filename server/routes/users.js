@@ -54,6 +54,85 @@ const handleFileUpload = (file) => {
     return null;
   }
 };
+// Add this route to your existing routes/users.js file
+// @desc    Get all users (Admin only)
+// @route   GET /api/users/all
+// @access  Private/Admin
+router.get("/all", protect, async (req, res) => {
+  try {
+    const {
+      search,
+      role,
+      city,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    // Build query object
+    let query = {};
+
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Filter by role
+    if (role && role !== "all") {
+      query.role = role;
+    }
+
+    // Filter by city
+    if (city && city !== "all") {
+      query.city = { $regex: city, $options: "i" };
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get users with pagination and sorting
+    const users = await User.find(query)
+      .select("-password -resetPasswordToken -resetPasswordExpire")
+      .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get total count for pagination
+    const totalUsers = await User.countDocuments(query);
+
+    // Get unique cities for filter dropdown
+    const cities = await User.distinct("city", {
+      city: { $exists: true, $ne: "" },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        users,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalUsers / parseInt(limit)),
+          totalUsers,
+          limit: parseInt(limit),
+        },
+        filters: {
+          cities: cities.filter((city) => city), // Remove null/empty values
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Get all users error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching users",
+    });
+  }
+});
 
 // @desc    Get user profile
 // @route   GET /api/users/profile
