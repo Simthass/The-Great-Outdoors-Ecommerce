@@ -100,22 +100,33 @@ const OrderManagement = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-  // Handle order status update
-  const handleUpdateOrder = async (orderId, updateData) => {
-    try {
-      const response = await axios.put(`/api/orders/${orderId}/status`, updateData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+  // Enhanced handleUpdateOrder function
+  const handleUpdateOrder = async (e) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
 
-      toast.success('Order updated successfully');
+    try {
+      const response = await axios.put(
+        `/api/orders/${selectedOrder._id}/update`, // Changed endpoint
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      toast.success(`Order #${selectedOrder.orderId} updated successfully`);
       fetchOrders();
       setShowUpdateModal(false);
       setSelectedOrder(null);
     } catch (error) {
       console.error('Error updating order:', error);
-      toast.error(error.response?.data?.message || 'Failed to update order');
+      toast.error(
+        error.response?.data?.message || 
+        'Failed to update order. Please try again.'
+      );
     }
   };
 
@@ -492,97 +503,106 @@ const OrderManagement = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Update Order #{selectedOrder.orderId}
             </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Order Status
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={updateData.orderStatus}
-                  onChange={(e) => setUpdateData(prev => ({ ...prev, orderStatus: e.target.value }))}
+            <form onSubmit={handleUpdateOrder}>
+              <div className="space-y-4">
+                {/* Order Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Order Status
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={updateData.orderStatus}
+                    onChange={(e) => setUpdateData(prev => ({ ...prev, orderStatus: e.target.value }))}
+                    required
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                {/* Payment Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Payment Status
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={updateData.paymentStatus}
+                    onChange={(e) => setUpdateData(prev => ({ ...prev, paymentStatus: e.target.value }))}
+                    required
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Refunded">Refunded</option>
+                  </select>
+                </div>
+
+                {/* Tracking Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tracking Number
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={updateData.trackingNumber}
+                    onChange={(e) => setUpdateData(prev => ({ ...prev, trackingNumber: e.target.value }))}
+                    placeholder="Enter tracking number"
+                  />
+                </div>
+
+                {/* Carrier */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Carrier
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={updateData.carrier}
+                    onChange={(e) => setUpdateData(prev => ({ ...prev, carrier: e.target.value }))}
+                    placeholder="e.g. Canada Post, UPS"
+                  />
+                </div>
+
+                {/* Estimated Delivery */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estimated Delivery
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={updateData.estimatedDelivery}
+                    onChange={(e) => setUpdateData(prev => ({ ...prev, estimatedDelivery: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUpdateModal(false);
+                    setSelectedOrder(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Payment Status
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={updateData.paymentStatus}
-                  onChange={(e) => setUpdateData(prev => ({ ...prev, paymentStatus: e.target.value }))}
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Failed">Failed</option>
-                  <option value="Refunded">Refunded</option>
-                </select>
+                  Update Order
+                </button>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tracking Number
-                </label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={updateData.trackingNumber}
-                  onChange={(e) => setUpdateData(prev => ({ ...prev, trackingNumber: e.target.value }))}
-                  placeholder="Enter tracking number"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Carrier
-                </label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={updateData.carrier}
-                  onChange={(e) => setUpdateData(prev => ({ ...prev, carrier: e.target.value }))}
-                  placeholder="e.g. Canada Post, UPS"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estimated Delivery
-                </label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={updateData.estimatedDelivery}
-                  onChange={(e) => setUpdateData(prev => ({ ...prev, estimatedDelivery: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setSelectedOrder(null);
-                }}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleUpdateOrder(selectedOrder._id, updateData)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Update Order
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
