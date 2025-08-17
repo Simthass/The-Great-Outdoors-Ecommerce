@@ -57,3 +57,5 @@ router.put('/:id/update', authenticateUser, async (req, res) => {
 });
 
 export default router;
+
+// Note: The update route is added to handle updates from the frontend.
