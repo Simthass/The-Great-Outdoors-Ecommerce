@@ -11,7 +11,6 @@ const router = express.Router();
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadPath = "public/products";
-    // Create directory if it doesn't exist
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
@@ -26,7 +25,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB
   },
   fileFilter: function (req, file, cb) {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -43,6 +42,149 @@ const upload = multer({
   },
 });
 
+// CREATE new product - JSON version (no image)
+router.post("/json", async (req, res) => {
+  try {
+    console.log("=== CREATE PRODUCT (JSON) ===");
+    console.log("Request body:", req.body);
+
+    const { category, productName, description, price, brand } = req.body;
+
+    // Validate required fields
+    if (!category || !productName || !description || !price || !brand) {
+      return res.status(400).json({
+        success: false,
+        error: "All required fields must be provided",
+      });
+    }
+
+    // Check if category exists
+    const categoryExists = await Category.findById(category);
+    if (!categoryExists) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid category ID",
+      });
+    }
+
+    const productData = {
+      category,
+      productName: productName.trim(),
+      description: description.trim(),
+      price: parseFloat(price),
+      brand: brand.trim(),
+      isActive: true,
+    };
+
+    // Add optional fields
+    if (req.body.weight && req.body.weight.toString().trim() !== "") {
+      productData.weight = parseFloat(req.body.weight);
+    }
+    if (req.body.dimensions && req.body.dimensions.trim() !== "") {
+      productData.dimensions = req.body.dimensions.trim();
+    }
+    if (req.body.color && req.body.color.trim() !== "") {
+      productData.color = req.body.color.trim();
+    }
+    if (req.body.size && req.body.size.trim() !== "") {
+      productData.size = req.body.size.trim();
+    }
+
+    console.log("Creating product:", productData);
+
+    const product = new Product(productData);
+    const savedProduct = await product.save();
+    await savedProduct.populate("category", "categoryName");
+
+    console.log("Product created successfully:", savedProduct._id);
+    res.status(201).json(savedProduct);
+  } catch (error) {
+    console.error("Error creating product (JSON):", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// UPDATE product - JSON version (no image)
+router.put("/json/:id", async (req, res) => {
+  try {
+    console.log("=== UPDATE PRODUCT (JSON) ===");
+    console.log("Product ID:", req.params.id);
+    console.log("Request body:", req.body);
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Build update data
+    const updateData = {};
+
+    if (req.body.category) {
+      const categoryExists = await Category.findById(req.body.category);
+      if (!categoryExists) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      updateData.category = req.body.category;
+    }
+
+    if (req.body.productName)
+      updateData.productName = req.body.productName.trim();
+    if (req.body.description)
+      updateData.description = req.body.description.trim();
+    if (req.body.price) updateData.price = parseFloat(req.body.price);
+    if (req.body.brand) updateData.brand = req.body.brand.trim();
+
+    // Optional fields - handle empty strings properly
+    if (req.body.weight !== undefined) {
+      updateData.weight =
+        req.body.weight && req.body.weight.toString().trim() !== ""
+          ? parseFloat(req.body.weight)
+          : undefined;
+    }
+    if (req.body.dimensions !== undefined) {
+      updateData.dimensions =
+        req.body.dimensions && req.body.dimensions.trim() !== ""
+          ? req.body.dimensions.trim()
+          : undefined;
+    }
+    if (req.body.color !== undefined) {
+      updateData.color =
+        req.body.color && req.body.color.trim() !== ""
+          ? req.body.color.trim()
+          : undefined;
+    }
+    if (req.body.size !== undefined) {
+      updateData.size =
+        req.body.size && req.body.size.trim() !== ""
+          ? req.body.size.trim()
+          : undefined;
+    }
+
+    console.log("Update data:", updateData);
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate("category", "categoryName");
+
+    if (!updatedProduct) {
+      return res
+        .status(404)
+        .json({ message: "Product not found after update" });
+    }
+
+    console.log("Product updated successfully:", updatedProduct._id);
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error("Error updating product (JSON):", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // GET all products
 router.get("/", async (req, res) => {
   try {
@@ -50,11 +192,9 @@ router.get("/", async (req, res) => {
       .populate("category", "categoryName")
       .sort({ createdAt: -1 });
 
-    // Add full image URL to each product
     const productsWithImageUrls = products.map((product) => {
       const productObj = product.toObject();
       if (productObj.imageUrl) {
-        // Make sure the imageUrl starts with /
         if (!productObj.imageUrl.startsWith("/")) {
           productObj.imageUrl = "/" + productObj.imageUrl;
         }
@@ -68,113 +208,133 @@ router.get("/", async (req, res) => {
   }
 });
 
-// CREATE new product
+// CREATE new product WITH IMAGE - multipart version
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const {
-      category,
-      productName,
-      description,
-      price,
-      weight,
-      dimensions,
-      brand,
-      color,
-      size,
-    } = req.body;
+    console.log("=== CREATE PRODUCT WITH IMAGE ===");
+    console.log("Request body:", req.body);
+    console.log("Uploaded file:", req.file);
+
+    const { category, productName, description, price, brand } = req.body;
 
     // Validate required fields
-    if (!category || !productName || !description || !price || !brand) {
-      return res.status(400).json({
-        message:
-          "Category, product name, description, price, and brand are required",
-      });
+    const requiredFields = { category, productName, description, price, brand };
+    for (const [field, value] of Object.entries(requiredFields)) {
+      if (!value || value.toString().trim() === "") {
+        console.log(`Missing field: ${field}`);
+        return res.status(400).json({
+          success: false,
+          error: `${field} is required`,
+        });
+      }
     }
 
     // Check if category exists
     const categoryExists = await Category.findById(category);
     if (!categoryExists) {
-      return res.status(400).json({ message: "Invalid category ID" });
+      console.log("Category not found:", category);
+      return res.status(400).json({
+        success: false,
+        error: "Invalid category ID",
+      });
     }
 
     const productData = {
       category,
-      productName,
-      description,
+      productName: productName.trim(),
+      description: description.trim(),
       price: parseFloat(price),
-      brand,
-      weight: weight ? parseFloat(weight) : undefined,
-      dimensions,
-      color,
-      size,
+      brand: brand.trim(),
       isActive: true,
     };
+
+    // Add optional fields
+    if (req.body.weight && req.body.weight.trim() !== "") {
+      productData.weight = parseFloat(req.body.weight);
+    }
+    if (req.body.dimensions && req.body.dimensions.trim() !== "") {
+      productData.dimensions = req.body.dimensions.trim();
+    }
+    if (req.body.color && req.body.color.trim() !== "") {
+      productData.color = req.body.color.trim();
+    }
+    if (req.body.size && req.body.size.trim() !== "") {
+      productData.size = req.body.size.trim();
+    }
 
     // Add image URL if file was uploaded
     if (req.file) {
       productData.imageUrl = `/products/${req.file.filename}`;
+      console.log("Image saved as:", productData.imageUrl);
     }
+
+    console.log("Final product data:", productData);
 
     const product = new Product(productData);
     const savedProduct = await product.save();
-
-    // Populate category info before sending response
     await savedProduct.populate("category", "categoryName");
 
+    console.log("Product saved successfully:", savedProduct._id);
     res.status(201).json(savedProduct);
   } catch (error) {
-    // Clean up uploaded file if product creation failed
+    console.error("=== ERROR CREATING PRODUCT WITH IMAGE ===");
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+
+    // Clean up uploaded file if it exists
     if (req.file) {
       fs.unlink(req.file.path, (err) => {
         if (err) console.error("Error deleting file:", err);
       });
     }
-    res.status(400).json({ message: error.message });
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 });
 
-// UPDATE product
+// UPDATE product WITH IMAGE - multipart version
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
-    const {
-      category,
-      productName,
-      description,
-      price,
-      weight,
-      dimensions,
-      brand,
-      color,
-      size,
-      isActive,
-    } = req.body;
+    console.log("=== UPDATE PRODUCT WITH IMAGE ===");
+    console.log("Product ID:", req.params.id);
+    console.log("Request body:", req.body);
+    console.log("Uploaded file:", req.file);
 
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Check if category exists (if provided)
-    if (category) {
-      const categoryExists = await Category.findById(category);
+    // Build update data
+    const updateData = {};
+
+    if (req.body.category) {
+      const categoryExists = await Category.findById(req.body.category);
       if (!categoryExists) {
         return res.status(400).json({ message: "Invalid category ID" });
       }
+      updateData.category = req.body.category;
     }
 
-    // Update fields
-    const updateData = {};
-    if (category) updateData.category = category;
-    if (productName) updateData.productName = productName;
-    if (description) updateData.description = description;
-    if (price) updateData.price = parseFloat(price);
-    if (weight !== undefined && weight !== "")
-      updateData.weight = parseFloat(weight);
-    if (dimensions) updateData.dimensions = dimensions;
-    if (brand) updateData.brand = brand;
-    if (color) updateData.color = color;
-    if (size) updateData.size = size;
-    if (isActive !== undefined) updateData.isActive = isActive === "true";
+    if (req.body.productName)
+      updateData.productName = req.body.productName.trim();
+    if (req.body.description)
+      updateData.description = req.body.description.trim();
+    if (req.body.price) updateData.price = parseFloat(req.body.price);
+    if (req.body.brand) updateData.brand = req.body.brand.trim();
+
+    // Optional fields
+    if (req.body.weight !== undefined && req.body.weight !== "") {
+      updateData.weight = parseFloat(req.body.weight);
+    }
+    if (req.body.dimensions) updateData.dimensions = req.body.dimensions.trim();
+    if (req.body.color) updateData.color = req.body.color.trim();
+    if (req.body.size) updateData.size = req.body.size.trim();
+    if (req.body.isActive !== undefined)
+      updateData.isActive = req.body.isActive === "true";
 
     // Handle image update
     if (req.file) {
@@ -188,29 +348,31 @@ router.put("/:id", upload.single("image"), async (req, res) => {
       updateData.imageUrl = `/products/${req.file.filename}`;
     }
 
+    console.log("Update data:", updateData);
+
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true, runValidators: true }
     ).populate("category", "categoryName");
 
+    console.log("Product updated successfully:", updatedProduct._id);
     res.json(updatedProduct);
   } catch (error) {
+    console.error("=== ERROR UPDATING PRODUCT WITH IMAGE ===");
+    console.error("Error:", error);
+
     // Clean up uploaded file if update failed
     if (req.file) {
       fs.unlink(req.file.path, (err) => {
         if (err) console.error("Error deleting file:", err);
       });
     }
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
-// Rest of your routes remain the same...
-// DELETE, GET single product, GET categories routes
-// Add this to your routes/products.js file
-
-// DELETE product
+// Keep your existing DELETE and GET single product routes
 router.delete("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -234,7 +396,6 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// GET single product (if you don't have this)
 router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate(
@@ -249,4 +410,5 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 export default router;

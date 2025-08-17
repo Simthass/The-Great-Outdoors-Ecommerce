@@ -12,7 +12,7 @@ const AdminDashboard = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mr-[75px] ml-[75px]">
         {/* User Management */}
-        <Link to="/admin/users">
+        <Link to="/Admin/User">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/User-Mana.png')" }}
@@ -24,7 +24,6 @@ const AdminDashboard = () => {
             </div>
           </div>
         </Link>
-
         {/* Order Management */}
         <Link to="/Admin/Order">
           <div
@@ -40,7 +39,7 @@ const AdminDashboard = () => {
         </Link>
 
         {/* Employee Management */}
-        <Link to="/admin/employees">
+        <Link to="/Admin/Employee">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Employee Management.png')" }}
@@ -82,7 +81,7 @@ const AdminDashboard = () => {
         </Link>
 
         {/* Review Management */}
-        <Link to="/admin/reviews">
+        <Link to="/Admin/ReviewList">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Review-Management.png')" }}
@@ -90,6 +89,18 @@ const AdminDashboard = () => {
             <div className="absolute inset-0 bg-black/50 bg-opacity-40 flex items-center justify-center rounded-xl">
               <h2 className="text-white text-lg font-semibold text-center px-2">
                 Review Management
+              </h2>
+            </div>
+          </div>
+        </Link>
+        <Link to="/Admin/ReportGeneration/userReport">
+          <div
+            className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
+            style={{ backgroundImage: "url('/User-Mana.png')" }}
+          >
+            <div className="absolute inset-0 bg-black/50 bg-opacity-40 flex items-center justify-center rounded-xl">
+              <h2 className="text-white text-lg font-semibold text-center px-2">
+                Others
               </h2>
             </div>
           </div>

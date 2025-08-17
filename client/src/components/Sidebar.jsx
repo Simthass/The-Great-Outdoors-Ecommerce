@@ -123,7 +123,7 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
     } else if (key === "orders") {
       navigate("/Admin/Orders");
     } else if (key === "reviews") {
-      navigate("/Admin/Review");
+      navigate("/Admin/ReviewList");
     } else if (key === "Products") {
       navigate("/Admin/Product");
     } else if (key === "reports") {

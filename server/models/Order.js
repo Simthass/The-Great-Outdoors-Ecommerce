@@ -10,7 +10,7 @@ const OrderItemSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true, // Added trim to remove whitespace
-    maxlength: 100, // Added maximum length
+    maxlength: 200, // Added maximum length
   },
   quantity: {
     type: Number,

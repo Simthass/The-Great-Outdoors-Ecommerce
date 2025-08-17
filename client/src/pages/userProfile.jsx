@@ -203,7 +203,7 @@ const Profile = () => {
                   </div>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-2 right-2 bg-[#8DC53E] text-white p-2 rounded-full shadow-lg hover:bg-[#97D243] transition-all duration-200"
+                    className="absolute bottom-2 right-2 bg-[#8DC53E] text-white p-2 rounded-full shadow-lg hover:bg-[#97D243] transition-all duration-200 cursor-pointer"
                     disabled={loading}
                   >
                     <Camera size={16} />
@@ -234,7 +234,7 @@ const Profile = () => {
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="bg-[#8DC53E] text-white px-8 py-3 rounded-[5px] font-medium hover:bg-[#97D243] transition-all duration-200 shadow-lg w-48"
+                    className="bg-[#8DC53E] text-white px-8 py-3 rounded-[5px] font-medium hover:bg-[#97D243] transition-all duration-200 shadow-lg w-48 cursor-pointer"
                     disabled={loading}
                   >
                     Edit Profile
@@ -372,14 +372,14 @@ const Profile = () => {
                     <div className="flex justify-center space-x-7 pt-6">
                       <button
                         onClick={handleCancel}
-                        className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-[5px] hover:bg-gray-50 transition-all duration-200 font-medium w-48"
+                        className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-[5px] hover:bg-gray-50 transition-all duration-200 font-medium w-48 cursor-pointer"
                         disabled={loading}
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleSave}
-                        className="px-8 py-3 bg-[#8DC53E] text-white rounded-[5px] hover:bg-[#97D243] transition-all duration-200 font-medium shadow-lg w-48"
+                        className="px-8 py-3 bg-[#8DC53E] text-white rounded-[5px] hover:bg-[#97D243] transition-all duration-200 font-medium shadow-lg w-48 cursor-pointer"
                         disabled={loading}
                       >
                         {loading ? "Saving..." : "Save Changes"}

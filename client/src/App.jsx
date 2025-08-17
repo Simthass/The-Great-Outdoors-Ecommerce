@@ -37,6 +37,9 @@ import Inventory from "./pages/Admin/Inventory";
 import NotFoundPage from "./pages/404";
 import UserManagement from "./pages/Admin/User";
 import UserReportGenerator from "./pages/Admin/ReportGeneration/userReport";
+import EmployeeManagement from "./pages/Admin/Employee";
+import ReviewsList from "./pages/Admin/ReviewList";
+import ReviewEdit from "./pages/Admin/ReviewEdit";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -181,6 +184,12 @@ const App = () => {
                 path="/Admin/ReportGeneration/userReport"
                 element={<UserReportGenerator />}
               />
+              <Route path="/Admin/Employee" element={<EmployeeManagement />} />
+              <Route path="/Admin/ReviewList" element={<ReviewsList />} />
+              <Route
+                path="/Admin/ReviewEdit/:id"
+                element={<ReviewEdit />}
+              />{" "}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Layout>

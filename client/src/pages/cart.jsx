@@ -284,9 +284,11 @@ const Cart = () => {
               </div>
             </div>
 
-            {/* Place Order Button */}
-            <button className="w-full bg-[#8DC53E] text-white text-xl font-semibold py-4 rounded-lg hover:bg-[#7AB32E] transition-colors duration-200">
-              Place Order
+            <button
+              onClick={() => navigate("/checkout")}
+              className="w-full bg-[#8DC53E] text-white text-xl font-semibold py-4 rounded-lg hover:bg-[#7AB32E] transition-colors duration-200 cursor-pointer"
+            >
+              Proceed to Checkout
             </button>
           </div>
         </div>

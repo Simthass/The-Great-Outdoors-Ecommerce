@@ -188,12 +188,7 @@ const UserManagement = () => {
   };
 
   // Handle sidebar navigation
-  const handleNavClick = (key) => {
-    setSidebarPage(key);
-    if (key !== "users") {
-      alert(`${key} management will be implemented soon!`);
-    }
-  };
+  const handleNavClick = (key) => {};
 
   // Get user profile image
   const getUserProfileImage = (user) => {

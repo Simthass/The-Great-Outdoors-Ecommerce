@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const AdminProduct = () => {
+const AdminOthers = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,37 +67,77 @@ const AdminProduct = () => {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const submitData = new FormData();
+      let url, response;
 
-      // Append all form fields
-      Object.keys(formData).forEach((key) => {
-        if (key === "image") {
-          if (formData[key]) {
-            submitData.append(key, formData[key]);
-          }
-        } else if (formData[key] !== null && formData[key] !== "") {
-          submitData.append(key, formData[key]);
+      if (formData.image) {
+        // Use multipart endpoints for image uploads
+        url = editingProduct
+          ? `${API_URL}/products/${editingProduct._id}`
+          : `${API_URL}/products`;
+
+        const submitData = new FormData();
+        submitData.append("category", formData.category);
+        submitData.append("productName", formData.productName);
+        submitData.append("description", formData.description);
+        submitData.append("price", formData.price);
+        submitData.append("brand", formData.brand);
+
+        if (formData.weight && formData.weight.trim() !== "") {
+          submitData.append("weight", formData.weight);
         }
-      });
+        if (formData.dimensions && formData.dimensions.trim() !== "") {
+          submitData.append("dimensions", formData.dimensions);
+        }
+        if (formData.color && formData.color.trim() !== "") {
+          submitData.append("color", formData.color);
+        }
+        if (formData.size && formData.size.trim() !== "") {
+          submitData.append("size", formData.size);
+        }
 
-      let response;
-      if (editingProduct) {
-        response = await axios.put(
-          `${API_URL}/products/${editingProduct._id}`,
-          submitData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-      } else {
-        response = await axios.post(`${API_URL}/products`, submitData, {
+        submitData.append("image", formData.image);
+
+        const method = editingProduct ? "put" : "post";
+        response = await axios[method](url, submitData, {
           headers: { "Content-Type": "multipart/form-data" },
+          timeout: 60000,
+        });
+      } else {
+        // Use JSON endpoints for no image
+        url = editingProduct
+          ? `${API_URL}/products/json/${editingProduct._id}`
+          : `${API_URL}/products/json`;
+
+        const jsonData = {
+          category: formData.category,
+          productName: formData.productName,
+          description: formData.description,
+          price: formData.price,
+          brand: formData.brand,
+        };
+
+        if (formData.weight && formData.weight.trim() !== "") {
+          jsonData.weight = formData.weight;
+        }
+        if (formData.dimensions && formData.dimensions.trim() !== "") {
+          jsonData.dimensions = formData.dimensions;
+        }
+        if (formData.color && formData.color.trim() !== "") {
+          jsonData.color = formData.color;
+        }
+        if (formData.size && formData.size.trim() !== "") {
+          jsonData.size = formData.size;
+        }
+
+        const method = editingProduct ? "put" : "post";
+        response = await axios[method](url, jsonData, {
+          headers: { "Content-Type": "application/json" },
+          timeout: 30000,
         });
       }
 
@@ -105,19 +145,21 @@ const AdminProduct = () => {
       await fetchProducts();
       resetForm();
       setIsModalOpen(false);
-      alert("Product saved successfully!");
+      alert(`Product ${editingProduct ? "updated" : "created"} successfully!`);
     } catch (error) {
-      console.error("Error saving product:", error);
-      alert(
-        `Error saving product: ${
-          error.response?.data?.message || error.message
-        }`
-      );
+      console.error("Full error:", error);
+      console.error("Error response:", error.response?.data);
+
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message;
+
+      alert(`Error saving product: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
-
   const handleEdit = (product) => {
     setEditingProduct(product);
     setFormData({
@@ -466,4 +508,4 @@ const AdminProduct = () => {
   );
 };
 
-export default AdminProduct;
+export default AdminOthers;
