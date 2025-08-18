@@ -56,6 +56,16 @@ const productSchema = mongoose.Schema(
       type: String,
       required: false,
     },
+    isFeatured: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    isHotThisWeek: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
   },
   {
     timestamps: true,

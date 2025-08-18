@@ -70,6 +70,7 @@ router.get("/", async (req, res) => {
 });
 
 // CREATE new product
+// CREATE new product
 router.post("/", upload.array("images", 5), async (req, res) => {
   try {
     const {
@@ -82,6 +83,8 @@ router.post("/", upload.array("images", 5), async (req, res) => {
       brand,
       color,
       size,
+      isFeatured,
+      isHotThisWeek,
     } = req.body;
 
     // Validate required fields
@@ -125,6 +128,8 @@ router.post("/", upload.array("images", 5), async (req, res) => {
       color,
       size,
       isActive: true,
+      isFeatured: isFeatured === "true",
+      isHotThisWeek: isHotThisWeek === "true",
     };
 
     // Add image URLs if files were uploaded
@@ -157,6 +162,7 @@ router.post("/", upload.array("images", 5), async (req, res) => {
 });
 
 // UPDATE product
+// UPDATE product
 router.put("/:id", upload.array("images", 5), async (req, res) => {
   try {
     const {
@@ -170,6 +176,8 @@ router.put("/:id", upload.array("images", 5), async (req, res) => {
       color,
       size,
       isActive,
+      isFeatured,
+      isHotThisWeek,
       existingImages = "[]", // JSON string of existing images
     } = req.body;
 
@@ -223,6 +231,9 @@ router.put("/:id", upload.array("images", 5), async (req, res) => {
     if (color) updateData.color = color;
     if (size) updateData.size = size;
     if (isActive !== undefined) updateData.isActive = isActive === "true";
+    if (isFeatured !== undefined) updateData.isFeatured = isFeatured === "true";
+    if (isHotThisWeek !== undefined)
+      updateData.isHotThisWeek = isHotThisWeek === "true";
 
     // Handle images update
     if (req.files && req.files.length > 0) {

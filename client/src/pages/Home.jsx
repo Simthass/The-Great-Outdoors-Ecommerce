@@ -207,67 +207,72 @@ const Home = () => {
       <div id="hot-this-week" className="text-center ml-[75px] mr-[75px]">
         <p className="text-[30px] font-bold mb-[50px]">Hot This Week</p>
         <div className="flex flex-wrap items-center justify-between mb-7">
-          {products.slice(0, 4).map((product) => (
-            <div
-              key={product._id}
-              className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]"
-            >
+          {products
+            .filter((product) => product.isHotThisWeek)
+            .slice(0, 4)
+            .map((product) => (
               <div
-                style={{ width: "280px", height: "205px" }}
-                className="flex items-center justify-center"
+                key={product._id}
+                className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]"
               >
-                <img
-                  src={
-                    product.imageUrl
-                      ? `${API_URL.replace("/api", "")}${product.imageUrl}`
-                      : "/products/placeholder.jpg"
-                  }
-                  alt={product.productName}
-                  className="h-full w-auto object-cover pt-[20px]"
-                />
-              </div>
-
-              {/* Updated Product Name with 2-line truncation */}
-              <div className="mt-[30px] h-[48px] overflow-hidden">
-                <p className="text-[15px] text-left leading-relaxed line-clamp-2">
-                  {product.productName}
-                </p>
-              </div>
-
-              <div className="flex mt-[15px]">
-                {Array(5)
-                  .fill()
-                  .map((_, i) => (
-                    <svg
-                      key={i}
-                      className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                    </svg>
-                  ))}
-              </div>
-
-              <hr className="mt-[25px] mb-[20px]" />
-
-              <div className="flex justify-between items-center text-[15px]">
-                <span className="font-bold text-left">Rs. {product.price}</span>
-                <span
-                  className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all ${
-                    addedItems.includes(product._id)
-                      ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                      : "hover:bg-[#195E29] hover:text-[#ffffff] cursor-pointer"
-                  }`}
-                  onClick={() => handleAddToCart(product._id)}
+                <div
+                  style={{ width: "280px", height: "205px" }}
+                  className="flex items-center justify-center"
                 >
-                  {addedItems.includes(product._id)
-                    ? "Added to Cart"
-                    : "+ Add to Cart"}
-                </span>
+                  <img
+                    src={
+                      product.imageUrl
+                        ? `${API_URL.replace("/api", "")}${product.imageUrl}`
+                        : "/products/placeholder.jpg"
+                    }
+                    alt={product.productName}
+                    className="h-full w-auto object-cover pt-[20px]"
+                  />
+                </div>
+
+                {/* Updated Product Name with 2-line truncation */}
+                <div className="mt-[30px] h-[48px] overflow-hidden">
+                  <p className="text-[15px] text-left leading-relaxed line-clamp-2">
+                    {product.productName}
+                  </p>
+                </div>
+
+                <div className="flex mt-[15px]">
+                  {Array(5)
+                    .fill()
+                    .map((_, i) => (
+                      <svg
+                        key={i}
+                        className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                      </svg>
+                    ))}
+                </div>
+
+                <hr className="mt-[25px] mb-[20px]" />
+
+                <div className="flex justify-between items-center text-[15px]">
+                  <span className="font-bold text-left">
+                    Rs. {product.price}
+                  </span>
+                  <span
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all ${
+                      addedItems.includes(product._id)
+                        ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
+                        : "hover:bg-[#195E29] hover:text-[#ffffff] cursor-pointer"
+                    }`}
+                    onClick={() => handleAddToCart(product._id)}
+                  >
+                    {addedItems.includes(product._id)
+                      ? "Added to Cart"
+                      : "+ Add to Cart"}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
       <div>
@@ -477,343 +482,73 @@ const Home = () => {
         <p className="text-[30px] mb-[50px]" style={{ fontWeight: "bold" }}>
           FEATURED PRODUCTS
         </p>
-        <div className="flex flex-wrap items-center justify-between mb-10">
-          <div className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]">
-            <div
-              style={{ width: "280px", height: "205px" }}
-              className="flex items-center justify-center"
-            >
-              <img
-                src="/products/product 1.jpg"
-                alt=""
-                className="h-full w-auto object-cover pt-[20px]"
-              />
-            </div>
+        <div className="flex flex-wrap items-center justify-between mb-7">
+          {products
+            .filter((product) => product.isFeatured)
+            .slice(0, 4)
+            .map((product) => (
+              <div
+                key={product._id}
+                className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]"
+              >
+                <div
+                  style={{ width: "280px", height: "205px" }}
+                  className="flex items-center justify-center"
+                >
+                  <img
+                    src={
+                      product.imageUrl
+                        ? `${API_URL.replace("/api", "")}${product.imageUrl}`
+                        : "/products/placeholder.jpg"
+                    }
+                    alt={product.productName}
+                    className="h-full w-auto object-cover pt-[20px]"
+                  />
+                </div>
 
-            <p className="mt-[30px] text-[15px] text-left leading-relaxed">
-              Seektop Archery Gloves Shooting Hunting Leather Three Finger
-              Protector
-            </p>
+                {/* Updated Product Name with 2-line truncation */}
+                <div className="mt-[30px] h-[48px] overflow-hidden">
+                  <p className="text-[15px] text-left leading-relaxed line-clamp-2">
+                    {product.productName}
+                  </p>
+                </div>
 
-            <div className="flex mt-[15px]">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
+                <div className="flex mt-[15px]">
+                  {Array(5)
+                    .fill()
+                    .map((_, i) => (
+                      <svg
+                        key={i}
+                        className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                      </svg>
+                    ))}
+                </div>
+
+                <hr className="mt-[25px] mb-[20px]" />
+
+                <div className="flex justify-between items-center text-[15px]">
+                  <span className="font-bold text-left">
+                    Rs. {product.price}
+                  </span>
+                  <span
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all ${
+                      addedItems.includes(product._id)
+                        ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
+                        : "hover:bg-[#195E29] hover:text-[#ffffff] cursor-pointer"
+                    }`}
+                    onClick={() => handleAddToCart(product._id)}
                   >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-
-            <hr className="mt-[25px] mb-[20px]" />
-
-            <div className="flex justify-between items-center text-[15px]">
-              <span className="font-bold text-left">Rs. 6000</span>
-              <span className="font-bold w-[110px] h-[30px] flex items-center justify-center hover:bg-[#195E29] hover:rounded-[5px] hover:text-[#ffffff] cursor-pointer transition-all">
-                + Add to Cart
-              </span>
-            </div>
-          </div>
-
-          <div className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]">
-            <div
-              style={{ width: "280px", height: "205px" }}
-              className="flex items-center justify-center"
-            >
-              <img
-                src="/products/product 2.jpg"
-                alt=""
-                className="h-full w-auto object-cover pt-[20px]"
-              />
-            </div>
-
-            <p className="mt-[30px] text-[15px] text-left leading-relaxed">
-              Seektop Archery Gloves Shooting Hunting Leather Three Finger
-              Protector
-            </p>
-
-            <div className="flex mt-[15px]">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-
-            <hr className="mt-[25px] mb-[20px]" />
-
-            <div className="flex justify-between items-center text-[15px]">
-              <span className="font-bold text-left">Rs. 6000</span>
-              <span className="font-bold w-[110px] h-[30px] flex items-center justify-center hover:bg-[#195E29] hover:rounded-[5px] hover:text-[#ffffff] cursor-pointer transition-all">
-                + Add to Cart
-              </span>
-            </div>
-          </div>
-
-          <div className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]">
-            <div
-              style={{ width: "280px", height: "205px" }}
-              className="flex items-center justify-center"
-            >
-              <img
-                src="/products/product 3.jpg"
-                alt=""
-                className="h-full w-auto object-cover pt-[20px]"
-              />
-            </div>
-
-            <p className="mt-[30px] text-[15px] text-left leading-relaxed">
-              Seektop Archery Gloves Shooting Hunting Leather Three Finger
-              Protector
-            </p>
-
-            <div className="flex mt-[15px]">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-
-            <hr className="mt-[25px] mb-[20px]" />
-
-            <div className="flex justify-between items-center text-[15px]">
-              <span className="font-bold text-left">Rs. 6000</span>
-              <span className="font-bold w-[110px] h-[30px] flex items-center justify-center hover:bg-[#195E29] hover:rounded-[5px] hover:text-[#ffffff] cursor-pointer transition-all">
-                + Add to Cart
-              </span>
-            </div>
-          </div>
-
-          <div className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]">
-            <div
-              style={{ width: "280px", height: "205px" }}
-              className="flex items-center justify-center"
-            >
-              <img
-                src="/products/product 4.jpg"
-                alt=""
-                className="h-full w-auto object-cover pt-[20px]"
-              />
-            </div>
-
-            <p className="mt-[30px] text-[15px] text-left leading-relaxed">
-              Seektop Archery Gloves Shooting Hunting Leather Three Finger
-              Protector
-            </p>
-
-            <div className="flex mt-[15px]">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-
-            <hr className="mt-[25px] mb-[20px]" />
-
-            <div className="flex justify-between items-center text-[15px]">
-              <span className="font-bold text-left">Rs. 6000</span>
-              <span className="font-bold w-[110px] h-[30px] flex items-center justify-center hover:bg-[#195E29] hover:rounded-[5px] hover:text-[#ffffff] cursor-pointer transition-all">
-                + Add to Cart
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-between">
-          <div className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]">
-            <div
-              style={{ width: "280px", height: "205px" }}
-              className="flex items-center justify-center"
-            >
-              <img
-                src="/products/product 1.jpg"
-                alt=""
-                className="h-full w-auto object-cover pt-[20px]"
-              />
-            </div>
-
-            <p className="mt-[30px] text-[15px] text-left leading-relaxed">
-              Seektop Archery Gloves Shooting Hunting Leather Three Finger
-              Protector
-            </p>
-
-            <div className="flex mt-[15px]">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-
-            <hr className="mt-[25px] mb-[20px]" />
-
-            <div className="flex justify-between items-center text-[15px]">
-              <span className="font-bold text-left">Rs. 6000</span>
-              <span className="font-bold w-[110px] h-[30px] flex items-center justify-center hover:bg-[#195E29] hover:rounded-[5px] hover:text-[#ffffff] cursor-pointer transition-all">
-                + Add to Cart
-              </span>
-            </div>
-          </div>
-
-          <div className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]">
-            <div
-              style={{ width: "280px", height: "205px" }}
-              className="flex items-center justify-center"
-            >
-              <img
-                src="/products/product 2.jpg"
-                alt=""
-                className="h-full w-auto object-cover pt-[20px]"
-              />
-            </div>
-
-            <p className="mt-[30px] text-[15px] text-left leading-relaxed">
-              Seektop Archery Gloves Shooting Hunting Leather Three Finger
-              Protector
-            </p>
-
-            <div className="flex mt-[15px]">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-
-            <hr className="mt-[25px] mb-[20px]" />
-
-            <div className="flex justify-between items-center text-[15px]">
-              <span className="font-bold text-left">Rs. 6000</span>
-              <span className="font-bold w-[110px] h-[30px] flex items-center justify-center hover:bg-[#195E29] hover:rounded-[5px] hover:text-[#ffffff] cursor-pointer transition-all">
-                + Add to Cart
-              </span>
-            </div>
-          </div>
-
-          <div className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]">
-            <div
-              style={{ width: "280px", height: "205px" }}
-              className="flex items-center justify-center"
-            >
-              <img
-                src="/products/product 3.jpg"
-                alt=""
-                className="h-full w-auto object-cover pt-[20px]"
-              />
-            </div>
-
-            <p className="mt-[30px] text-[15px] text-left leading-relaxed">
-              Seektop Archery Gloves Shooting Hunting Leather Three Finger
-              Protector
-            </p>
-
-            <div className="flex mt-[15px]">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-
-            <hr className="mt-[25px] mb-[20px]" />
-
-            <div className="flex justify-between items-center text-[15px]">
-              <span className="font-bold text-left">Rs. 6000</span>
-              <span className="font-bold w-[110px] h-[30px] flex items-center justify-center hover:bg-[#195E29] hover:rounded-[5px] hover:text-[#ffffff] cursor-pointer transition-all">
-                + Add to Cart
-              </span>
-            </div>
-          </div>
-
-          <div className="pl-[20px] pr-[20px] border-l-[0.2px] border-r-[0.2px] border-black border-t-0 border-b-0 hover:border-t-[0.2px] hover:border-b-[0.2px] w-[310px] h-[440px]">
-            <div
-              style={{ width: "280px", height: "205px" }}
-              className="flex items-center justify-center"
-            >
-              <img
-                src="/products/product 4.jpg"
-                alt=""
-                className="h-full w-auto object-cover pt-[20px]"
-              />
-            </div>
-
-            <p className="mt-[30px] text-[15px] text-left leading-relaxed">
-              Seektop Archery Gloves Shooting Hunting Leather Three Finger
-              Protector
-            </p>
-
-            <div className="flex mt-[15px]">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[15px] h-[15px] text-yellow-500 mr-[2px]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-
-            <hr className="mt-[25px] mb-[20px]" />
-
-            <div className="flex justify-between items-center text-[15px]">
-              <span className="font-bold text-left">Rs. 6000</span>
-              <span className="font-bold w-[110px] h-[30px] flex items-center justify-center hover:bg-[#195E29] hover:rounded-[5px] hover:text-[#ffffff] cursor-pointer transition-all">
-                + Add to Cart
-              </span>
-            </div>
-          </div>
+                    {addedItems.includes(product._id)
+                      ? "Added to Cart"
+                      : "+ Add to Cart"}
+                  </span>
+                </div>
+              </div>
+            ))}
         </div>
       </div>
     </div>
