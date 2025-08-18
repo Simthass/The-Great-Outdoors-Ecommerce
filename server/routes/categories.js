@@ -3,12 +3,10 @@ import Category from "../models/Category.js";
 
 const router = express.Router();
 
-// GET all categories
+// GET all active categories
 router.get("/", async (req, res) => {
   try {
-    const categories = await Category.find({ isActive: true }).sort({
-      categoryName: 1,
-    });
+    const categories = await Category.find({ isActive: true }).sort({ categoryName: 1 });
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -38,24 +36,28 @@ router.post("/", async (req, res) => {
     }
 
     // Check if category already exists
-    const existingCategory = await Category.findOne({
-      categoryName: { $regex: new RegExp(`^${categoryName}$`, "i") },
+    const existingCategory = await Category.findOne({ 
+      categoryName: { $regex: new RegExp('^' + categoryName + '$', 'i') }
     });
-
+    
     if (existingCategory) {
       return res.status(400).json({ message: "Category already exists" });
     }
 
     const category = new Category({
-      categoryName,
-      description: description || "",
+      categoryName: categoryName.trim(),
+      description: description?.trim(),
       isActive: true,
     });
 
     const savedCategory = await category.save();
     res.status(201).json(savedCategory);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    if (error.code === 11000) {
+      res.status(400).json({ message: "Category already exists" });
+    } else {
+      res.status(400).json({ message: error.message });
+    }
   }
 });
 
@@ -64,28 +66,9 @@ router.put("/:id", async (req, res) => {
   try {
     const { categoryName, description, isActive } = req.body;
 
-    const category = await Category.findById(req.params.id);
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-
-    // Check if new name already exists (excluding current category)
-    if (categoryName && categoryName !== category.categoryName) {
-      const existingCategory = await Category.findOne({
-        categoryName: { $regex: new RegExp(`^${categoryName}$`, "i") },
-        _id: { $ne: req.params.id },
-      });
-
-      if (existingCategory) {
-        return res
-          .status(400)
-          .json({ message: "Category name already exists" });
-      }
-    }
-
     const updateData = {};
-    if (categoryName) updateData.categoryName = categoryName;
-    if (description !== undefined) updateData.description = description;
+    if (categoryName) updateData.categoryName = categoryName.trim();
+    if (description !== undefined) updateData.description = description?.trim();
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const updatedCategory = await Category.findByIdAndUpdate(
@@ -94,9 +77,17 @@ router.put("/:id", async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    if (!updatedCategory) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
     res.json(updatedCategory);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    if (error.code === 11000) {
+      res.status(400).json({ message: "Category name already exists" });
+    } else {
+      res.status(400).json({ message: error.message });
+    }
   }
 });
 
@@ -108,20 +99,36 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    // Check if category is being used by products
-    const Product = (await import("../models/Product.js")).default;
-    const productsUsingCategory = await Product.countDocuments({
-      category: req.params.id,
-    });
+    // Instead of hard delete, soft delete by setting isActive to false
+    await Category.findByIdAndUpdate(req.params.id, { isActive: false });
+    res.json({ message: "Category deactivated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
-    if (productsUsingCategory > 0) {
-      return res.status(400).json({
-        message: `Cannot delete category. ${productsUsingCategory} products are using this category.`,
-      });
+// Initialize default categories
+router.post("/init-default", async (req, res) => {
+  try {
+    const defaultCategories = [
+      { categoryName: "Hiking", description: "Hiking gear and equipment" },
+      { categoryName: "Climbing", description: "Rock climbing and mountaineering equipment" },
+      { categoryName: "Hunting", description: "Hunting accessories and gear" },
+      { categoryName: "Camping", description: "Camping equipment and outdoor shelter" },
+      { categoryName: "Fishing", description: "Fishing rods, reels, and accessories" },
+      { categoryName: "Backpacks", description: "Outdoor and adventure backpacks" },
+      { categoryName: "Navigation", description: "GPS devices, compasses, and maps" },
+      { categoryName: "Clothing", description: "Outdoor and adventure clothing" },
+    ];
+
+    const existingCategories = await Category.find({});
+    
+    if (existingCategories.length === 0) {
+      await Category.insertMany(defaultCategories);
+      res.json({ message: "Default categories created successfully" });
+    } else {
+      res.json({ message: "Categories already exist" });
     }
-
-    await Category.findByIdAndDelete(req.params.id);
-    res.json({ message: "Category deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
