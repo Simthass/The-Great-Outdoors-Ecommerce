@@ -9,6 +9,7 @@ import { promisify } from "util";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import Address from "../models/Address.js";
+import multer from "multer";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -16,44 +17,41 @@ const __dirname = dirname(__filename);
 const router = express.Router();
 const unlinkAsync = promisify(fs.unlink);
 
-// Helper function to handle file uploads safely
-const handleFileUpload = (file) => {
-  try {
-    if (!file || !file.tempFilePath) {
-      console.error("No file or temp file path provided");
-      return null;
+const profileImageStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, "../public/uploads/profiles");
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
     }
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname) || ".jpg";
+    cb(null, "profile-" + uniqueSuffix + ext);
+  },
+});
 
-    // Ensure the upload directory exists
-    const uploadDir = path.join(__dirname, "../public/uploads/profiles");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-      console.log(`Created directory: ${uploadDir}`);
+const profileImageUpload = multer({
+  storage: profileImageStorage,
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"));
     }
-
-    // Get file extension
-    const ext = path.extname(file.name) || ".jpg";
-    const filename = `profile-${Date.now()}${ext}`;
-    const filePath = path.join(uploadDir, filename);
-
-    console.log(`Moving file from ${file.tempFilePath} to ${filePath}`);
-
-    // Move the file
-    fs.renameSync(file.tempFilePath, filePath);
-
-    // Verify the file exists
-    if (!fs.existsSync(filePath)) {
-      console.error("File was not moved successfully");
-      return null;
-    }
-
-    console.log(`File successfully saved to ${filePath}`);
-    return `/uploads/profiles/${filename}`;
-  } catch (error) {
-    console.error("File upload error:", error);
-    return null;
-  }
-};
+  },
+});
 // Add this route to your existing routes/users.js file
 // @desc    Get all users (Admin only)
 // @route   GET /api/users/all
@@ -234,66 +232,82 @@ router.put("/profile", protect, async (req, res) => {
 // @desc    Update profile image
 // @route   PUT /api/users/profile/image
 // @access  Private
-router.put("/profile/image", protect, async (req, res) => {
-  try {
-    if (!req.files || !req.files.image) {
-      return res.status(400).json({
-        success: false,
-        message: "Please upload an image file",
-      });
-    }
-
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Delete old image if it exists and isn't default
-    if (user.profileImage && !user.profileImage.includes("default-profile")) {
-      try {
-        const oldImagePath = path.join(
-          __dirname,
-          "../public",
-          user.profileImage
-        );
-        if (fs.existsSync(oldImagePath)) {
-          await unlinkAsync(oldImagePath);
-        }
-      } catch (err) {
-        console.error("Error deleting old profile image:", err);
+// @desc    Update profile image
+// @route   PUT /api/users/profile/image
+// @access  Private
+router.put(
+  "/profile/image",
+  protect,
+  profileImageUpload.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Please upload an image file",
+        });
       }
-    }
 
-    // Process new image
-    const imagePath = handleFileUpload(req.files.image);
-    if (!imagePath) {
-      return res.status(400).json({
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        // Clean up the uploaded file if user not found
+        if (req.file.path) {
+          try {
+            await unlinkAsync(req.file.path);
+          } catch (err) {
+            console.error("Error deleting uploaded file:", err);
+          }
+        }
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Delete old image if it exists and isn't default
+      if (user.profileImage && !user.profileImage.includes("default-profile")) {
+        try {
+          const oldImagePath = path.join(
+            __dirname,
+            "../public",
+            user.profileImage
+          );
+          if (fs.existsSync(oldImagePath)) {
+            await unlinkAsync(oldImagePath);
+          }
+        } catch (err) {
+          console.error("Error deleting old profile image:", err);
+        }
+      }
+
+      // Update user with new image path
+      user.profileImage = `/uploads/profiles/${req.file.filename}`;
+      await user.save();
+
+      res.json({
+        success: true,
+        data: {
+          profileImage: user.profileImage,
+        },
+      });
+    } catch (error) {
+      // Clean up the uploaded file if error occurs
+      if (req.file?.path) {
+        try {
+          await unlinkAsync(req.file.path);
+        } catch (err) {
+          console.error("Error deleting uploaded file:", err);
+        }
+      }
+
+      console.error("Profile image update error:", error);
+      res.status(500).json({
         success: false,
-        message: "Failed to process uploaded image",
+        message: error.message || "Server error while updating profile image",
       });
     }
-
-    // Update user with new image path
-    user.profileImage = imagePath;
-    await user.save();
-
-    res.json({
-      success: true,
-      data: {
-        profileImage: user.profileImage,
-      },
-    });
-  } catch (error) {
-    console.error("Profile image update error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error while updating profile image",
-    });
   }
-});
+);
 
 // @desc    Change password
 // @route   PUT /api/users/profile/password

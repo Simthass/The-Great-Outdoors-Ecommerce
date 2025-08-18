@@ -112,20 +112,21 @@ app.use(express.static(path.join(process.cwd(), "public")));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-app.use(
-  fileUpload({
-    useTempFiles: true,
-    tempFileDir: "/tmp/",
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB limit
-      files: 1,
-    },
-    abortOnLimit: true,
-    responseOnLimit: "File size exceeds the 5MB limit",
-    safeFileNames: true,
-    preserveExtension: true,
-  })
-);
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
+// app.use(
+//   fileUpload({
+//     useTempFiles: true,
+//     tempFileDir: "/tmp/",
+//     limits: {
+//       fileSize: 5 * 1024 * 1024, // 5MB limit
+//       files: 1,
+//     },
+//     abortOnLimit: true,
+//     responseOnLimit: "File size exceeds the 5MB limit",
+//     safeFileNames: true,
+//     preserveExtension: true,
+//   })
+// );
 
 // Rate limiting configuration
 const authLimiter = rateLimit({

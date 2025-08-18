@@ -40,6 +40,8 @@ import UserReportGenerator from "./pages/Admin/ReportGeneration/userReport";
 import EmployeeManagement from "./pages/Admin/Employee";
 import ReviewsList from "./pages/Admin/ReviewList";
 import ReviewEdit from "./pages/Admin/ReviewEdit";
+import AdminProduct from "./pages/Admin/AdminProduct";
+import ProductDetails from "./pages/ProductDetails";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -190,6 +192,8 @@ const App = () => {
                 path="/Admin/ReviewEdit/:id"
                 element={<ReviewEdit />}
               />{" "}
+              <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
+              <Route path="/product/:id" element={<ProductDetails />} />{" "}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Layout>

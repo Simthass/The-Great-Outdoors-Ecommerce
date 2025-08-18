@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Camera, MapPin, Mail, Phone } from "lucide-react";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const Profile = () => {
   const { user: currentUser } = useSelector((state) => state.auth);
@@ -83,22 +84,26 @@ const Profile = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("image", file);
+    const uploadFormData = new FormData();
+    uploadFormData.append("image", file);
 
     try {
       setLoading(true);
-      const response = await fetch("/api/users/profile/image", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: formData,
-      });
+      const response = await axios.put(
+        "/api/users/profile/image",
+        uploadFormData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-      const data = await response.json();
+      // Note: axios returns response.data, not response.json()
+      const data = response.data;
 
-      if (response.ok) {
+      if (response.status === 200) {
         // Add timestamp to URL to prevent caching issues
         setProfileImage(`${data.data.profileImage}?t=${Date.now()}`);
         toast.success("Profile image updated successfully");
@@ -107,7 +112,13 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("Error updating profile image:", error);
-      toast.error("Error updating profile image");
+      if (error.response) {
+        toast.error(
+          error.response.data.message || "Failed to update profile image"
+        );
+      } else {
+        toast.error("Error updating profile image");
+      }
     } finally {
       setLoading(false);
     }
@@ -191,7 +202,7 @@ const Profile = () => {
                   <div className="w-32 h-32 rounded-full bg-white p-2 shadow-lg">
                     <div className="w-full h-full rounded-full overflow-hidden">
                       <img
-                        src={`http://localhost:5000${profileImage}`} // Use your backend URL
+                        src={`http://localhost:5000${profileImage}`}
                         alt="Profile"
                         className="w-full h-full object-cover"
                         onError={(e) => {

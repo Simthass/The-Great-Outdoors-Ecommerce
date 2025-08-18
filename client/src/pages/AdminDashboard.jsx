@@ -53,7 +53,7 @@ const AdminDashboard = () => {
         </Link>
 
         {/* Product Management */}
-        <Link to="/admin/products">
+        <Link to="/Admin/AdminProduct">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Product-Management.png')" }}

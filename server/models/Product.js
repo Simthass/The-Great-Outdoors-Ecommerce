@@ -45,6 +45,13 @@ const productSchema = mongoose.Schema(
       required: true,
       default: true,
     },
+    images: [
+      {
+        type: String,
+        required: false,
+      },
+    ],
+    // Keep the single imageUrl for backward compatibility
     imageUrl: {
       type: String,
       required: false,
