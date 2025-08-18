@@ -14,16 +14,32 @@ import TopBar from "./components/topBar";
 import Header from "./components/header";
 import HomeHero from "./components/homeHero";
 import Footer from "./components/footer";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Sidebar from "./components/Sidebar";
+import { HelmetProvider } from "react-helmet-async";
 
 // Pages
 import Home from "./pages/Home";
 import Shop from "./pages/shop";
 import About from "./pages/aboutUs";
 import Contact from "./pages/contactus";
-import AdminProduct from "./pages/Admin/AdminProduct";
+import AdminOthers from "./pages/Admin/Others";
+import Order from "./pages/Admin/Order";
 import Cart from "./pages/cart";
 import Register from "./pages/register";
 import Login from "./pages/login";
+import ForgotPassword from "./pages/forgotPassword";
+import ResetPassword from "./pages/resetPassword";
+import Profile from "./pages/userProfile";
+import Settings from "./pages/userSettings";
+import AdminDashboard from "./pages/AdminDashboard";
+import Inventory from "./pages/Admin/Inventory";
+import NotFoundPage from "./pages/404";
+import UserManagement from "./pages/Admin/User";
+import UserReportGenerator from "./pages/Admin/ReportGeneration/userReport";
+import EmployeeManagement from "./pages/Admin/Employee";
+import ReviewsList from "./pages/Admin/ReviewList";
+import ReviewEdit from "./pages/Admin/ReviewEdit";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -140,22 +156,46 @@ const Layout = ({ children }) => {
 
 const App = () => {
   return (
-    <Provider store={store}>
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/aboutUs" element={<About />} />
-            <Route path="/contactus" element={<Contact />} />
-            <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
-        </Layout>
-      </Router>
-    </Provider>
+    <HelmetProvider>
+      <Provider store={store}>
+        <Router>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/aboutUs" element={<About />} />
+              <Route path="/contactus" element={<Contact />} />
+              <Route path="/Admin/Others" element={<AdminOthers />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/forgotPassword" element={<ForgotPassword />} />
+              <Route
+                path="/resetPassword/:resettoken"
+                element={<ResetPassword />}
+              />
+              <Route path="/userProfile" element={<Profile />} />
+              <Route path="/userSettings" element={<Settings />} />
+              <Route path="/Admin/Order" element={<Order />} />
+              <Route path="/AdminDashboard" element={<AdminDashboard />} />
+              <Route path="/Admin/Inventory" element={<Inventory />} />
+              <Route path="/Admin/User" element={<UserManagement />} />
+              <Route
+                path="/Admin/ReportGeneration/userReport"
+                element={<UserReportGenerator />}
+              />
+              <Route path="/Admin/Employee" element={<EmployeeManagement />} />
+              <Route path="/Admin/ReviewList" element={<ReviewsList />} />
+              <Route
+                path="/Admin/ReviewEdit/:id"
+                element={<ReviewEdit />}
+              />{" "}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </Provider>
+    </HelmetProvider>
   );
 };
 

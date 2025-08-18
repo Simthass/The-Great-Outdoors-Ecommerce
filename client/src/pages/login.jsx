@@ -188,15 +188,13 @@ const Login = () => {
                   />
                 </div>
                 <div className="text-right">
-                  <button
-                    type="button"
-                    onClick={handleForgotPassword}
-                    disabled={loading}
-                    className="text-[14px] font-semibold hover:underline disabled:opacity-50 bg-transparent border-none p-0 focus:outline-none transition-all duration-200"
+                  <Link
+                    to="/forgotPassword"
+                    className="text-[14px] font-semibold hover:underline transition-all duration-200 cursor-pointer"
                     style={{ color: "#4e7f00ff" }}
                   >
                     Forgot Password?
-                  </button>
+                  </Link>
                 </div>
               </div>
 

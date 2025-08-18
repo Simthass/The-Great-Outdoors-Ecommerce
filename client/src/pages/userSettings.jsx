@@ -1,0 +1,1298 @@
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import {
+  Bell,
+  Shield,
+  Package,
+  MapPin,
+  HelpCircle,
+  Mail,
+  Smartphone,
+  Lock,
+  Truck,
+  Home,
+  Building,
+  Check,
+  X,
+  Plus,
+  Edit,
+  Trash2,
+  User,
+  AlertTriangle,
+  UserX,
+} from "lucide-react";
+
+const UserSettings = () => {
+  const [activeTab, setActiveTab] = useState("Notification");
+  const [loading, setLoading] = useState(true);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [success, setSuccess] = useState("");
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [profileImage, setProfileImage] = useState("/default-user.png");
+
+  const [settings, setSettings] = useState({
+    notifications: {
+      emailNotifications: true,
+      pushNotifications: false,
+      smsNotifications: true,
+      orderUpdates: true,
+      promotions: false,
+    },
+    addresses: [],
+    orders: [],
+  });
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [addressForm, setAddressForm] = useState({
+    addressType: "Home",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    province: "",
+    postalCode: "",
+    country: "Canada",
+    isDefault: false,
+  });
+
+  const navigate = useNavigate();
+
+  // Create axios instance with interceptors
+  const api = axios.create({
+    baseURL: "http://localhost:5000/api",
+    withCredentials: true,
+  });
+
+  // Add request interceptor to include token
+  api.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
+  // Add response interceptor to handle 401 errors
+  api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        setErrors({ auth: "Session expired. Please login again." });
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  // Check if user is authenticated
+  const isAuthenticated = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setErrors({ auth: "Please login to access settings." });
+      setTimeout(() => navigate("/login"), 2000);
+      return false;
+    }
+    return true;
+  };
+
+  // Get user orders - moved outside of render function
+  const getUserOrders = async () => {
+    if (!isAuthenticated()) return;
+
+    try {
+      setOrdersLoading(true);
+      const response = await api.get("/settings/orders");
+
+      setSettings((prev) => ({
+        ...prev,
+        orders: response.data.data || response.data || [],
+      }));
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to load orders";
+      setErrors({ orders: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  // Delete Account Function
+  const handleDeleteAccount = async () => {
+    if (!deleteConfirm) {
+      toast.error("Please confirm account deletion");
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+      setErrors({});
+
+      await api.delete("/users/account", {
+        data: { confirmDelete: true },
+      });
+
+      toast.success("Account deleted successfully");
+
+      // Clear local storage and redirect
+      localStorage.removeItem("token");
+      setTimeout(() => {
+        navigate("/", { replace: true });
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete account";
+      setErrors({ delete: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
+      setDeleteConfirm(false);
+    }
+  };
+
+  // Fetch settings on component mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!isAuthenticated()) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setErrors({});
+
+        const response = await api.get("/settings");
+        setSettings(response.data);
+
+        // Fetch user profile for image
+        const profileResponse = await api.get("/users/profile");
+        if (profileResponse.data.success) {
+          setProfileImage(
+            profileResponse.data.data.profileImage || "/default-user.png"
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+
+        if (error.response?.data?.message) {
+          setErrors({ fetch: error.response.data.message });
+        } else {
+          setErrors({ fetch: "Failed to load settings. Please try again." });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  // Fetch orders when My Orders tab is selected
+  useEffect(() => {
+    if (activeTab === "My Orders") {
+      getUserOrders();
+    }
+  }, [activeTab]);
+
+  // Handle notification change
+  const handleNotificationChange = (e) => {
+    const { name, checked } = e.target;
+    setSettings((prev) => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        [name]: checked,
+      },
+    }));
+  };
+
+  // Save notification settings
+  const saveNotificationSettings = async () => {
+    if (!isAuthenticated()) return;
+
+    try {
+      setSaveLoading(true);
+      setErrors({});
+
+      await api.put("/settings/notifications", settings.notifications);
+
+      setSuccess("Notification settings saved successfully");
+      toast.success("Notification settings saved successfully");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+      console.error("Error saving notification settings:", error);
+
+      const errorMessage =
+        error.response?.data?.message || "Failed to save notification settings";
+      setErrors({ save: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Save password
+  const savePassword = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated()) return;
+
+    setErrors({});
+    setSuccess("");
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setErrors({ confirmPassword: "Passwords do not match" });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      setErrors({ newPassword: "Password must be at least 6 characters" });
+      return;
+    }
+
+    try {
+      setSaveLoading(true);
+
+      await api.put("/settings/password", {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      setSuccess("Password updated successfully");
+      toast.success("Password updated successfully");
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+      console.error("Error updating password:", error);
+
+      const errorMessage =
+        error.response?.data?.message || "Failed to update password";
+      setErrors({ save: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Handle address form change
+  const handleAddressFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setAddressForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // Submit new address
+  const submitAddress = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated()) return;
+
+    try {
+      setSaveLoading(true);
+      setErrors({});
+
+      const response = await api.post("/settings/addresses", addressForm);
+
+      setSettings((prev) => ({
+        ...prev,
+        addresses: [...prev.addresses, response.data.address],
+      }));
+
+      setSuccess("Address added successfully");
+      toast.success("Address added successfully");
+      setShowAddressForm(false);
+      setAddressForm({
+        addressType: "Home",
+        addressLine1: "",
+        addressLine2: "",
+        city: "",
+        province: "",
+        postalCode: "",
+        country: "Canada",
+        isDefault: false,
+      });
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+      console.error("Error adding address:", error);
+
+      const errorMessage =
+        error.response?.data?.message || "Failed to add address";
+      setErrors({ save: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Delete address
+  const deleteAddress = async (addressId) => {
+    if (!isAuthenticated()) return;
+
+    if (!window.confirm("Are you sure you want to delete this address?")) {
+      return;
+    }
+
+    try {
+      setSaveLoading(true);
+      await api.delete(`/settings/addresses/${addressId}`);
+
+      setSettings((prev) => ({
+        ...prev,
+        addresses: prev.addresses.filter((addr) => addr._id !== addressId),
+      }));
+
+      setSuccess("Address deleted successfully");
+      toast.success("Address deleted successfully");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+      console.error("Error deleting address:", error);
+
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete address";
+      setErrors({ save: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Render Delete Account Modal
+  const renderDeleteModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Delete Account
+            </h3>
+          </div>
+          <button
+            onClick={() => {
+              setShowDeleteModal(false);
+              setDeleteConfirm(false);
+            }}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+            <p className="text-red-800 text-sm">
+              <strong>Warning:</strong> This action cannot be undone. This will
+              permanently delete your account and remove all your data from our
+              servers.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-gray-700 text-sm">
+              The following data will be permanently deleted:
+            </p>
+            <ul className="text-gray-600 text-sm space-y-1 ml-4">
+              <li>• Your profile information</li>
+              <li>• All saved addresses</li>
+              <li>• Order history</li>
+              <li>• Account settings</li>
+              <li>• Profile image</li>
+            </ul>
+          </div>
+
+          <div className="flex items-start space-x-2 pt-4">
+            <input
+              type="checkbox"
+              id="deleteConfirm"
+              checked={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.checked)}
+              className="w-4 h-4 text-red-600 rounded focus:ring-red-500 mt-1"
+            />
+            <label htmlFor="deleteConfirm" className="text-sm text-gray-700">
+              I understand that this action cannot be undone and I want to
+              permanently delete my account.
+            </label>
+          </div>
+
+          {errors.delete && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {errors.delete}
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-4 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteConfirm(false);
+              }}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={!deleteConfirm || deleteLoading}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {deleteLoading ? "Deleting..." : "Delete Account"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render Account Tab
+  const renderAccountTab = () => (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        Account Settings
+      </h2>
+
+      <div className="space-y-6">
+        {/* Danger Zone */}
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-start space-x-3">
+            <UserX className="h-6 w-6 text-red-600 mt-1" />
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-red-900 mb-2">
+                Delete Account
+              </h3>
+              <p className="text-red-700 text-sm mb-4">
+                Once you delete your account, there is no going back. Please be
+                certain.
+              </p>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render Notification Tab
+  const renderNotificationTab = () => (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        Notification Preferences
+      </h2>
+      {errors.save && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+          {errors.save}
+        </div>
+      )}
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+          {success}
+        </div>
+      )}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <Mail className="text-gray-500" size={20} />
+            <div>
+              <h3 className="font-medium text-gray-900">Email Notifications</h3>
+              <p className="text-sm text-gray-500">
+                Receive notifications via email
+              </p>
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            name="emailNotifications"
+            checked={settings.notifications.emailNotifications}
+            onChange={handleNotificationChange}
+            className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+          />
+        </div>
+
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <Bell className="text-gray-500" size={20} />
+            <div>
+              <h3 className="font-medium text-gray-900">Push Notifications</h3>
+              <p className="text-sm text-gray-500">
+                Receive push notifications on your device
+              </p>
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            name="pushNotifications"
+            checked={settings.notifications.pushNotifications}
+            onChange={handleNotificationChange}
+            className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+          />
+        </div>
+
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <Smartphone className="text-gray-500" size={20} />
+            <div>
+              <h3 className="font-medium text-gray-900">SMS Notifications</h3>
+              <p className="text-sm text-gray-500">
+                Receive notifications via SMS
+              </p>
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            name="smsNotifications"
+            checked={settings.notifications.smsNotifications}
+            onChange={handleNotificationChange}
+            className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+          />
+        </div>
+
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <Package className="text-gray-500" size={20} />
+            <div>
+              <h3 className="font-medium text-gray-900">Order Updates</h3>
+              <p className="text-sm text-gray-500">
+                Get notified about order status changes
+              </p>
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            name="orderUpdates"
+            checked={settings.notifications.orderUpdates}
+            onChange={handleNotificationChange}
+            className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+          />
+        </div>
+
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <Mail className="text-gray-500" size={20} />
+            <div>
+              <h3 className="font-medium text-gray-900">Promotions</h3>
+              <p className="text-sm text-gray-500">
+                Receive promotional emails and offers
+              </p>
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            name="promotions"
+            checked={settings.notifications.promotions}
+            onChange={handleNotificationChange}
+            className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+          />
+        </div>
+
+        <div className="flex justify-end pt-6 mt-6 border-t border-gray-200">
+          <button
+            onClick={saveNotificationSettings}
+            disabled={saveLoading}
+            className="px-8 py-3 bg-[#8DC53E] text-white rounded-lg hover:bg-[#97D243] transition-all duration-200 font-medium w-48 cursor-pointer disabled:opacity-50"
+          >
+            {saveLoading ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render Security Tab (Password Only)
+  const renderSecurityTab = () => (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        Security Settings
+      </h2>
+      {errors.save && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+          {errors.save}
+        </div>
+      )}
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+          {success}
+        </div>
+      )}
+      <div className="space-y-6">
+        <div>
+          <h3 className="font-medium text-gray-900 mb-4">Change Password</h3>
+          <form onSubmit={savePassword}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      currentPassword: e.target.value,
+                    }))
+                  }
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                    }))
+                  }
+                  required
+                  minLength="6"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
+                  placeholder="Enter new password"
+                />
+                {errors.newPassword && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.newPassword}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
+                  required
+                  minLength="6"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
+                  placeholder="Confirm new password"
+                />
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end pt-6 mt-6 border-t border-gray-200">
+              <button
+                type="submit"
+                disabled={saveLoading}
+                className="px-8 py-3 bg-[#8DC53E] text-white rounded-lg hover:bg-[#97D243] transition-all duration-200 font-medium w-48 cursor-pointer disabled:opacity-50"
+              >
+                {saveLoading ? "Saving..." : "Change Password"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render My Orders Tab - Fixed version
+  const renderMyOrdersTab = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-gray-900">My Orders</h2>
+        {ordersLoading && (
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-[#8DC53E]"></div>
+            <span className="text-sm text-gray-500">Loading orders...</span>
+          </div>
+        )}
+      </div>
+
+      {errors.orders && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {errors.orders}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {!ordersLoading && settings.orders && settings.orders.length > 0 ? (
+          settings.orders.map((order) => (
+            <div
+              key={order._id}
+              className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    Order #{order.orderId}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {new Date(order.orderDate).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-gray-900 text-lg">
+                    ${parseFloat(order.totalAmount).toFixed(2)}
+                  </p>
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                      order.orderStatus === "Delivered"
+                        ? "bg-green-100 text-green-800"
+                        : order.orderStatus === "Processing"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : order.orderStatus === "Shipped"
+                        ? "bg-blue-100 text-blue-800"
+                        : order.orderStatus === "Cancelled"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {order.orderStatus}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Package className="h-4 w-4 text-gray-400" />
+                    <p className="text-sm text-gray-600">
+                      {order.items?.length || 0} item(s)
+                    </p>
+                  </div>
+
+                  {order.orderStatus === "Shipped" && (
+                    <div className="flex items-center space-x-2 text-blue-600">
+                      <Truck className="h-4 w-4" />
+                      <span className="text-sm font-medium">Track Order</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Show order items if available */}
+                {order.items && order.items.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {order.items.slice(0, 3).map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center space-x-3 text-sm"
+                      >
+                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <span className="text-gray-600">
+                          {item.product?.name || `Item ${index + 1}`}
+                          {item.quantity && ` (Qty: ${item.quantity})`}
+                        </span>
+                      </div>
+                    ))}
+                    {order.items.length > 3 && (
+                      <div className="flex items-center space-x-3 text-sm">
+                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <span className="text-gray-500">
+                          +{order.items.length - 3} more items
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        ) : !ordersLoading ? (
+          <div className="text-center py-16">
+            <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Package className="h-12 w-12 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No orders yet
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+              Start shopping to see your orders here. Your order history will
+              appear once you make your first purchase.
+            </p>
+            <button
+              onClick={() => navigate("/products")}
+              className="bg-[#8DC53E] text-white px-6 py-3 rounded-lg hover:bg-[#97D243] transition-colors font-medium"
+            >
+              Start Shopping
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  // Render Address Form
+  const renderAddressForm = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold">
+            {editingAddress ? "Edit Address" : "Add New Address"}
+          </h3>
+          <button
+            onClick={() => {
+              setShowAddressForm(false);
+              setEditingAddress(null);
+              setAddressForm({
+                addressType: "Home",
+                addressLine1: "",
+                addressLine2: "",
+                city: "",
+                province: "",
+                postalCode: "",
+                country: "Canada",
+                isDefault: false,
+              });
+            }}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={submitAddress} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Address Type
+            </label>
+            <select
+              name="addressType"
+              value={addressForm.addressType}
+              onChange={handleAddressFormChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+            >
+              <option value="Home">Home</option>
+              <option value="Work">Work</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Address Line 1 *
+            </label>
+            <input
+              type="text"
+              name="addressLine1"
+              value={addressForm.addressLine1}
+              onChange={handleAddressFormChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+              placeholder="Street address"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Address Line 2
+            </label>
+            <input
+              type="text"
+              name="addressLine2"
+              value={addressForm.addressLine2}
+              onChange={handleAddressFormChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+              placeholder="Apartment, suite, etc."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                City *
+              </label>
+              <input
+                type="text"
+                name="city"
+                value={addressForm.city}
+                onChange={handleAddressFormChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Province *
+              </label>
+              <input
+                type="text"
+                name="province"
+                value={addressForm.province}
+                onChange={handleAddressFormChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Postal Code *
+              </label>
+              <input
+                type="text"
+                name="postalCode"
+                value={addressForm.postalCode}
+                onChange={handleAddressFormChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Country
+              </label>
+              <input
+                type="text"
+                name="country"
+                value={addressForm.country}
+                onChange={handleAddressFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              name="isDefault"
+              checked={addressForm.isDefault}
+              onChange={handleAddressFormChange}
+              className="w-4 h-4 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+            />
+            <label className="text-sm text-gray-700">
+              Set as default address
+            </label>
+          </div>
+
+          <div className="flex justify-end space-x-4 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddressForm(false);
+                setEditingAddress(null);
+              }}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saveLoading}
+              className="px-4 py-2 bg-[#8DC53E] text-white rounded-lg hover:bg-[#97D243] disabled:opacity-50"
+            >
+              {saveLoading ? "Saving..." : "Save Address"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  // Render Addresses Tab
+  const renderAddressesTab = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-gray-900">Saved Addresses</h2>
+        <button
+          onClick={() => setShowAddressForm(true)}
+          className="bg-[#8DC53E] text-white px-4 py-2 rounded-lg hover:bg-[#97D243] transition-colors flex items-center space-x-2"
+        >
+          <Plus size={16} />
+          <span>Add New Address</span>
+        </button>
+      </div>
+
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          {success}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {settings.addresses && settings.addresses.length > 0 ? (
+          settings.addresses.map((address) => (
+            <div
+              key={address._id}
+              className="border border-gray-200 rounded-lg p-4"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3">
+                  {address.addressType === "Home" ? (
+                    <Home className="text-gray-500 mt-1" size={20} />
+                  ) : address.addressType === "Work" ? (
+                    <Building className="text-gray-500 mt-1" size={20} />
+                  ) : (
+                    <MapPin className="text-gray-500 mt-1" size={20} />
+                  )}
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-medium text-gray-900">
+                        {address.addressType}
+                      </h3>
+                      {address.isDefault && (
+                        <span className="bg-[#8DC53E] text-white text-xs px-2 py-1 rounded-full">
+                          Default
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-600 mt-1">{address.addressLine1}</p>
+                    {address.addressLine2 && (
+                      <p className="text-gray-600">{address.addressLine2}</p>
+                    )}
+                    <p className="text-gray-500 text-sm">
+                      {address.city}, {address.province} {address.postalCode}
+                    </p>
+                    <p className="text-gray-500 text-sm">{address.country}</p>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    className="text-[#8DC53E] hover:text-[#97D243] text-sm flex items-center space-x-1"
+                    onClick={() => {
+                      setEditingAddress(address);
+                      setAddressForm(address);
+                      setShowAddressForm(true);
+                    }}
+                  >
+                    <Edit size={16} />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    className="text-red-600 hover:text-red-700 text-sm flex items-center space-x-1"
+                    onClick={() => deleteAddress(address._id)}
+                    disabled={saveLoading}
+                  >
+                    <Trash2 size={16} />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-12">
+            <MapPin className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No addresses saved
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Add an address to get started.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Main component loading state
+  if (loading) {
+    return (
+      <div>
+        <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
+          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
+            Settings
+          </p>
+        </div>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8DC53E] mx-auto mb-4"></div>
+            <p>Loading settings...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth errors
+  if (errors.auth) {
+    return (
+      <div>
+        <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
+          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
+            Settings
+          </p>
+        </div>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
+              {errors.auth}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const tabs = [
+    { id: "Notification", label: "Notifications", icon: Bell },
+    { id: "Security", label: "Security", icon: Shield },
+    { id: "My Orders", label: "My Orders", icon: Package },
+    { id: "Addresses", label: "Addresses", icon: MapPin },
+    { id: "Account", label: "Account", icon: UserX }, // New Account tab
+    { id: "Help", label: "Help", icon: HelpCircle },
+  ];
+
+  return (
+    <div>
+      <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
+        <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">Settings</p>
+      </div>
+
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            {/* Profile Header */}
+            <div className="h-32 bg-gradient-to-r from-[#8DC53E] to-[#97D243] relative">
+              <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
+                <div className="w-32 h-32 rounded-full bg-white p-2 shadow-lg">
+                  <div className="w-full h-full rounded-full overflow-hidden">
+                    <img
+                      src={`http://localhost:5000${profileImage}`}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/default-user.png";
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-20 pb-8">
+              <div className="flex flex-col lg:flex-row">
+                {/* Sidebar */}
+                <div className="lg:w-1/4 px-8 pb-8 lg:pb-0 border-b lg:border-b-0 lg:border-r border-gray-200">
+                  <nav className="space-y-2">
+                    {tabs.map((tab) => {
+                      const IconComponent = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors ${
+                            activeTab === tab.id
+                              ? "bg-[#8DC53E] text-white"
+                              : "text-gray-700 hover:bg-gray-100"
+                          }`}
+                        >
+                          <IconComponent size={20} />
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                {/* Main Content */}
+                <div className="lg:w-3/4 px-8 pt-8 lg:pt-0">
+                  {activeTab === "Notification" && renderNotificationTab()}
+                  {activeTab === "Security" && renderSecurityTab()}
+                  {activeTab === "My Orders" && renderMyOrdersTab()}
+                  {activeTab === "Addresses" && renderAddressesTab()}
+                  {activeTab === "Account" && renderAccountTab()}
+                  {activeTab === "Help" && (
+                    <div className="space-y-6">
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        Help & Support
+                      </h2>
+                      <div className="space-y-4">
+                        <div className="p-4 border border-gray-200 rounded-lg">
+                          <h3 className="font-medium text-gray-900 mb-2">
+                            Contact Support
+                          </h3>
+                          <p className="text-gray-600 mb-3">
+                            Need help? Our support team is here for you.
+                          </p>
+                          <div className="space-y-2">
+                            <p className="text-sm text-gray-500">
+                              Email: Simthass@outlook.com
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Phone: +94764078448
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Hours: Monday - Friday, 9AM - 6PM
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 border border-gray-200 rounded-lg">
+                          <h3 className="font-medium text-gray-900 mb-2">
+                            Frequently Asked Questions
+                          </h3>
+                          <p className="text-gray-600 mb-3">
+                            Find answers to common questions.
+                          </p>
+                          <button className="text-[#8DC53E] hover:text-[#97D243] font-medium">
+                            View FAQ →
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Address Form Modal */}
+      {showAddressForm && renderAddressForm()}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && renderDeleteModal()}
+    </div>
+  );
+};
+
+export default UserSettings;

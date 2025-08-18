@@ -1,11 +1,12 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const inventorySchema = mongoose.Schema(
   {
-    product: { // productID (Foreign Key) - References Product
+    product: {
+      // productID (Foreign Key) - References Product
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: 'Product',
+      ref: "Product",
       unique: true, // One inventory record per product
     },
     stockLevel: {
@@ -37,6 +38,6 @@ const inventorySchema = mongoose.Schema(
   }
 );
 
-const Inventory = mongoose.model('Inventory', inventorySchema);
+const Inventory = mongoose.model("Inventory", inventorySchema);
 
-module.exports = Inventory;
+export default Inventory;

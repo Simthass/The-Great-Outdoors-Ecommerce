@@ -1,20 +1,29 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const paymentSchema = mongoose.Schema(
   {
-    order: { // orderID (Foreign Key) - References Order
+    order: {
+      // orderID (Foreign Key) - References Order
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: 'Order',
+      ref: "Order",
     },
     paymentMethod: {
       type: String,
       required: true,
-      enum: ['Credit Card', 'Debit Card', 'PayPal', 'Bank Transfer', 'Cash On Delivery'],
+      enum: [
+        "Credit Card",
+        "Debit Card",
+        "PayPal",
+        "Bank Transfer",
+        "Cash On Delivery",
+      ],
     },
     paymentAmount: {
       type: Number,
       required: true,
+      min: [0, "Payment amount cannot be negative"],
+      set: (v) => parseFloat(v.toFixed(2)), // Ensure 2 decimal places
     },
     paymentDate: {
       type: Date,
@@ -24,8 +33,8 @@ const paymentSchema = mongoose.Schema(
     paymentStatus: {
       type: String,
       required: true,
-      enum: ['Pending', 'Completed', 'Failed', 'Refunded'],
-      default: 'Pending',
+      enum: ["Pending", "Completed", "Failed", "Refunded"],
+      default: "Pending",
     },
     transactionID: {
       type: String,
@@ -33,9 +42,21 @@ const paymentSchema = mongoose.Schema(
       unique: true, // Transaction IDs should be unique
       sparse: true, // Allows multiple documents to have null/undefined transactionID
     },
-    gatewayResponse: { // Store the raw response from the payment gateway
+    gatewayResponse: {
+      // Store the raw response from the payment gateway
       type: Object, // Can be a JSON object
       required: false,
+    },
+    refundAmount: {
+      type: Number,
+      default: 0,
+      min: [0, "Refund amount cannot be negative"],
+      set: (v) => parseFloat(v.toFixed(2)),
+    },
+    refundReason: {
+      type: String,
+      trim: true,
+      maxlength: 500,
     },
   },
   {
@@ -43,6 +64,6 @@ const paymentSchema = mongoose.Schema(
   }
 );
 
-const Payment = mongoose.model('Payment', paymentSchema);
+const Payment = mongoose.model("Payment", paymentSchema);
 
-module.exports = Payment;
+export default Payment;

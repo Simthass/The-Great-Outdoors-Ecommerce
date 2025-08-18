@@ -7,22 +7,70 @@ import {
   Settings,
   HelpCircle,
   LogOut,
+  Shield,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../store/slices/authSlice";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState("/default-profile.jpg");
+  const [imageLoading, setImageLoading] = useState(false);
   const profileMenuRef = useRef(null);
   const location = useLocation();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   const isHome = location.pathname === "/";
   const linkColor = isHome ? "text-[#ffffff]" : "text-[#111111]";
+
+  // Check if user is admin
+  const isAdmin = isAuthenticated && user && user.role === "Admin";
+
+  // Fetch user profile image when component mounts or user changes
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (isAuthenticated && user) {
+        try {
+          setImageLoading(true);
+          const token = localStorage.getItem("token");
+          const response = await fetch("/api/users/profile", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data.profileImage) {
+              // Construct the full image URL
+              const imageUrl = data.data.profileImage.startsWith("http")
+                ? data.data.profileImage
+                : `http://localhost:5000${data.data.profileImage}`;
+              setProfileImage(imageUrl);
+            } else {
+              setProfileImage("/default-profile.jpg");
+            }
+          } else {
+            setProfileImage("/default-profile.jpg");
+          }
+        } catch (error) {
+          console.error("Error fetching profile image:", error);
+          setProfileImage("/default-profile.jpg");
+        } finally {
+          setImageLoading(false);
+        }
+      } else {
+        setProfileImage("/default-profile.jpg");
+      }
+    };
+
+    fetchProfileImage();
+  }, [isAuthenticated, user]);
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -55,6 +103,26 @@ const Header = () => {
   const handleLogout = () => {
     dispatch(logout());
     setIsProfileMenuOpen(false);
+    setIsMenuOpen(false);
+    setProfileImage("/default-profile.jpg"); // Reset to default on logout
+    navigate("/");
+  };
+
+  // Function to get user initials as fallback
+  const getUserInitials = () => {
+    if (!user) return "U";
+    const firstName = user.firstName || "";
+    const lastName = user.lastName || "";
+    const initials =
+      `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "U";
+    return initials;
+  };
+
+  // Handle image error by falling back to initials
+  const handleImageError = (e) => {
+    console.log("Profile image failed to load, falling back to initials");
+    e.target.style.display = "none";
+    e.target.nextElementSibling.style.display = "flex";
   };
 
   const ProfileMenu = () => (
@@ -63,13 +131,39 @@ const Header = () => {
         onClick={toggleProfileMenu}
         className={`${linkColor} hover:text-[#8DC53E] transition-colors duration-200 p-2 rounded-full`}
       >
-        <User size={24} />
+        {isAuthenticated && (user?.firstName || user?.lastName) ? (
+          <div className="relative w-[50px] h-[50px] rounded-full overflow-hidden">
+            {imageLoading ? (
+              <div className="bg-gray-300 animate-pulse rounded-full w-full h-full flex items-center justify-center">
+                <User size={24} className="text-gray-500" />
+              </div>
+            ) : (
+              <>
+                <img
+                  src={profileImage}
+                  alt="Profile"
+                  className="w-full h-full object-cover cursor-pointer rounded-full border-2 border-white"
+                  onError={handleImageError}
+                  style={{ display: "block" }}
+                />
+                <div
+                  className="bg-[#8DC53E] rounded-full w-full h-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer absolute top-0 left-0"
+                  style={{ display: "none" }}
+                >
+                  {getUserInitials()}
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <User size={24} />
+        )}
       </button>
 
       {isProfileMenuOpen && (
         <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl py-3 z-50 border border-gray-100">
           <Link
-            to="/profile"
+            to="/userProfile"
             className="flex items-center px-6 py-4 text-base text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             onClick={() => setIsProfileMenuOpen(false)}
           >
@@ -78,7 +172,7 @@ const Header = () => {
           </Link>
 
           <Link
-            to="/settings"
+            to="/usersettings"
             className="flex items-center px-6 py-4 text-base text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             onClick={() => setIsProfileMenuOpen(false)}
           >
@@ -87,7 +181,7 @@ const Header = () => {
           </Link>
 
           <Link
-            to="/help"
+            to="/contactus"
             className="flex items-center px-6 py-4 text-base text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             onClick={() => setIsProfileMenuOpen(false)}
           >
@@ -116,7 +210,7 @@ const Header = () => {
       ) : (
         <Link to="/register">
           <button
-            className="bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none"
+            className="bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none cursor-pointer"
             style={{
               height: "45px",
               width: "163px",
@@ -177,7 +271,7 @@ const Header = () => {
 
         <nav className="flex items-center justify-center text-base mt-[40px]">
           <ul className="flex items-center justify-center gap-[60px] w-full list-none">
-            <li className="ml-[100px]">
+            <li>
               <Link
                 to="/"
                 className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
@@ -212,13 +306,13 @@ const Header = () => {
             </li>
             <li>
               <Link
-                to="/contact"
+                to="/contactus"
                 className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
               >
                 Contact Us
               </Link>
             </li>
-            <li className="mr-[100px]">
+            <li>
               <Link
                 to="/events"
                 className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
@@ -226,6 +320,19 @@ const Header = () => {
                 Events
               </Link>
             </li>
+            {/* Admin Menu - Only show when user is admin */}
+            {isAdmin && (
+              <li>
+                <Link
+                  to="/AdminDashboard"
+                  className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline flex items-center gap-2`}
+                >
+                  <span className={isHome ? "text-white" : "text-black"}>
+                    Admin
+                  </span>
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
 
@@ -248,11 +355,39 @@ const Header = () => {
 
             <div className="flex flex-col p-6 space-y-6">
               {isAuthenticated && (
-                <div className="pb-4 border-b border-gray-200">
-                  <p className="text-gray-800 font-medium">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p className="text-gray-500 text-sm">{user?.email}</p>
+                <div className="pb-4 border-b border-gray-200 flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden">
+                    {imageLoading ? (
+                      <div className="bg-gray-300 animate-pulse rounded-full w-full h-full flex items-center justify-center">
+                        <User size={16} className="text-gray-500" />
+                      </div>
+                    ) : (
+                      <>
+                        <img
+                          src={profileImage}
+                          alt="Profile"
+                          className="w-full h-full object-cover rounded-full"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.nextElementSibling.style.display = "flex";
+                          }}
+                          style={{ display: "block" }}
+                        />
+                        <div
+                          className="bg-[#8DC53E] rounded-full w-full h-full flex items-center justify-center text-white font-semibold text-xs"
+                          style={{ display: "none" }}
+                        >
+                          {getUserInitials()}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-gray-800 font-medium">
+                      {user?.firstName} {user?.lastName}
+                    </p>
+                    <p className="text-gray-500 text-sm">{user?.email}</p>
+                  </div>
                 </div>
               )}
 
@@ -302,10 +437,22 @@ const Header = () => {
                   Events
                 </Link>
 
+                {/* Admin menu item in mobile */}
+                {isAdmin && (
+                  <Link
+                    to="/AdminDashboard"
+                    onClick={toggleMenu}
+                    className="flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100 gap-2"
+                  >
+                    <Shield size={18} className="text-blue-500" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                )}
+
                 {isAuthenticated && (
                   <>
                     <Link
-                      to="/profile"
+                      to="/userProfile"
                       onClick={toggleMenu}
                       className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
                     >
@@ -327,7 +474,7 @@ const Header = () => {
                   <>
                     <Link to="/register" onClick={toggleMenu}>
                       <button
-                        className="w-full bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none mb-3"
+                        className="w-full bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none mb-3 cursor-pointer"
                         style={{
                           height: "45px",
                           borderRadius: "5px",

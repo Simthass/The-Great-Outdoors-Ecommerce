@@ -14,11 +14,23 @@ import userRoutes from "./routes/users.js";
 import categoryRoutes from "./routes/categories.js";
 import cartRoutes from "./routes/cart.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import fileUpload from "express-fileupload";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import contactRoute from "./routes/contact.js";
+import settingsRoutes from "./routes/settings.js";
+import employeeRoutes from "./routes/employee.js";
+import reviewsRouter from "./routes/review.js";
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+
+app.use(express.json());
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Trust proxy for rate limiting behind reverse proxies
 app.set("trust proxy", 1);
@@ -30,6 +42,7 @@ app.use(
   })
 );
 app.use(compression());
+app.use(express.static("public"));
 
 // CORS configuration - MUST be before other middleware
 const allowedOrigins = [
@@ -57,7 +70,22 @@ app.use(
 
 // Handle preflight requests
 app.options("*", cors());
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://localhost:5173"], // Add both common ports
+    credentials: true,
+    optionsSuccessStatus: 200,
+  })
+);
 
+app.use(express.json({ limit: "50mb" }));
+app.use(
+  express.urlencoded({
+    limit: "50mb",
+    extended: true,
+    parameterLimit: 50000,
+  })
+);
 // Session middleware
 app.use(
   session({
@@ -83,6 +111,21 @@ app.use(express.static(path.join(process.cwd(), "public")));
 // Body parser middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+      files: 1,
+    },
+    abortOnLimit: true,
+    responseOnLimit: "File size exceeds the 5MB limit",
+    safeFileNames: true,
+    preserveExtension: true,
+  })
+);
 
 // Rate limiting configuration
 const authLimiter = rateLimit({
@@ -112,6 +155,7 @@ const generalLimiter = rateLimit({
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 app.use("/api/", generalLimiter);
+app.use("/api/contact", contactRoute);
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -153,6 +197,7 @@ try {
   console.log("🛑 Server cannot start without database connection");
   process.exit(1);
 }
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Register routes only after successful database connection
 if (dbConnected) {
@@ -164,6 +209,9 @@ if (dbConnected) {
   app.use("/api/users", userRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/cart", cartRoutes);
+  app.use("/api/settings", settingsRoutes);
+  app.use("/api/employee", employeeRoutes);
+  app.use("/api/reviews", reviewsRouter);
 }
 
 // 404 handler for undefined routes

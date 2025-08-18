@@ -1,4 +1,6 @@
-import express from 'express';
+import express from "express";
 const router = express.Router();
-router.get('/', (req, res) => { res.send('Orders API route works!'); });
+router.get("/", (req, res) => {
+  res.send("Orders API route works!");
+});
 export default router;

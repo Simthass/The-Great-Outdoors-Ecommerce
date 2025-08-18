@@ -1,52 +1,36 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
+import Counter from "./Counter.js";
 
-const reviewSchema = mongoose.Schema(
+const reviewSchema = new mongoose.Schema(
   {
-    user: { // userID (Foreign Key) - References User
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: 'User',
-    },
-    product: { // productID (Foreign Key) - References Product
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: 'Product',
-    },
-    order: { // orderID (Foreign Key) - References Order (Optional, if review is not tied to a specific order)
-      type: mongoose.Schema.Types.ObjectId,
-      required: false, // Made optional as a user might review a product they didn't buy through the system
-      ref: 'Order',
-    },
-    rating: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 5,
-    },
-    title: {
-      type: String,
-      required: false,
-    },
-    comment: {
-      type: String,
-      required: true,
-    },
-    isVerifiedPurchase: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-    isApproved: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
+    reviewId: { type: String, unique: true }, // e.g., R001
+    rating: { type: Number, min: 1, max: 5, required: true },
+    description: { type: String, default: "" },
+    customerId: { type: String, required: true },
+    productId: { type: String, required: true },
+    status: { type: String, enum: ["Y", "N"], default: "Y" },
+    dateAdded: { type: Date, default: Date.now },
+    response: { type: String, default: "" },
   },
-  {
-    timestamps: true, // Adds createdAt and updatedAt
-  }
+  { timestamps: true }
 );
 
-const Review = mongoose.model('Review', reviewSchema);
+// Auto-generate reviewId like R001 on create (if not provided)
+reviewSchema.pre("save", async function (next) {
+  if (this.reviewId) return next();
+  const counter = await Counter.findOneAndUpdate(
+    { key: "review" },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+  const num = String(counter.seq).padStart(3, "0"); // 001, 002, ...
+  this.reviewId = `R${num}`;
+  next();
+});
 
-module.exports = Review;
+// Helpful indexes
+reviewSchema.index({ productId: 1 });
+reviewSchema.index({ customerId: 1 });
+reviewSchema.index({ dateAdded: -1 });
+
+export default mongoose.model("Review", reviewSchema);
