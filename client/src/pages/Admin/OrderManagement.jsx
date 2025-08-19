@@ -612,3 +612,4 @@ const OrderManagement = () => {
 
 export default OrderManagement;
 
+// This code is a React component for managing orders in an admin dashboard.
