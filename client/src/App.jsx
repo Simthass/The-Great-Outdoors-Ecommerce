@@ -42,6 +42,7 @@ import ReviewsList from "./pages/Admin/ReviewList";
 import ReviewEdit from "./pages/Admin/ReviewEdit";
 import AdminProduct from "./pages/Admin/AdminProduct";
 import ProductDetails from "./pages/ProductDetails";
+import SearchResults from "./pages/SearchResults";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -194,6 +195,7 @@ const App = () => {
               />{" "}
               <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
               <Route path="/product/:id" element={<ProductDetails />} />{" "}
+              <Route path="/search" element={<SearchResults />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Layout>

@@ -21,6 +21,7 @@ import contactRoute from "./routes/contact.js";
 import settingsRoutes from "./routes/settings.js";
 import employeeRoutes from "./routes/employee.js";
 import reviewsRouter from "./routes/review.js";
+import searchRoutes from "./routes/search.js";
 
 // Load environment variables
 dotenv.config();
@@ -213,6 +214,7 @@ if (dbConnected) {
   app.use("/api/settings", settingsRoutes);
   app.use("/api/employee", employeeRoutes);
   app.use("/api/reviews", reviewsRouter);
+  app.use("/api/search", searchRoutes);
 }
 
 // 404 handler for undefined routes

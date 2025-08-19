@@ -12,10 +12,12 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../store/slices/authSlice";
+import SearchModal from "./SearchModal"; // Import the SearchModal
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false); // Add search modal state
   const [profileImage, setProfileImage] = useState("/default-profile.jpg");
   const [imageLoading, setImageLoading] = useState(false);
   const profileMenuRef = useRef(null);
@@ -91,6 +93,24 @@ const Header = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isProfileMenuOpen]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Ctrl/Cmd + K to open search
+      if ((event.ctrlKey || event.metaKey) && event.key === "k") {
+        event.preventDefault();
+        setIsSearchModalOpen(true);
+      }
+      // Escape to close search modal
+      if (event.key === "Escape" && isSearchModalOpen) {
+        setIsSearchModalOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isSearchModalOpen]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -224,16 +244,23 @@ const Header = () => {
         </Link>
       )}
 
+      {/* Updated Search Button */}
       <button
-        className="bg-[#8DC53E] text-[#ffffff] flex items-center justify-center hover:bg-[#7AB32E] transition-colors duration-200 border-none"
+        onClick={() => setIsSearchModalOpen(true)}
+        className="bg-[#8DC53E] text-[#ffffff] flex items-center justify-center hover:bg-[#7AB32E] transition-colors duration-200 border-none relative group cursor-pointer"
         style={{
           height: "45px",
           width: "50px",
           borderRadius: "5px",
           fontSize: "16px",
         }}
+        title="Search (Ctrl+K)"
       >
         <Search size={20} />
+        {/* Search tooltip */}
+        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+          Search (Ctrl+K)
+        </div>
       </button>
 
       <Link to="/cart">
@@ -256,282 +283,296 @@ const Header = () => {
   );
 
   return (
-    <header
-      className={`w-full bg-cover bg-center bg-no-repeat bg-fixed ${
-        !isHome ? "mb-[20px]" : ""
-      }`}
-    >
-      {/* Large Desktop View (1400px+) */}
-      <div className="hidden 2xl:flex flex-wrap items-center justify-between mt-[-20px]">
-        <div className="flex items-center space-x-2 ml-[70px] mt-[20px]">
-          <Link to="/">
-            <img src="/TGO-Logo.png" alt="Logo" className="w-32 h-16" />
-          </Link>
-        </div>
+    <>
+      <header
+        className={`w-full bg-cover bg-center bg-no-repeat bg-fixed ${
+          !isHome ? "mb-[20px]" : ""
+        }`}
+      >
+        {/* Large Desktop View (1400px+) */}
+        <div className="hidden 2xl:flex flex-wrap items-center justify-between mt-[-20px]">
+          <div className="flex items-center space-x-2 ml-[70px] mt-[20px]">
+            <Link to="/">
+              <img src="/TGO-Logo.png" alt="Logo" className="w-32 h-16" />
+            </Link>
+          </div>
 
-        <nav className="flex items-center justify-center text-base mt-[40px]">
-          <ul className="flex items-center justify-center gap-[60px] w-full list-none">
-            <li>
-              <Link
-                to="/"
-                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
-              >
-                Home
-              </Link>
-            </li>
-            <div className="flex items-center">
+          <nav className="flex items-center justify-center text-base mt-[40px]">
+            <ul className="flex items-center justify-center gap-[60px] w-full list-none">
               <li>
-                <Link
-                  to="/shop"
-                  className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline mr-[5px]`}
-                >
-                  Shop
-                </Link>
-              </li>
-              <img
-                src="/dropdown-arrow.svg"
-                alt="Dropdown"
-                height={7}
-                width={12}
-                className="mt-[3px]"
-              />
-            </div>
-            <li>
-              <Link
-                to="/aboutUs"
-                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
-              >
-                About Us
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/contactus"
-                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
-              >
-                Contact Us
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/events"
-                className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
-              >
-                Events
-              </Link>
-            </li>
-            {/* Admin Menu - Only show when user is admin */}
-            {isAdmin && (
-              <li>
-                <Link
-                  to="/AdminDashboard"
-                  className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline flex items-center gap-2`}
-                >
-                  <span className={isHome ? "text-white" : "text-black"}>
-                    Admin
-                  </span>
-                </Link>
-              </li>
-            )}
-          </ul>
-        </nav>
-
-        <AuthButtons className="mr-[75px] mt-[40px]" />
-      </div>
-
-      {/* Mobile Menu Overlay */}
-      {isMenuOpen && (
-        <div className="xl:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
-          <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800">Menu</h2>
-              <button
-                onClick={toggleMenu}
-                className="text-gray-600 hover:text-gray-800 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="flex flex-col p-6 space-y-6">
-              {isAuthenticated && (
-                <div className="pb-4 border-b border-gray-200 flex items-center space-x-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden">
-                    {imageLoading ? (
-                      <div className="bg-gray-300 animate-pulse rounded-full w-full h-full flex items-center justify-center">
-                        <User size={16} className="text-gray-500" />
-                      </div>
-                    ) : (
-                      <>
-                        <img
-                          src={profileImage}
-                          alt="Profile"
-                          className="w-full h-full object-cover rounded-full"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.nextElementSibling.style.display = "flex";
-                          }}
-                          style={{ display: "block" }}
-                        />
-                        <div
-                          className="bg-[#8DC53E] rounded-full w-full h-full flex items-center justify-center text-white font-semibold text-xs"
-                          style={{ display: "none" }}
-                        >
-                          {getUserInitials()}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-gray-800 font-medium">
-                      {user?.firstName} {user?.lastName}
-                    </p>
-                    <p className="text-gray-500 text-sm">{user?.email}</p>
-                  </div>
-                </div>
-              )}
-
-              <nav className="space-y-4">
                 <Link
                   to="/"
-                  onClick={toggleMenu}
-                  className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                  className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
                 >
                   Home
                 </Link>
-                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+              </li>
+              <div className="flex items-center">
+                <li>
                   <Link
                     to="/shop"
-                    onClick={toggleMenu}
-                    className="text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium"
+                    className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline mr-[5px]`}
                   >
                     Shop
                   </Link>
-                  <img
-                    src="/dropdown-arrow.svg"
-                    alt="Dropdown"
-                    height={7}
-                    width={12}
-                    className="ml-2"
-                  />
-                </div>
+                </li>
+                <img
+                  src="/dropdown-arrow.svg"
+                  alt="Dropdown"
+                  height={7}
+                  width={12}
+                  className="mt-[3px]"
+                />
+              </div>
+              <li>
                 <Link
                   to="/aboutUs"
-                  onClick={toggleMenu}
-                  className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                  className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
                 >
                   About Us
                 </Link>
+              </li>
+              <li>
                 <Link
-                  to="/contact"
-                  onClick={toggleMenu}
-                  className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                  to="/contactus"
+                  className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
                 >
                   Contact Us
                 </Link>
+              </li>
+              <li>
                 <Link
                   to="/events"
-                  onClick={toggleMenu}
-                  className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                  className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
                 >
                   Events
                 </Link>
-
-                {/* Admin menu item in mobile */}
-                {isAdmin && (
+              </li>
+              {/* Admin Menu - Only show when user is admin */}
+              {isAdmin && (
+                <li>
                   <Link
                     to="/AdminDashboard"
-                    onClick={toggleMenu}
-                    className="flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100 gap-2"
+                    className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline flex items-center gap-2`}
                   >
-                    <Shield size={18} className="text-blue-500" />
-                    <span>Admin Dashboard</span>
+                    <span className={isHome ? "text-white" : "text-black"}>
+                      Admin
+                    </span>
                   </Link>
-                )}
+                </li>
+              )}
+            </ul>
+          </nav>
 
+          <AuthButtons className="mr-[75px] mt-[40px]" />
+        </div>
+
+        {/* Mobile Menu Overlay */}
+        {isMenuOpen && (
+          <div className="xl:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
+            <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-800">Menu</h2>
+                <button
+                  onClick={toggleMenu}
+                  className="text-gray-600 hover:text-gray-800 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="flex flex-col p-6 space-y-6">
                 {isAuthenticated && (
-                  <>
-                    <Link
-                      to="/userProfile"
-                      onClick={toggleMenu}
-                      className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
-                    >
-                      My Profile
-                    </Link>
-                    <Link
-                      to="/orders"
-                      onClick={toggleMenu}
-                      className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
-                    >
-                      My Orders
-                    </Link>
-                  </>
+                  <div className="pb-4 border-b border-gray-200 flex items-center space-x-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden">
+                      {imageLoading ? (
+                        <div className="bg-gray-300 animate-pulse rounded-full w-full h-full flex items-center justify-center">
+                          <User size={16} className="text-gray-500" />
+                        </div>
+                      ) : (
+                        <>
+                          <img
+                            src={profileImage}
+                            alt="Profile"
+                            className="w-full h-full object-cover rounded-full"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextElementSibling.style.display =
+                                "flex";
+                            }}
+                            style={{ display: "block" }}
+                          />
+                          <div
+                            className="bg-[#8DC53E] rounded-full w-full h-full flex items-center justify-center text-white font-semibold text-xs"
+                            style={{ display: "none" }}
+                          >
+                            {getUserInitials()}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-gray-800 font-medium">
+                        {user?.firstName} {user?.lastName}
+                      </p>
+                      <p className="text-gray-500 text-sm">{user?.email}</p>
+                    </div>
+                  </div>
                 )}
-              </nav>
 
-              <div className="space-y-6 pt-6">
-                {!isAuthenticated ? (
-                  <>
-                    <Link to="/register" onClick={toggleMenu}>
-                      <button
-                        className="w-full bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none mb-3 cursor-pointer"
-                        style={{
-                          height: "45px",
-                          borderRadius: "5px",
-                          borderBottomRightRadius: "25px",
-                          fontSize: "16px",
-                        }}
-                      >
-                        Register Now
-                      </button>
+                <nav className="space-y-4">
+                  <Link
+                    to="/"
+                    onClick={toggleMenu}
+                    className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                  >
+                    Home
+                  </Link>
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <Link
+                      to="/shop"
+                      onClick={toggleMenu}
+                      className="text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium"
+                    >
+                      Shop
                     </Link>
-                    <Link to="/login" onClick={toggleMenu}>
-                      <button
-                        className="w-full bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none mb-3"
-                        style={{
-                          height: "45px",
-                          borderRadius: "5px",
-                          fontSize: "16px",
-                        }}
-                      >
-                        Login
-                      </button>
+                    <img
+                      src="/dropdown-arrow.svg"
+                      alt="Dropdown"
+                      height={7}
+                      width={12}
+                      className="ml-2"
+                    />
+                  </div>
+                  <Link
+                    to="/aboutUs"
+                    onClick={toggleMenu}
+                    className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                  >
+                    About Us
+                  </Link>
+                  <Link
+                    to="/contactus"
+                    onClick={toggleMenu}
+                    className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                  >
+                    Contact Us
+                  </Link>
+                  <Link
+                    to="/events"
+                    onClick={toggleMenu}
+                    className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                  >
+                    Events
+                  </Link>
+
+                  {/* Admin menu item in mobile */}
+                  {isAdmin && (
+                    <Link
+                      to="/AdminDashboard"
+                      onClick={toggleMenu}
+                      className="flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100 gap-2"
+                    >
+                      <Shield size={18} className="text-blue-500" />
+                      <span>Admin Dashboard</span>
                     </Link>
-                  </>
-                ) : (
+                  )}
+
+                  {isAuthenticated && (
+                    <>
+                      <Link
+                        to="/userProfile"
+                        onClick={toggleMenu}
+                        className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                      >
+                        My Profile
+                      </Link>
+                      <Link
+                        to="/orders"
+                        onClick={toggleMenu}
+                        className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
+                      >
+                        My Orders
+                      </Link>
+                    </>
+                  )}
+                </nav>
+
+                <div className="space-y-6 pt-6">
+                  {!isAuthenticated ? (
+                    <>
+                      <Link to="/register" onClick={toggleMenu}>
+                        <button
+                          className="w-full bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none mb-3 cursor-pointer"
+                          style={{
+                            height: "45px",
+                            borderRadius: "5px",
+                            borderBottomRightRadius: "25px",
+                            fontSize: "16px",
+                          }}
+                        >
+                          Register Now
+                        </button>
+                      </Link>
+                      <Link to="/login" onClick={toggleMenu}>
+                        <button
+                          className="w-full bg-[#8DC53E] text-[#ffffff] font-semibold hover:bg-[#7AB32E] transition-colors duration-200 border-none mb-3"
+                          style={{
+                            height: "45px",
+                            borderRadius: "5px",
+                            fontSize: "16px",
+                          }}
+                        >
+                          Login
+                        </button>
+                      </Link>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        toggleMenu();
+                      }}
+                      className="w-full bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors duration-200 border-none"
+                      style={{
+                        height: "45px",
+                        borderRadius: "5px",
+                        fontSize: "16px",
+                      }}
+                    >
+                      Logout
+                    </button>
+                  )}
+
+                  {/* Mobile Search Button */}
                   <button
                     onClick={() => {
-                      handleLogout();
+                      setIsSearchModalOpen(true);
                       toggleMenu();
                     }}
-                    className="w-full bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors duration-200 border-none"
+                    className="w-full bg-[#8DC53E] text-[#ffffff] flex items-center justify-center hover:bg-[#7AB32E] transition-colors duration-200 border-none gap-2"
                     style={{
                       height: "45px",
                       borderRadius: "5px",
                       fontSize: "16px",
                     }}
                   >
-                    Logout
+                    <Search size={20} />
+                    <span>Search</span>
                   </button>
-                )}
-
-                <button
-                  className="w-full bg-[#8DC53E] text-[#ffffff] flex items-center justify-center hover:bg-[#7AB32E] transition-colors duration-200 border-none gap-2"
-                  style={{
-                    height: "45px",
-                    borderRadius: "5px",
-                    fontSize: "16px",
-                  }}
-                >
-                  <Search size={20} />
-                  <span>Search</span>
-                </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </header>
+        )}
+      </header>
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+      />
+    </>
   );
 };
 
