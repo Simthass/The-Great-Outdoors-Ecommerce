@@ -24,7 +24,7 @@ import Shop from "./pages/shop";
 import About from "./pages/aboutUs";
 import Contact from "./pages/contactus";
 import AdminOthers from "./pages/Admin/Others";
-import Order from "./pages/Admin/Order";
+import OrderManagement from "./pages/Admin/OrderManagement";
 import Cart from "./pages/cart";
 import Register from "./pages/register";
 import Login from "./pages/login";
@@ -41,7 +41,7 @@ import EmployeeManagement from "./pages/Admin/Employee";
 import ReviewsList from "./pages/Admin/ReviewList";
 import ReviewEdit from "./pages/Admin/ReviewEdit";
 import AdminProduct from "./pages/Admin/AdminProduct";
-import ProductDetails from "./pages/ProductDetails";
+// import ProductDetails from "./pages/ProductDetails";
 import SearchResults from "./pages/SearchResults";
 
 const BackgroundSlider = ({ children }) => {
@@ -179,7 +179,7 @@ const App = () => {
               />
               <Route path="/userProfile" element={<Profile />} />
               <Route path="/userSettings" element={<Settings />} />
-              <Route path="/Admin/Order" element={<Order />} />
+              <Route path="/Admin/OrderManagement" element={<OrderManagement />} />
               <Route path="/AdminDashboard" element={<AdminDashboard />} />
               <Route path="/Admin/Inventory" element={<Inventory />} />
               <Route path="/Admin/User" element={<UserManagement />} />
@@ -194,7 +194,7 @@ const App = () => {
                 element={<ReviewEdit />}
               />{" "}
               <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
-              <Route path="/product/:id" element={<ProductDetails />} />{" "}
+             
               <Route path="/search" element={<SearchResults />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

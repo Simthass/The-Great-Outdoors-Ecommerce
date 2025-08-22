@@ -1,140 +1,284 @@
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import Order from "../models/Order.js";
-import User from "../models/User.js";
-import Product from "../models/Product.js";
-import connectDB from "../config/database.js";
+import mongoose from 'mongoose';
+import Order from '../models/Order.js';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-const sampleOrders = [
+const orderSeedData = [
   {
-    orderStatus: "Delivered",
-    paymentStatus: "Paid",
-    paymentMethod: "Credit Card",
-    paymentId: "pay_12345",
-    tax: 15.6,
-    shippingCost: 0,
-    discount: 0,
+    user: new mongoose.Types.ObjectId(),
+    orderId: 'ORD-2024-001',
+    orderDate: new Date('2024-01-15'),
+    totalAmount: 449.98,
+    tax: 35.99,
+    shippingCost: 15.00,
+    discount: 0.00,
+    orderStatus: 'Delivered',
+    paymentStatus: 'Paid',
+    paymentMethod: 'Credit Card',
     shippingAddress: {
-      addressLine1: "123 Maple Street",
-      city: "Toronto",
-      province: "Ontario",
-      postalCode: "M5V 3A8",
-      country: "Canada",
-      phoneNumber: "(416) 123-4567",
+      addressLine1: '123 Adventure Lane',
+      addressLine2: '',
+      city: 'Denver',
+      province: 'Colorado',
+      postalCode: '80202',
+      country: 'USA',
+      phoneNumber: '+1234567890'
     },
     billingAddress: {
-      addressLine1: "123 Maple Street",
-      city: "Toronto",
-      province: "Ontario",
-      postalCode: "M5V 3A8",
-      country: "Canada",
-      phoneNumber: "(416) 123-4567",
+      addressLine1: '123 Adventure Lane',
+      addressLine2: '',
+      city: 'Denver',
+      province: 'Colorado',
+      postalCode: '80202',
+      country: 'USA',
+      phoneNumber: '+1234567890'
     },
-    trackingNumber: "TRK123456789",
-    carrier: "UPS",
-    notes: "Please leave at front door",
-    orderDate: new Date("2024-01-15"),
-    estimatedDelivery: new Date("2024-01-20"),
-    actualDelivery: new Date("2024-01-19"),
+    items: [
+      {
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Hiking Boots',
+        price: 149.99,
+        quantity: 1,
+        total: 149.99,
+        image: '/images/hiking-boots.jpg',
+        sku: 'HB-001'
+      },
+      {
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Camping Tent',
+        price: 299.99,
+        quantity: 1,
+        total: 299.99,
+        image: '/images/camping-tent.jpg',
+        sku: 'CT-001'
+      }
+    ],
+    trackingNumber: 'TRK123456789',
+    carrier: 'FedEx',
+    estimatedDelivery: new Date('2024-01-25'),
+    actualDelivery: new Date('2024-01-20')
   },
-  // ... (keep your other sample orders as they were)
+  {
+    user: new mongoose.Types.ObjectId(),
+    orderId: 'ORD-2024-002',
+    orderDate: new Date('2024-02-01'),
+    totalAmount: 179.98,
+    tax: 14.40,
+    shippingCost: 10.00,
+    discount: 5.00,
+    orderStatus: 'Shipped',
+    paymentStatus: 'Paid',
+    paymentMethod: 'PayPal',
+    shippingAddress: {
+      addressLine1: '456 Mountain View Dr',
+      addressLine2: 'Apt 2B',
+      city: 'Boulder',
+      province: 'Colorado',
+      postalCode: '80301',
+      country: 'USA',
+      phoneNumber: '+1234567891'
+    },
+    billingAddress: {
+      addressLine1: '456 Mountain View Dr',
+      addressLine2: 'Apt 2B',
+      city: 'Boulder',
+      province: 'Colorado',
+      postalCode: '80301',
+      country: 'USA',
+      phoneNumber: '+1234567891'
+    },
+    items: [
+      {
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Sleeping Bag',
+        price: 89.99,
+        quantity: 2,
+        total: 179.98,
+        image: '/images/sleeping-bag.jpg',
+        sku: 'SB-002'
+      }
+    ],
+    trackingNumber: 'TRK987654321',
+    carrier: 'UPS',
+    estimatedDelivery: new Date('2024-02-08')
+  },
+  {
+    user: new mongoose.Types.ObjectId(),
+    orderId: 'ORD-2024-003',
+    orderDate: new Date('2024-02-10'),
+    totalAmount: 288.95,
+    tax: 23.12,
+    shippingCost: 12.00,
+    discount: 10.00,
+    orderStatus: 'Processing',
+    paymentStatus: 'Paid',
+    paymentMethod: 'Credit Card',
+    shippingAddress: {
+      addressLine1: '789 Forest Trail',
+      addressLine2: 'Unit 5',
+      city: 'Portland',
+      province: 'Oregon',
+      postalCode: '97205',
+      country: 'USA',
+      phoneNumber: '+1234567892'
+    },
+    billingAddress: {
+      addressLine1: '789 Forest Trail',
+      addressLine2: 'Unit 5',
+      city: 'Portland',
+      province: 'Oregon',
+      postalCode: '97205',
+      country: 'USA',
+      phoneNumber: '+1234567892'
+    },
+    items: [
+      {
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Backpack - 40L',
+        price: 199.99,
+        quantity: 1,
+        total: 199.99,
+        image: '/images/backpack-40l.jpg',
+        sku: 'BP-003'
+      },
+      {
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Water Bottle',
+        price: 24.99,
+        quantity: 2,
+        total: 49.98,
+        image: '/images/water-bottle.jpg',
+        sku: 'WB-004'
+      },
+      {
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Trail Mix',
+        price: 12.99,
+        quantity: 3,
+        total: 38.97,
+        image: '/images/trail-mix.jpg',
+        sku: 'TM-005'
+      }
+    ]
+  },
+  {
+    user: new mongoose.Types.ObjectId(),
+    orderId: 'ORD-2024-004',
+    orderDate: new Date('2024-02-12'),
+    totalAmount: 79.99,
+    tax: 6.40,
+    shippingCost: 8.00,
+    discount: 0.00,
+    orderStatus: 'Pending',
+    paymentStatus: 'Pending',
+    paymentMethod: 'Debit Card',
+    shippingAddress: {
+      addressLine1: '321 Pine Street',
+      addressLine2: '',
+      city: 'Seattle',
+      province: 'Washington',
+      postalCode: '98101',
+      country: 'USA',
+      phoneNumber: '+1234567893'
+    },
+    billingAddress: {
+      addressLine1: '321 Pine Street',
+      addressLine2: '',
+      city: 'Seattle',
+      province: 'Washington',
+      postalCode: '98101',
+      country: 'USA',
+      phoneNumber: '+1234567893'
+    },
+    items: [
+      {
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Camping Stove',
+        price: 79.99,
+        quantity: 1,
+        total: 79.99,
+        image: '/images/camping-stove.jpg',
+        sku: 'CS-006'
+      }
+    ]
+  },
+  {
+    user: new mongoose.Types.ObjectId(),
+    orderId: 'ORD-2024-005',
+    orderDate: new Date('2024-01-28'),
+    totalAmount: 89.98,
+    tax: 7.20,
+    shippingCost: 9.00,
+    discount: 0.00,
+    orderStatus: 'Cancelled',
+    paymentStatus: 'Refunded',
+    paymentMethod: 'Credit Card',
+    shippingAddress: {
+      addressLine1: '654 River Road',
+      addressLine2: 'Suite 10',
+      city: 'Austin',
+      province: 'Texas',
+      postalCode: '73301',
+      country: 'USA',
+      phoneNumber: '+1234567894'
+    },
+    billingAddress: {
+      addressLine1: '654 River Road',
+      addressLine2: 'Suite 10',
+      city: 'Austin',
+      province: 'Texas',
+      postalCode: '73301',
+      country: 'USA',
+      phoneNumber: '+1234567894'
+    },
+    items: [
+      {
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Headlamp',
+        price: 39.99,
+        quantity: 1,
+        total: 39.99,
+        image: '/images/headlamp.jpg',
+        sku: 'HL-007'
+      },
+      {
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'First Aid Kit',
+        price: 49.99,
+        quantity: 1,
+        total: 49.99,
+        image: '/images/first-aid-kit.jpg',
+        sku: 'FK-008'
+      }
+    ]
+  }
 ];
 
 const seedOrders = async () => {
   try {
-    await connectDB();
-    console.log("🗄️ Connected to MongoDB");
-
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    
+    console.log('MongoDB connected for seeding orders...');
+    
     // Clear existing orders
     await Order.deleteMany({});
-    console.log("🗑️ Cleared existing orders");
-
-    // Find the specific user
-    const user = await User.findOne({ email: "Simthass@outlook.com" });
-
-    if (!user) {
-      throw new Error(
-        "User with email Simthass@outlook.com not found. Please create this user first."
-      );
-    }
-
-    // Get sample products
-    const products = await Product.find({}).limit(10);
-
-    if (products.length === 0) {
-      throw new Error("No products found. Please run product seeder first.");
-    }
-
-    // Create orders with sample data for this specific user
-    const ordersToCreate = await Promise.all(
-      sampleOrders.map(async (orderData) => {
-        const orderProducts = products.slice(
-          0,
-          Math.floor(Math.random() * 3) + 1
-        );
-
-        const items = orderProducts.map((product) => {
-          const quantity = Math.floor(Math.random() * 3) + 1;
-          return {
-            productId: product._id,
-            productName: product.productName,
-            quantity: quantity,
-            price: product.price,
-            total: product.price * quantity,
-            image: product.imageUrl,
-            sku: product.sku || `SKU-${product._id.toString().slice(-6)}`,
-          };
-        });
-
-        const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-        const totalAmount =
-          subtotal +
-          orderData.shippingCost +
-          orderData.tax -
-          orderData.discount;
-
-        return {
-          ...orderData,
-          user: user._id,
-          items: items,
-          subtotal: subtotal,
-          totalAmount: totalAmount,
-        };
-      })
-    );
-
-    const orders = await Order.insertMany(ordersToCreate);
-    console.log(`✅ Created ${orders.length} sample orders for ${user.email}`);
-
-    // Detailed output
-    console.log("\n📋 Created Orders:");
-    orders.forEach((order, index) => {
-      console.log(`
-      ${index + 1}. Order ID: ${order.orderId}
-         Status: ${order.orderStatus}
-         Date: ${order.orderDate.toLocaleDateString()}
-         Customer: ${user.email}
-         Items: ${order.items.length}
-         Total: $${order.totalAmount.toFixed(2)}
-      `);
-    });
-
-    console.log("\n🎉 Order seeding completed successfully!");
-    return orders;
+    console.log('Existing orders cleared');
+    
+    // Insert seed data
+    const orders = await Order.insertMany(orderSeedData);
+    console.log(`${orders.length} orders seeded successfully`);
+    
+    console.log('Order seeding completed successfully!');
+    process.exit(0);
   } catch (error) {
-    console.error("❌ Error seeding orders:", error.message);
-    throw error;
-  } finally {
-    await mongoose.connection.close();
-    console.log("🔌 Database connection closed");
+    console.error('Error seeding orders:', error);
+    process.exit(1);
   }
 };
 
-// Run seeder if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  seedOrders().catch(() => process.exit(1));
-}
-
+// Run the seed function
 seedOrders();
