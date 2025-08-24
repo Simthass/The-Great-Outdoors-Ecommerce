@@ -25,7 +25,7 @@ const AdminDashboard = () => {
           </div>
         </Link>
         {/* Order Management */}
-        <Link to="/Admin/Order">
+        <Link to="/Admin/OrderManagement">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Order-Management.png')" }}
@@ -93,7 +93,7 @@ const AdminDashboard = () => {
             </div>
           </div>
         </Link>
-        <Link to="/Admin/Others">
+        <Link to="/Admin/EventManagement">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/User-Mana.png')" }}
