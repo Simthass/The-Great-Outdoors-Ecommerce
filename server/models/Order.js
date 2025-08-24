@@ -267,6 +267,23 @@ orderSchema.pre("save", function (next) {
   }
   next();
 });
+orderSchema.methods.calculateGrandTotal = function () {
+  return this.totalAmount + this.tax + this.shippingCost - this.discount;
+};
+orderSchema.methods.canBeCancelled = function () {
+  return !["Shipped", "Delivered", "Cancelled", "Refunded"].includes(
+    this.orderStatus
+  );
+};
+orderSchema.pre("save", function (next) {
+  if (!this.orderId) {
+    this.orderId = `ORD-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 6)
+      .toUpperCase()}`;
+  }
+  next();
+});
 
 // Update product stock when order is completed
 orderSchema.post("save", async function (doc, next) {

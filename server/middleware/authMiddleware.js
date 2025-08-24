@@ -69,66 +69,30 @@ export const checkUserActive = (req, res, next) => {
 };
 
 // Alternative middleware that sets userId and userRole for easier access
+
 export const protect = async (req, res, next) => {
-  try {
-    const authHeader = req.header("Authorization");
+  let token;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required - No valid token provided",
-      });
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.userId || decoded.id).select(
+        "-password"
+      );
+      next();
+    } catch (error) {
+      res.status(401).json({ message: "Not authorized, token failed" });
     }
+  }
 
-    const token = authHeader.replace("Bearer ", "");
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required - Token missing",
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId || decoded.id);
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Set user info for easy access in controllers
-    req.user = user;
-    req.userId = user._id.toString();
-    req.userRole = user.role;
-
-    next();
-  } catch (error) {
-    console.error("Authentication error:", error);
-
-    if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
-    }
-
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({
-        success: false,
-        message: "Token expired",
-      });
-    }
-
-    res.status(401).json({
-      success: false,
-      message: "Please authenticate",
-    });
+  if (!token) {
+    res.status(401).json({ message: "Not authorized, no token" });
   }
 };
-
 // Admin role middleware
 export const admin = (req, res, next) => {
   if (!req.user) {

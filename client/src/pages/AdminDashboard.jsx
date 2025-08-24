@@ -93,7 +93,7 @@ const AdminDashboard = () => {
             </div>
           </div>
         </Link>
-        <Link to="/Admin/ReportGeneration/userReport">
+        <Link to="/Admin/Others">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/User-Mana.png')" }}

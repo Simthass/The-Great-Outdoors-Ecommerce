@@ -509,10 +509,20 @@ const AdminProduct = () => {
                       />
                     </svg>
                   </div>
-                  <div className="absolute top-2 left-2">
+                  <div className="absolute top-2 left-2 flex flex-col gap-1">
                     <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
                       {product.category.categoryName}
                     </span>
+                    {product.isHotThisWeek && (
+                      <span className="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
+                        Hot This Week
+                      </span>
+                    )}
+                    {product.isFeatured && (
+                      <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                        Featured
+                      </span>
+                    )}
                   </div>
                 </div>
 

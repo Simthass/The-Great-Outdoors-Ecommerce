@@ -1,6 +1,11 @@
 // Home.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { getAuthToken, isLoggedIn } from "../utils/auth";
+import { useNavigate } from "react-router-dom";
+import BannerSlider from "../components/BannerSlider";
+import EventSubscriptionForm from "../components/EventSubscriptionForm";
+import ScrollToTop from "../components/ScrollToTop";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -9,6 +14,10 @@ const Home = () => {
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
   const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
+
+  ScrollToTop();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProducts();
@@ -36,27 +45,45 @@ const Home = () => {
 
   const handleAddToCart = async (productId) => {
     try {
-      // Prevent duplicate clicks
+      if (!isLoggedIn()) {
+        if (
+          window.confirm(
+            "Please log in to add items to cart. Would you like to log in now?"
+          )
+        ) {
+          navigate("/login");
+        }
+        return;
+      }
+
       if (addedItems.includes(productId)) return;
 
-      // Optimistically update UI
       setAddedItems([...addedItems, productId]);
 
-      const response = await axios.post(`${API_URL}/cart/add`, {
-        productId,
-        quantity: 1,
-      });
+      const response = await axios.post(
+        `${API_URL}/cart/add`,
+        { productId, quantity: 1 },
+        {
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
+          withCredentials: true,
+        }
+      );
 
       console.log("Added to cart:", response.data);
 
-      // Reset the button state after 2 seconds
       setTimeout(() => {
-        setAddedItems(addedItems.filter((id) => id !== productId));
+        setAddedItems((prev) => prev.filter((id) => id !== productId));
       }, 2000);
     } catch (error) {
       console.error("Error adding to cart:", error);
-      // Revert if there was an error
-      setAddedItems(addedItems.filter((id) => id !== productId));
+      setAddedItems((prev) => prev.filter((id) => id !== productId));
+
+      if (error.response?.status === 401) {
+        alert("Please log in to add items to cart");
+        navigate("/login");
+      } else {
+        alert("Failed to add item to cart. Please try again.");
+      }
     }
   };
 
@@ -67,11 +94,13 @@ const Home = () => {
       </div>
     );
   }
+
   return (
     <div>
       <div className="mt-[50px] mb-[50px]">
         <div className="flex flex-wrap items-center justify-between ml-[75px] mr-[75px]">
           <div
+            onClick={() => navigate(`/shop?category=Hunting`)}
             style={{
               backgroundColor: "#EFEFEF",
               width: "320px",
@@ -82,7 +111,7 @@ const Home = () => {
               justifyContent: "space-between",
               overflow: "hidden",
             }}
-            className="group flex flex-col justify-between border border-transparent hover:border-[#195E29] transition"
+            className="group flex flex-col justify-between border border-transparent hover:border-[#195E29] transition cursor-pointer"
           >
             <div className="pl-[20px] pr-[20px] pt-[20px] pb-[15px]">
               <h2 className="text-2xl font-bold text-left mb-3 text-gray-800">
@@ -105,6 +134,7 @@ const Home = () => {
           </div>
 
           <div
+            onClick={() => navigate(`/shop?category=Camping`)}
             style={{
               backgroundColor: "#EFEFEF",
               width: "320px",
@@ -115,7 +145,7 @@ const Home = () => {
               justifyContent: "space-between",
               overflow: "hidden",
             }}
-            className="group flex flex-col justify-between border border-transparent hover:border-[#195E29] transition"
+            className="group flex flex-col justify-between border border-transparent hover:border-[#195E29] transition cursor-pointer"
           >
             <div className="pl-[20px] pr-[20px] pt-[20px] pb-[15px]">
               <h2 className="text-2xl font-bold text-left mb-3 text-gray-800">
@@ -138,6 +168,7 @@ const Home = () => {
           </div>
 
           <div
+            onClick={() => navigate(`/shop?category=Fishing`)}
             style={{
               backgroundColor: "#EFEFEF",
               width: "320px",
@@ -148,7 +179,7 @@ const Home = () => {
               justifyContent: "space-between",
               overflow: "hidden",
             }}
-            className="group flex flex-col justify-between border border-transparent hover:border-[#195E29] transition"
+            className="group flex flex-col justify-between border border-transparent hover:border-[#195E29] transition cursor-pointer"
           >
             <div className="pl-[20px] pr-[20px] pt-[20px] pb-[15px]">
               <h2 className="text-2xl font-bold text-left mb-3 text-gray-800">
@@ -171,6 +202,7 @@ const Home = () => {
           </div>
 
           <div
+            onClick={() => navigate(`/shop?category=Climbing`)}
             style={{
               backgroundColor: "#EFEFEF",
               width: "320px",
@@ -181,7 +213,7 @@ const Home = () => {
               justifyContent: "space-between",
               overflow: "hidden",
             }}
-            className="group flex flex-col justify-between border border-transparent hover:border-[#195E29] transition"
+            className="group flex flex-col justify-between border border-transparent hover:border-[#195E29] transition cursor-pointer"
           >
             <div className="pl-[20px] pr-[20px] pt-[20px] pb-[15px]">
               <h2 className="text-2xl font-bold text-left mb-3 text-gray-800">
@@ -217,7 +249,8 @@ const Home = () => {
               >
                 <div
                   style={{ width: "280px", height: "205px" }}
-                  className="flex items-center justify-center"
+                  className="flex items-center justify-center cursor-pointer"
+                  onClick={() => navigate(`/product/${product._id}`)}
                 >
                   <img
                     src={
@@ -226,13 +259,16 @@ const Home = () => {
                         : "/products/placeholder.jpg"
                     }
                     alt={product.productName}
-                    className="h-full w-auto object-cover pt-[20px]"
+                    className="h-full w-auto object-cover pt-[20px] hover:scale-105 transition-transform duration-200"
                   />
                 </div>
 
                 {/* Updated Product Name with 2-line truncation */}
                 <div className="mt-[30px] h-[48px] overflow-hidden">
-                  <p className="text-[15px] text-left leading-relaxed line-clamp-2">
+                  <p
+                    className="text-[15px] text-left leading-relaxed line-clamp-2 cursor-pointer hover:text-green-600 transition-colors"
+                    onClick={() => navigate(`/product/${product._id}`)}
+                  >
                     {product.productName}
                   </p>
                 </div>
@@ -259,15 +295,15 @@ const Home = () => {
                     Rs. {product.price}
                   </span>
                   <span
-                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all ${
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] cursor-pointer ${
                       addedItems.includes(product._id)
                         ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                        : "hover:bg-[#195E29] hover:text-[#ffffff] cursor-pointer"
+                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] "
                     }`}
                     onClick={() => handleAddToCart(product._id)}
                   >
                     {addedItems.includes(product._id)
-                      ? "Added to Cart"
+                      ? "Added ✓"
                       : "+ Add to Cart"}
                   </span>
                 </div>
@@ -277,7 +313,7 @@ const Home = () => {
       </div>
       <div>
         <div className="ml-[75px] mr-[75px] mb-[70px] mt-[30px] overflow-hidden">
-          <img src="/Sale-banner.png" alt="" className="w-full h-full" />
+          <BannerSlider />
         </div>
       </div>
       <div className="">
@@ -325,56 +361,37 @@ const Home = () => {
         </div>
         <hr className="mr-[75px] ml-[75px]" />
       </div>
-      <div className="mt-[70px] mb-[30px] bg-[#195E29]/70 w-auto h-[570px] relative">
-        <div className="w-[1205px] h-[585px] flex items-center justify-between absolute top-[80px] left-1/2 -translate-x-1/2 bg-[#ffffff]">
+      <div className="mt-[70px] mb-[30px] bg-[#195E29]/80 w-auto h-[590px] relative">
+        <div className="w-[1205px] h-[610px] flex items-center justify-between absolute top-[80px] left-1/2 -translate-x-1/2 bg-[#ffffff] rounded-2xl shadow-2xl overflow-hidden">
           {/* Image Container */}
-          <div className="w-[585px] h-[585px]">
+          <div className="w-[585px] h-fit relative">
             <img
               src="/Subs-Home.jpg"
               alt="Outdoor"
               className="w-full h-full object-cover"
             />
-          </div>
-          <div className="pr-[50px]">
-            <p className="text-[20px] mb-[10px] text-[#797979] font-bold">
-              About the Great Outdoors
-            </p>
-            <p className="text-4xl font-bold leading-12">
-              Fast and Easy Ways to <br /> Get Your Gear
-            </p>
-            <p className="text-[18px] leading-8 mb-5 mt-3">
-              If you'd rather be in the mountains right now and you love all{" "}
-              <br />
-              the gear, footwear, and apparel that keeps you outside, <br />
-              you've come to the right place.
-            </p>
-            <div className="flex flex-wrap items-center">
-              <input
-                type="text"
-                placeholder="Enter Your Email Address"
-                className="w-[310px] h-[45px] pl-[20px] bg-[#ECEAEA]/50 border border-transparent placeholder:text-gray-600 outline-none rounded-[5px]"
-              />
-
-              <button
-                className="bg-[#8DC53E] text-white font-semibold hover:bg-[#7AB32E] transition-colors duration-200"
-                style={{
-                  height: "45px",
-                  width: "163px",
-                  borderRadius: "5px",
-                  borderBottomRightRadius: "25px",
-                  boxShadow: "none",
-                  border: "none",
-                  fontSize: "16px",
-                  color: "white",
-                  fontFamily: "inherit",
-                }}
-              >
-                Subscribe Now
-              </button>
+            {/* Simple badge */}
+            <div className="absolute top-6 left-6 bg-[#8DC53E] text-white px-4 py-2 rounded-full text-sm font-semibold">
+              🏔️ Join 10,000+ Adventurers
             </div>
-            <p className="text-[12px] text-[#797979] font-bold mt-1">
-              Online Only. First time Subscribers Only
+          </div>
+
+          <div className="pr-[110px] pl-[10px]">
+            <p className="text-[20px] mb-[10px] text-[#797979] font-bold">
+              Never Miss an Adventure
             </p>
+            <p className="text-4xl font-bold leading-12 mb-4">
+              Get Notified About New <br /> Outdoor Events
+            </p>
+            <p className="text-[16px] leading-8 mb-8 mt-3">
+              Be the first to know about hiking trips, camping adventures,{" "}
+              <br />
+              climbing expeditions, fishing tours, and outdoor workshops. <br />
+              Join our community of outdoor enthusiasts!
+            </p>
+
+            {/* Updated EventSubscriptionForm with modern checkboxes */}
+            <EventSubscriptionForm />
           </div>
         </div>
       </div>
@@ -493,7 +510,8 @@ const Home = () => {
               >
                 <div
                   style={{ width: "280px", height: "205px" }}
-                  className="flex items-center justify-center"
+                  className="flex items-center justify-center cursor-pointer"
+                  onClick={() => navigate(`/product/${product._id}`)}
                 >
                   <img
                     src={
@@ -502,13 +520,16 @@ const Home = () => {
                         : "/products/placeholder.jpg"
                     }
                     alt={product.productName}
-                    className="h-full w-auto object-cover pt-[20px]"
+                    className="h-full w-auto object-cover pt-[20px] hover:scale-105 transition-transform duration-200"
                   />
                 </div>
 
                 {/* Updated Product Name with 2-line truncation */}
                 <div className="mt-[30px] h-[48px] overflow-hidden">
-                  <p className="text-[15px] text-left leading-relaxed line-clamp-2">
+                  <p
+                    className="text-[15px] text-left leading-relaxed line-clamp-2 cursor-pointer hover:text-green-600 transition-colors"
+                    onClick={() => navigate(`/product/${product._id}`)}
+                  >
                     {product.productName}
                   </p>
                 </div>
@@ -535,15 +556,15 @@ const Home = () => {
                     Rs. {product.price}
                   </span>
                   <span
-                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all ${
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] cursor-pointer ${
                       addedItems.includes(product._id)
                         ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                        : "hover:bg-[#195E29] hover:text-[#ffffff] cursor-pointer"
+                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] "
                     }`}
                     onClick={() => handleAddToCart(product._id)}
                   >
                     {addedItems.includes(product._id)
-                      ? "Added to Cart"
+                      ? "Added ✓"
                       : "+ Add to Cart"}
                   </span>
                 </div>

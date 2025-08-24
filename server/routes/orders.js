@@ -1,58 +1,315 @@
-import express from 'express';
-import {
-  createOrder,
-  getAllOrders,
-  getOrder,
-  getUserOrders,
-  updateOrderStatus,
-  cancelOrder,
-  getOrderAnalytics,
-  deleteOrder
-} from '../controllers/orderController.js';
-import { authenticateUser } from '../middleware/authMiddleware.js';
-import Order from '../models/Order.js';
+import express from "express";
+import Order from "../models/Order.js";
+import Cart from "../models/Cart.js";
+import Product from "../models/Product.js";
+import { protect } from "../middleware/authMiddleware.js";
+import Address from "../models/Address.js"; // Import Address model
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
-router.use(authenticateUser);
-
-// Customer routes
-router.post('/', createOrder); // Create new order from cart
-router.get('/my-orders', getUserOrders); // Get current user's orders
-router.get('/:id', getOrder); // Get single order (customer can only access their own)
-router.put('/:id/cancel', cancelOrder); // Cancel order (customer or admin)
-
-// Admin routes - these should be protected with admin role check
-router.get('/', getAllOrders); // Get all orders (admin only)
-router.put('/:id/status', updateOrderStatus); // Update order status (admin only)
-router.get('/analytics/dashboard', getOrderAnalytics); // Get order analytics (admin only)
-router.delete('/:id', deleteOrder); // Delete order (admin only)
-
-// Update order route - should match what frontend is calling
-router.put('/:id/update', authenticateUser, async (req, res) => {
+// @desc    Create new order from cart
+// @route   POST /api/orders/checkout
+// @access  Private
+router.post("/checkout", protect, async (req, res) => {
   try {
-    const { orderStatus, paymentStatus, trackingNumber, carrier, estimatedDelivery } = req.body;
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      {
-        orderStatus,
-        paymentStatus,
-        trackingNumber,
-        carrier,
-        estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null
-      },
-      { new: true }
-    );
+    console.log("Checkout request received from user:", req.user._id);
 
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+    const {
+      paymentMethod = "Cash On Delivery",
+      notes = "",
+      couponCode = "",
+    } = req.body;
+
+    // Get user's cart
+    const cart = await Cart.findOne({ user: req.user._id }).populate({
+      path: "items.product",
+      select: "productName price imageUrl brand stock",
+    });
+
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Your cart is empty",
+      });
     }
 
-    res.json(order);
+    // Get user's default address
+    const defaultAddress = await Address.findOne({
+      user: req.user._id,
+      isDefault: true,
+    });
+
+    if (!defaultAddress) {
+      return res.status(400).json({
+        success: false,
+        message: "No default address found. Please add an address first.",
+      });
+    }
+
+    // Calculate totals
+    let subtotal = 0;
+    const orderItems = [];
+
+    // Validate stock and prepare order items
+    for (const item of cart.items) {
+      if (!item.product) {
+        return res.status(400).json({
+          success: false,
+          message: "Some products in your cart are no longer available",
+        });
+      }
+
+      // Check stock availability
+      if (item.product.stock < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for ${item.product.productName}. Available: ${item.product.stock}`,
+        });
+      }
+
+      const itemTotal = item.product.price * item.quantity;
+      subtotal += itemTotal;
+
+      orderItems.push({
+        productId: item.product._id,
+        productName: item.product.productName,
+        quantity: item.quantity,
+        price: item.product.price,
+        total: itemTotal,
+        image: item.product.imageUrl,
+        sku: item.product.sku || "",
+      });
+    }
+
+    // Calculate tax and shipping
+    const taxRate = 0.13; // 13% tax (adjust as needed)
+    const tax = subtotal * taxRate;
+    const shippingCost = subtotal > 100 ? 0 : 15; // Free shipping over $100
+    const discount = 0; // Implement coupon logic if needed
+
+    const totalAmount = subtotal + tax + shippingCost - discount;
+
+    // Create order
+    const order = await Order.create({
+      user: req.user._id,
+      orderDate: new Date(),
+      totalAmount: subtotal,
+      tax: tax,
+      shippingCost: shippingCost,
+      discount: discount,
+      orderStatus: "Processing",
+      paymentStatus:
+        paymentMethod === "Cash On Delivery" ? "Pending" : "Pending",
+      paymentMethod: paymentMethod,
+      shippingAddress: {
+        addressType: defaultAddress.addressType,
+        addressLine1: defaultAddress.addressLine1,
+        addressLine2: defaultAddress.addressLine2 || "",
+        city: defaultAddress.city,
+        province: defaultAddress.province,
+        postalCode: defaultAddress.postalCode,
+        country: defaultAddress.country || "Canada",
+        phoneNumber: defaultAddress.phoneNumber || "",
+        instructions: defaultAddress.instructions || "",
+      },
+      billingAddress: {
+        addressType: defaultAddress.addressType,
+        addressLine1: defaultAddress.addressLine1,
+        addressLine2: defaultAddress.addressLine2 || "",
+        city: defaultAddress.city,
+        province: defaultAddress.province,
+        postalCode: defaultAddress.postalCode,
+        country: defaultAddress.country || "Canada",
+        phoneNumber: defaultAddress.phoneNumber || "",
+      },
+      items: orderItems,
+      notes: notes,
+      couponCode: couponCode,
+      ipAddress: req.ip,
+      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    });
+
+    // Update product stock
+    for (const item of cart.items) {
+      await Product.findByIdAndUpdate(
+        item.product._id,
+        { $inc: { stock: -item.quantity } },
+        { new: true }
+      );
+    }
+
+    // Clear the cart
+    await Cart.findOneAndUpdate(
+      { user: req.user._id },
+      { $set: { items: [] } }
+    );
+
+    console.log("Order created successfully:", order.orderId);
+
+    res.status(201).json({
+      success: true,
+      message: "Order placed successfully!",
+      data: {
+        order: {
+          _id: order._id,
+          orderId: order.orderId,
+          totalAmount: order.totalAmount,
+          tax: order.tax,
+          shippingCost: order.shippingCost,
+          grandTotal: order.grandTotal,
+          orderStatus: order.orderStatus,
+          paymentStatus: order.paymentStatus,
+          estimatedDelivery: order.estimatedDelivery,
+          createdAt: order.createdAt,
+        },
+      },
+    });
   } catch (error) {
-    console.error('Error updating order:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Checkout error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process order. Please try again.",
+      error: error.message,
+    });
+  }
+});
+
+// @desc    Get user's orders
+// @route   GET /api/orders
+// @access  Private
+router.get("/", protect, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const sort = req.query.sort || "-createdAt";
+
+    const skip = (page - 1) * limit;
+
+    // Build query
+    let query = { user: req.user._id };
+    if (status) {
+      query.orderStatus = status;
+    }
+
+    // Get orders with pagination
+    const orders = await Order.find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .populate({
+        path: "items.productId",
+        select: "productName imageUrl brand",
+        model: "Product",
+      });
+
+    // Get total count for pagination
+    const totalOrders = await Order.countDocuments(query);
+    const totalPages = Math.ceil(totalOrders / limit);
+
+    res.json({
+      success: true,
+      data: {
+        orders: orders,
+        pagination: {
+          currentPage: page,
+          totalPages: totalPages,
+          totalOrders: totalOrders,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Get orders error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch orders",
+    });
+  }
+});
+
+// @desc    Get single order
+// @route   GET /api/orders/:id
+// @access  Private
+router.get("/:id", protect, async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    }).populate({
+      path: "items.productId",
+      select: "productName imageUrl brand",
+      model: "Product",
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: order,
+    });
+  } catch (error) {
+    console.error("Get single order error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch order details",
+    });
+  }
+});
+
+// @desc    Cancel order
+// @route   PUT /api/orders/:id/cancel
+// @access  Private
+router.put("/:id/cancel", protect, async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // Check if order can be cancelled
+    if (["Shipped", "Delivered", "Cancelled"].includes(order.orderStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot cancel order with status: ${order.orderStatus}`,
+      });
+    }
+
+    // Update order status
+    order.orderStatus = "Cancelled";
+    await order.save();
+
+    // Restore product stock
+    for (const item of order.items) {
+      await Product.findByIdAndUpdate(item.productId, {
+        $inc: { stock: item.quantity },
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Order cancelled successfully",
+      data: order,
+    });
+  } catch (error) {
+    console.error("Cancel order error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to cancel order",
+    });
   }
 });
 

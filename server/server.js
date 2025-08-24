@@ -199,7 +199,6 @@ try {
   console.log("🛑 Server cannot start without database connection");
   process.exit(1);
 }
-app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Register routes only after successful database connection
 if (dbConnected) {
@@ -234,7 +233,7 @@ app.all("*", (req, res) => {
     ],
   });
 });
-
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 // Global error handling middleware (must be last)
 app.use(errorHandler);
 

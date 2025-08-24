@@ -8,6 +8,7 @@ import {
   HelpCircle,
   LogOut,
   Shield,
+  Package,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -201,12 +202,12 @@ const Header = () => {
           </Link>
 
           <Link
-            to="/contactus"
+            to="/orders"
             className="flex items-center px-6 py-4 text-base text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             onClick={() => setIsProfileMenuOpen(false)}
           >
-            <HelpCircle size={20} className="mr-4 text-gray-500" />
-            <span>Help center</span>
+            <Package size={20} className="mr-4 text-gray-500" />
+            <span>My Orders</span>
           </Link>
 
           <hr className="my-2 border-gray-200" />
@@ -342,7 +343,7 @@ const Header = () => {
               </li>
               <li>
                 <Link
-                  to="/events"
+                  to="/Events"
                   className={`${linkColor} hover:font-bold hover:underline transition-all duration-200 no-underline`}
                 >
                   Events
@@ -459,7 +460,7 @@ const Header = () => {
                     Contact Us
                   </Link>
                   <Link
-                    to="/events"
+                    to="/Events"
                     onClick={toggleMenu}
                     className="block text-gray-800 hover:text-[#8DC53E] transition-colors duration-200 text-base font-medium py-2 border-b border-gray-100"
                   >

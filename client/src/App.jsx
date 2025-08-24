@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "./store/store";
+import { ToastContainer } from "react-toastify";
 
 // Components
 import TopBar from "./components/topBar";
@@ -43,6 +44,9 @@ import ReviewEdit from "./pages/Admin/ReviewEdit";
 import AdminProduct from "./pages/Admin/AdminProduct";
 // import ProductDetails from "./pages/ProductDetails";
 import SearchResults from "./pages/SearchResults";
+import Checkout from "./pages/checkout";
+import Orders from "./pages/orders";
+import OrderDetails from "./pages/OrderDetails";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -168,7 +172,6 @@ const App = () => {
               <Route path="/shop" element={<Shop />} />
               <Route path="/aboutUs" element={<About />} />
               <Route path="/contactus" element={<Contact />} />
-              <Route path="/Admin/Others" element={<AdminOthers />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
@@ -179,7 +182,10 @@ const App = () => {
               />
               <Route path="/userProfile" element={<Profile />} />
               <Route path="/userSettings" element={<Settings />} />
-              <Route path="/Admin/OrderManagement" element={<OrderManagement />} />
+              <Route
+                path="/Admin/OrderManagement"
+                element={<OrderManagement />}
+              />
               <Route path="/AdminDashboard" element={<AdminDashboard />} />
               <Route path="/Admin/Inventory" element={<Inventory />} />
               <Route path="/Admin/User" element={<UserManagement />} />
@@ -194,10 +200,13 @@ const App = () => {
                 element={<ReviewEdit />}
               />{" "}
               <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
-             
               <Route path="/search" element={<SearchResults />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/:id" element={<OrderDetails />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
+            <ToastContainer position="top-right" autoClose={3000} />
           </Layout>
         </Router>
       </Provider>
