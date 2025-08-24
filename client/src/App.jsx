@@ -11,6 +11,7 @@ import store from "./store/store";
 import { ToastContainer } from "react-toastify";
 
 // Components
+import ScrollToTop from "./components/ScrollToTop";
 import TopBar from "./components/topBar";
 import Header from "./components/header";
 import HomeHero from "./components/homeHero";
@@ -24,7 +25,6 @@ import Home from "./pages/Home";
 import Shop from "./pages/shop";
 import About from "./pages/aboutUs";
 import Contact from "./pages/contactus";
-import AdminOthers from "./pages/Admin/Others";
 import OrderManagement from "./pages/Admin/OrderManagement";
 import Cart from "./pages/cart";
 import Register from "./pages/register";
@@ -42,11 +42,15 @@ import EmployeeManagement from "./pages/Admin/Employee";
 import ReviewsList from "./pages/Admin/ReviewList";
 import ReviewEdit from "./pages/Admin/ReviewEdit";
 import AdminProduct from "./pages/Admin/AdminProduct";
-// import ProductDetails from "./pages/ProductDetails";
+import ProductDetails from "./pages/ProductDetails";
 import SearchResults from "./pages/SearchResults";
 import Checkout from "./pages/checkout";
 import Orders from "./pages/orders";
 import OrderDetails from "./pages/OrderDetails";
+import OthersManagement from "./pages/Admin/AdminOthers";
+import Events from "./pages/events";
+import EventManagement from "./pages/Admin/EventManagement";
+import EventDetail from "./pages/EventDetail";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -167,6 +171,7 @@ const App = () => {
       <Provider store={store}>
         <Router>
           <Layout>
+            <ScrollToTop /> {/* 👈 Moved inside Layout */}
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
@@ -195,15 +200,21 @@ const App = () => {
               />
               <Route path="/Admin/Employee" element={<EmployeeManagement />} />
               <Route path="/Admin/ReviewList" element={<ReviewsList />} />
-              <Route
-                path="/Admin/ReviewEdit/:id"
-                element={<ReviewEdit />}
-              />{" "}
+              <Route path="/Admin/ReviewEdit/:id" element={<ReviewEdit />} />
               <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
               <Route path="/search" element={<SearchResults />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderDetails />} />
+              <Route path="/product/:id" element={<ProductDetails />} />
+              <Route path="/Admin/AdminOthers" element={<OthersManagement />} />
+              <Route
+                path="/Admin/EventManagement"
+                element={<EventManagement />}
+              />
+              <Route path="/events/:id" element={<EventDetail />} />
+
+              <Route path="/events" element={<Events />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <ToastContainer position="top-right" autoClose={3000} />
