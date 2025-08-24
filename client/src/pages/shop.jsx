@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import axios from "axios";
+import { getAuthToken, isLoggedIn } from "../utils/auth";
+import ScrollToTop from "../components/ScrollToTop";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -10,7 +12,12 @@ const Shop = () => {
   const [addedItems, setAddedItems] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage] = useState(9); // Changed to 9 for better 3x3 grid
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialCategory = queryParams.get("category");
+  const [selectedCategories, setSelectedCategories] = useState(
+    initialCategory ? [initialCategory] : []
+  );
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [priceRange, setPriceRange] = useState([0, 100000]);
   const [categoryOpen, setCategoryOpen] = useState(true);
@@ -46,7 +53,12 @@ const Shop = () => {
 
   useEffect(() => {
     fetchProducts();
+    window.scrollTo(0, 0, { behavior: "smooth" }); // Scroll to top when component mounts
   }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0, { behavior: "smooth" }); // Scroll to top when search params change
+  }, [location.search]);
 
   const fetchProducts = async () => {
     try {
@@ -61,20 +73,54 @@ const Shop = () => {
 
   const handleAddToCart = async (productId) => {
     try {
+      // Check if user is logged in
+      if (!isLoggedIn()) {
+        if (
+          window.confirm(
+            "Please log in to add items to cart. Would you like to log in now?"
+          )
+        ) {
+          navigate("/login");
+        }
+        return;
+      }
+
+      // Prevent duplicate clicks
       if (addedItems.includes(productId)) return;
+
+      // Optimistically update UI
       setAddedItems([...addedItems, productId]);
 
-      await axios.post(`${API_URL}/cart/add`, {
-        productId,
-        quantity: 1,
-      });
+      const response = await axios.post(
+        `${API_URL}/cart/add`,
+        {
+          productId,
+          quantity: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+          withCredentials: true,
+        }
+      );
 
+      console.log("Added to cart:", response.data);
+
+      // Reset the button state after 2 seconds
       setTimeout(() => {
-        setAddedItems(addedItems.filter((id) => id !== productId));
+        setAddedItems((prev) => prev.filter((id) => id !== productId));
       }, 2000);
     } catch (error) {
       console.error("Error adding to cart:", error);
-      setAddedItems(addedItems.filter((id) => id !== productId));
+      setAddedItems((prev) => prev.filter((id) => id !== productId));
+
+      if (error.response?.status === 401) {
+        alert("Please log in to add items to cart");
+        navigate("/login");
+      } else {
+        alert("Failed to add item to cart. Please try again.");
+      }
     }
   };
 
