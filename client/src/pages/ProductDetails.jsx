@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getAuthToken, isLoggedIn } from "../utils/auth";
 import {
   Heart,
   Share2,
@@ -50,6 +51,10 @@ const ProductDetails = () => {
   const API_URL = "http://localhost:5000/api";
 
   useEffect(() => {
+    // Scroll to top first
+    window.scrollTo(0, 0);
+
+    // Then fetch data
     fetchProduct();
     fetchReviews();
   }, [id]);
@@ -139,15 +144,53 @@ const ProductDetails = () => {
 
   const handleAddToCart = async () => {
     try {
-      await axios.post(`${API_URL}/cart/add`, {
-        productId: id,
-        quantity: quantity,
-        selectedColor: selectedColor,
-      });
+      // Check if user is logged in
+      if (!isLoggedIn()) {
+        if (
+          window.confirm(
+            "Please log in to add items to cart. Would you like to log in now?"
+          )
+        ) {
+          navigate("/login");
+        }
+        return;
+      }
+
+      // Prevent duplicate clicks
+      if (addedToCart) return;
+
+      // Optimistically update UI
       setAddedToCart(true);
+
+      const response = await axios.post(
+        `${API_URL}/cart/add`,
+        {
+          productId: id,
+          quantity: quantity,
+          selectedColor: selectedColor,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      console.log("Added to cart:", response.data);
+
+      // Reset the button state after 3 seconds
       setTimeout(() => setAddedToCart(false), 3000);
     } catch (error) {
       console.error("Error adding to cart:", error);
+      setAddedToCart(false);
+
+      if (error.response?.status === 401) {
+        alert("Please log in to add items to cart");
+        navigate("/login");
+      } else {
+        alert("Failed to add item to cart. Please try again.");
+      }
     }
   };
 
@@ -362,24 +405,24 @@ const ProductDetails = () => {
   return (
     <div className="bg-gray-50 min-h-screen font-sans antialiased text-gray-900">
       {/* Modern Breadcrumb */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
+      <div className="w-full h-20 bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <nav className="flex items-center text-sm">
             <button
               onClick={() => navigate("/")}
-              className="text-gray-500 hover:text-green-600 transition-colors duration-200"
+              className="text-white hover:text-green-600 transition-colors duration-200 cursor-pointer"
             >
               Home
             </button>
             <ChevronRight size={16} className="text-gray-400 mx-1" />
             <button
               onClick={() => navigate("/shop")}
-              className="text-gray-500 hover:text-green-600 transition-colors duration-200"
+              className="text-white hover:text-green-600 transition-colors duration-200 cursor-pointer"
             >
               Shop
             </button>
             <ChevronRight size={16} className="text-gray-400 mx-1" />
-            <span className="text-gray-800 font-semibold truncate max-w-xs">
+            <span className="text-white font-semibold truncate max-w-xs">
               {product.productName}
             </span>
           </nav>
@@ -653,7 +696,7 @@ const ProductDetails = () => {
                     onClick={handleAddToCart}
                     className="flex-1 bg-green-600 text-white rounded-xl py-3 px-6 font-semibold text-lg hover:bg-green-700 transition-colors duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    {addedToCart ? "Added to Cart" : "Add to Cart"}
+                    {addedToCart ? "Added ✓" : "+ Add to Cart"}
                   </button>
                 </div>
               </div>
