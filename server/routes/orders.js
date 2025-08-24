@@ -1,9 +1,10 @@
+// routes/orders.js
 import express from "express";
 import Order from "../models/Order.js";
 import Cart from "../models/Cart.js";
 import Product from "../models/Product.js";
 import { protect } from "../middleware/authMiddleware.js";
-import Address from "../models/Address.js"; // Import Address model
+import Address from "../models/Address.js";
 
 const router = express.Router();
 
@@ -108,7 +109,7 @@ router.post("/checkout", protect, async (req, res) => {
         city: defaultAddress.city,
         province: defaultAddress.province,
         postalCode: defaultAddress.postalCode,
-        country: defaultAddress.country || "Canada",
+        country: defaultAddress.country || "Sri Lanka",
         phoneNumber: defaultAddress.phoneNumber || "",
         instructions: defaultAddress.instructions || "",
       },
@@ -119,7 +120,7 @@ router.post("/checkout", protect, async (req, res) => {
         city: defaultAddress.city,
         province: defaultAddress.province,
         postalCode: defaultAddress.postalCode,
-        country: defaultAddress.country || "Canada",
+        country: defaultAddress.country || "Sri Lanka",
         phoneNumber: defaultAddress.phoneNumber || "",
       },
       items: orderItems,
@@ -175,9 +176,9 @@ router.post("/checkout", protect, async (req, res) => {
 });
 
 // @desc    Get user's orders
-// @route   GET /api/orders
+// @route   GET /api/orders/user
 // @access  Private
-router.get("/", protect, async (req, res) => {
+router.get("/user", protect, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -314,5 +315,3 @@ router.put("/:id/cancel", protect, async (req, res) => {
 });
 
 export default router;
-
-// Note: The update route is added to handle updates from the frontend.

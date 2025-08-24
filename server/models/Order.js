@@ -10,7 +10,7 @@ const OrderItemSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true, // Added trim to remove whitespace
-    maxlength: 100, // Added maximum length
+    maxlength: 300, // Added maximum length
   },
   quantity: {
     type: Number,
@@ -267,6 +267,7 @@ orderSchema.pre("save", function (next) {
   }
   next();
 });
+
 orderSchema.methods.calculateGrandTotal = function () {
   return this.totalAmount + this.tax + this.shippingCost - this.discount;
 };

@@ -1,48 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Filter, 
-  Eye, 
-  Edit3, 
-  Truck, 
-  CheckCircle, 
-  XCircle, 
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Filter,
+  Eye,
+  Edit3,
+  Truck,
+  CheckCircle,
+  XCircle,
   RefreshCw,
   Download,
   Calendar,
   Package,
   DollarSign,
-  User
-} from 'lucide-react';
-import axios from 'axios';
-import { toast } from 'react-toastify';
+  User,
+} from "lucide-react";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    status: '',
-    paymentStatus: '',
-    search: '',
-    startDate: '',
-    endDate: ''
+    status: "",
+    paymentStatus: "",
+    search: "",
+    startDate: "",
+    endDate: "",
   });
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
-    pages: 0
+    pages: 0,
   });
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateData, setUpdateData] = useState({
-    orderStatus: '',
-    paymentStatus: '',
-    trackingNumber: '',
-    carrier: '',
-    estimatedDelivery: ''
+    orderStatus: "",
+    paymentStatus: "",
+    trackingNumber: "",
+    carrier: "",
+    estimatedDelivery: "",
   });
   const [analytics, setAnalytics] = useState(null);
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
   // Fetch orders
   const fetchOrders = async () => {
@@ -51,25 +53,30 @@ const OrderManagement = () => {
       const params = {
         page: pagination.page,
         limit: pagination.limit,
-        ...filters
+        ...filters,
       };
 
-      const response = await axios.get('/api/orders', {
+      const response = await axios.get(`${API_URL}/admin/orders`, {
         params,
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
-      setOrders(response.data.orders);
-      setPagination(prev => ({
-        ...prev,
-        total: response.data.pagination.total,
-        pages: response.data.pagination.pages
-      }));
+      if (response.data.success) {
+        setOrders(response.data.orders || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: response.data.pagination?.total || 0,
+          pages: response.data.pagination?.pages || 0,
+        }));
+      } else {
+        throw new Error(response.data.message || "Failed to fetch orders");
+      }
     } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast.error('Failed to fetch orders');
+      console.error("Error fetching orders:", error);
+      toast.error(error.response?.data?.message || "Failed to fetch orders");
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -78,14 +85,20 @@ const OrderManagement = () => {
   // Fetch analytics
   const fetchAnalytics = async () => {
     try {
-      const response = await axios.get('/api/orders/analytics/dashboard', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+      const response = await axios.get(
+        `${API_URL}/admin/orders/analytics/dashboard`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      setAnalytics(response.data);
+      );
+
+      if (response.data.success) {
+        setAnalytics(response.data);
+      }
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      console.error("Error fetching analytics:", error);
     }
   };
 
@@ -96,8 +109,8 @@ const OrderManagement = () => {
 
   // Handle filter changes
   const handleFilterChange = (field, value) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setFilters((prev) => ({ ...prev, [field]: value }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   // Enhanced handleUpdateOrder function
@@ -107,25 +120,31 @@ const OrderManagement = () => {
 
     try {
       const response = await axios.put(
-        `/api/orders/${selectedOrder._id}/update`, // Changed endpoint
+        `${API_URL}/admin/orders/${selectedOrder._id}/update`,
         updateData,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
       );
 
-      toast.success(`Order #${selectedOrder.orderId} updated successfully`);
-      fetchOrders();
-      setShowUpdateModal(false);
-      setSelectedOrder(null);
+      if (response.data.success) {
+        toast.success(`Order #${selectedOrder.orderId} updated successfully`, {
+          icon: <CheckCircle size={20} className="text-green-600" />, // fixed size
+        });
+        fetchOrders();
+        setShowUpdateModal(false);
+        setSelectedOrder(null);
+      } else {
+        throw new Error(response.data.message || "Failed to update order");
+      }
     } catch (error) {
-      console.error('Error updating order:', error);
+      console.error("Error updating order:", error);
       toast.error(
-        error.response?.data?.message || 
-        'Failed to update order. Please try again.'
+        error.response?.data?.message ||
+          "Failed to update order. Please try again."
       );
     }
   };
@@ -133,61 +152,66 @@ const OrderManagement = () => {
   // Handle order cancellation
   const handleCancelOrder = async (orderId, reason) => {
     try {
-      const response = await axios.put(`/api/orders/${orderId}/cancel`, 
-        { reason }, 
+      const response = await axios.put(
+        `${API_URL}/admin/orders/${orderId}/cancel`,
+        { reason },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
       );
 
-      toast.success('Order cancelled successfully');
-      fetchOrders();
+      if (response.data.success) {
+        toast.success("Order cancelled successfully");
+        fetchOrders();
+      } else {
+        throw new Error(response.data.message || "Failed to cancel order");
+      }
     } catch (error) {
-      console.error('Error cancelling order:', error);
-      toast.error(error.response?.data?.message || 'Failed to cancel order');
+      console.error("Error cancelling order:", error);
+      toast.error(error.response?.data?.message || "Failed to cancel order");
     }
   };
 
   // Get status badge color
   const getStatusBadgeColor = (status) => {
     const colors = {
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Processing': 'bg-blue-100 text-blue-800',
-      'Shipped': 'bg-purple-100 text-purple-800',
-      'Delivered': 'bg-green-100 text-green-800',
-      'Cancelled': 'bg-red-100 text-red-800',
-      'Refunded': 'bg-gray-100 text-gray-800'
+      Pending: "bg-yellow-100 text-yellow-800",
+      Processing: "bg-blue-100 text-blue-800",
+      Shipped: "bg-purple-100 text-purple-800",
+      Delivered: "bg-green-100 text-green-800",
+      Cancelled: "bg-red-100 text-red-800",
+      Refunded: "bg-gray-100 text-gray-800",
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || "bg-gray-100 text-gray-800";
   };
 
   // Get payment status badge color
   const getPaymentStatusBadgeColor = (status) => {
     const colors = {
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Paid': 'bg-green-100 text-green-800',
-      'Failed': 'bg-red-100 text-red-800',
-      'Refunded': 'bg-gray-100 text-gray-800'
+      Pending: "bg-yellow-100 text-yellow-800",
+      Paid: "bg-green-100 text-green-800",
+      Failed: "bg-red-100 text-red-800",
+      Refunded: "bg-gray-100 text-gray-800",
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || "bg-gray-100 text-gray-800";
   };
 
   // Format currency
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-CA', {
-      style: 'currency',
-      currency: 'CAD'
-    }).format(amount);
+    return new Intl.NumberFormat("en-LK", {
+      style: "currency",
+      currency: "LKR",
+    }).format(amount || 0);
   };
 
   // Format date
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-CA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-LK", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -195,8 +219,12 @@ const OrderManagement = () => {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Management</h1>
-        <p className="text-gray-600">Manage customer orders, update status, and track deliveries</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Order Management
+        </h1>
+        <p className="text-gray-600">
+          Manage customer orders, update status, and track deliveries
+        </p>
       </div>
 
       {/* Analytics Cards */}
@@ -207,7 +235,9 @@ const OrderManagement = () => {
               <Package className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Total Orders</p>
-                <p className="text-2xl font-semibold text-gray-900">{analytics.totalOrders}</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {analytics.totalOrders || 0}
+                </p>
               </div>
             </div>
           </div>
@@ -217,7 +247,7 @@ const OrderManagement = () => {
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Total Revenue</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {formatCurrency(analytics.totalRevenue)}
+                  {formatCurrency(analytics.totalRevenue || 0)}
                 </p>
               </div>
             </div>
@@ -228,7 +258,7 @@ const OrderManagement = () => {
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Avg Order Value</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {formatCurrency(analytics.avgOrderValue)}
+                  {formatCurrency(analytics.avgOrderValue || 0)}
                 </p>
               </div>
             </div>
@@ -239,7 +269,8 @@ const OrderManagement = () => {
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Completed</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {analytics.ordersByStatus?.find(s => s._id === 'Delivered')?.count || 0}
+                  {analytics.ordersByStatus?.find((s) => s._id === "Delivered")
+                    ?.count || 0}
                 </p>
               </div>
             </div>
@@ -251,7 +282,9 @@ const OrderManagement = () => {
       <div className="bg-white rounded-lg shadow mb-6 p-6">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Search
+            </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -259,17 +292,19 @@ const OrderManagement = () => {
                 placeholder="Order ID, customer..."
                 className="pl-10 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
               />
             </div>
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Order Status
+            </label>
             <select
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
             >
               <option value="">All Status</option>
               <option value="Pending">Pending</option>
@@ -282,11 +317,15 @@ const OrderManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Payment Status
+            </label>
             <select
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={filters.paymentStatus}
-              onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
+              onChange={(e) =>
+                handleFilterChange("paymentStatus", e.target.value)
+              }
             >
               <option value="">All Payment</option>
               <option value="Pending">Pending</option>
@@ -297,22 +336,26 @@ const OrderManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
             <input
               type="date"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={filters.startDate}
-              onChange={(e) => handleFilterChange('startDate', e.target.value)}
+              onChange={(e) => handleFilterChange("startDate", e.target.value)}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
             <input
               type="date"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={filters.endDate}
-              onChange={(e) => handleFilterChange('endDate', e.target.value)}
+              onChange={(e) => handleFilterChange("endDate", e.target.value)}
             />
           </div>
 
@@ -320,11 +363,11 @@ const OrderManagement = () => {
             <button
               onClick={() => {
                 setFilters({
-                  status: '',
-                  paymentStatus: '',
-                  search: '',
-                  startDate: '',
-                  endDate: ''
+                  status: "",
+                  paymentStatus: "",
+                  search: "",
+                  startDate: "",
+                  endDate: "",
                 });
               }}
               className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200"
@@ -406,18 +449,31 @@ const OrderManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(order.orderStatus)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(
+                          order.orderStatus
+                        )}`}
+                      >
                         {order.orderStatus}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusBadgeColor(order.paymentStatus)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusBadgeColor(
+                          order.paymentStatus
+                        )}`}
+                      >
                         {order.paymentStatus}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {formatCurrency(order.totalAmount + order.tax + order.shippingCost - order.discount)}
+                        {formatCurrency(
+                          order.totalAmount +
+                            order.tax +
+                            order.shippingCost -
+                            order.discount
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -428,10 +484,13 @@ const OrderManagement = () => {
                             setUpdateData({
                               orderStatus: order.orderStatus,
                               paymentStatus: order.paymentStatus,
-                              trackingNumber: order.trackingNumber || '',
-                              carrier: order.carrier || '',
-                              estimatedDelivery: order.estimatedDelivery ? 
-                                new Date(order.estimatedDelivery).toISOString().split('T')[0] : ''
+                              trackingNumber: order.trackingNumber || "",
+                              carrier: order.carrier || "",
+                              estimatedDelivery: order.estimatedDelivery
+                                ? new Date(order.estimatedDelivery)
+                                    .toISOString()
+                                    .split("T")[0]
+                                : "",
                             });
                             setShowUpdateModal(true);
                           }}
@@ -442,25 +501,28 @@ const OrderManagement = () => {
                         <button
                           onClick={() => {
                             // View order details - you can implement this
-                            console.log('View order:', order._id);
+                            console.log("View order:", order._id);
                           }}
                           className="text-green-600 hover:text-green-900"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        {order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Delivered' && (
-                          <button
-                            onClick={() => {
-                              const reason = prompt('Enter cancellation reason:');
-                              if (reason) {
-                                handleCancelOrder(order._id, reason);
-                              }
-                            }}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </button>
-                        )}
+                        {order.orderStatus !== "Cancelled" &&
+                          order.orderStatus !== "Delivered" && (
+                            <button
+                              onClick={() => {
+                                const reason = prompt(
+                                  "Enter cancellation reason:"
+                                );
+                                if (reason) {
+                                  handleCancelOrder(order._id, reason);
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          )}
                       </div>
                     </td>
                   </tr>
@@ -475,7 +537,12 @@ const OrderManagement = () => {
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
             <div className="flex-1 flex justify-between">
               <button
-                onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                onClick={() =>
+                  setPagination((prev) => ({
+                    ...prev,
+                    page: Math.max(1, prev.page - 1),
+                  }))
+                }
                 disabled={pagination.page === 1}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -485,7 +552,12 @@ const OrderManagement = () => {
                 Page {pagination.page} of {pagination.pages}
               </span>
               <button
-                onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.pages, prev.page + 1) }))}
+                onClick={() =>
+                  setPagination((prev) => ({
+                    ...prev,
+                    page: Math.min(prev.pages, prev.page + 1),
+                  }))
+                }
                 disabled={pagination.page === pagination.pages}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -513,7 +585,12 @@ const OrderManagement = () => {
                   <select
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={updateData.orderStatus}
-                    onChange={(e) => setUpdateData(prev => ({ ...prev, orderStatus: e.target.value }))}
+                    onChange={(e) =>
+                      setUpdateData((prev) => ({
+                        ...prev,
+                        orderStatus: e.target.value,
+                      }))
+                    }
                     required
                   >
                     <option value="Pending">Pending</option>
@@ -532,7 +609,12 @@ const OrderManagement = () => {
                   <select
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={updateData.paymentStatus}
-                    onChange={(e) => setUpdateData(prev => ({ ...prev, paymentStatus: e.target.value }))}
+                    onChange={(e) =>
+                      setUpdateData((prev) => ({
+                        ...prev,
+                        paymentStatus: e.target.value,
+                      }))
+                    }
                     required
                   >
                     <option value="Pending">Pending</option>
@@ -551,7 +633,12 @@ const OrderManagement = () => {
                     type="text"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={updateData.trackingNumber}
-                    onChange={(e) => setUpdateData(prev => ({ ...prev, trackingNumber: e.target.value }))}
+                    onChange={(e) =>
+                      setUpdateData((prev) => ({
+                        ...prev,
+                        trackingNumber: e.target.value,
+                      }))
+                    }
                     placeholder="Enter tracking number"
                   />
                 </div>
@@ -565,7 +652,12 @@ const OrderManagement = () => {
                     type="text"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={updateData.carrier}
-                    onChange={(e) => setUpdateData(prev => ({ ...prev, carrier: e.target.value }))}
+                    onChange={(e) =>
+                      setUpdateData((prev) => ({
+                        ...prev,
+                        carrier: e.target.value,
+                      }))
+                    }
                     placeholder="e.g. Canada Post, UPS"
                   />
                 </div>
@@ -579,7 +671,12 @@ const OrderManagement = () => {
                     type="date"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={updateData.estimatedDelivery}
-                    onChange={(e) => setUpdateData(prev => ({ ...prev, estimatedDelivery: e.target.value }))}
+                    onChange={(e) =>
+                      setUpdateData((prev) => ({
+                        ...prev,
+                        estimatedDelivery: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -611,4 +708,3 @@ const OrderManagement = () => {
 };
 
 export default OrderManagement;
-

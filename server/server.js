@@ -22,6 +22,10 @@ import settingsRoutes from "./routes/settings.js";
 import employeeRoutes from "./routes/employee.js";
 import reviewsRouter from "./routes/review.js";
 import searchRoutes from "./routes/search.js";
+import adminOrderRoutes from "./routes/adminOrders.js";
+import bannerRoutes from "./routes/banners.js";
+import eventRoutes from "./routes/events.js";
+import eventNotificationRoutes from "./routes/eventNotifications.js";
 
 // Load environment variables
 dotenv.config();
@@ -68,7 +72,10 @@ app.use(
     optionsSuccessStatus: 200,
   })
 );
+const uploadsPath = path.join(__dirname, "uploads");
+console.log("Serving static files from:", uploadsPath); // Debug log
 
+app.use("/uploads", express.static(uploadsPath));
 // Handle preflight requests
 app.options("*", cors());
 app.use(
@@ -214,6 +221,10 @@ if (dbConnected) {
   app.use("/api/employee", employeeRoutes);
   app.use("/api/reviews", reviewsRouter);
   app.use("/api/search", searchRoutes);
+  app.use("/api/admin/orders", adminOrderRoutes); // Admin orders
+  app.use("/api/banners", bannerRoutes);
+  app.use("/api/events", eventRoutes);
+  app.use("/api/event-notifications", eventNotificationRoutes);
 }
 
 // 404 handler for undefined routes
@@ -236,6 +247,8 @@ app.all("*", (req, res) => {
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 // Global error handling middleware (must be last)
 app.use(errorHandler);
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const PORT = process.env.PORT || 5000;
 
