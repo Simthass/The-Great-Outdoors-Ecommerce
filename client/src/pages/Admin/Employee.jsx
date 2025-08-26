@@ -13,6 +13,8 @@ import {
   Plus,
   User,
   ChevronUp,
+  DollarSign, 
+  TrendingUp
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import { useNavigate } from "react-router-dom";
@@ -141,6 +143,7 @@ const EmployeeManagement = () => {
     email: "",
     phoneNumber: "",
     address: "",
+    salary: "", 
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -244,6 +247,8 @@ const EmployeeManagement = () => {
       errors.email = "Email is invalid";
     if (!formData.phoneNumber.trim())
       errors.phoneNumber = "Phone number is required";
+      if (!formData.salary || formData.salary <= 0) 
+    errors.salary = "Valid salary is required";
     if (!formData.address.trim()) errors.address = "Address is required";
 
     setFormErrors(errors);
@@ -257,6 +262,7 @@ const EmployeeManagement = () => {
       email: "",
       phoneNumber: "",
       address: "",
+      salary:"",
     });
     setFormErrors({});
     setError(null);
@@ -511,19 +517,43 @@ const EmployeeManagement = () => {
         {/* Main Content */}
         <div className="flex-1" ref={topRef}>
           {/* Stats */}
-          <div className="p-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Employees</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {totalEmployees}
-                  </p>
-                </div>
-                <Users className="h-10 w-10 text-blue-500" />
-              </div>
-            </div>
-          </div>
+<div className="p-6">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600">Total Employees</p>
+          <p className="text-2xl font-bold text-gray-900">{totalEmployees}</p>
+        </div>
+        <Users className="h-10 w-10 text-blue-500" />
+      </div>
+    </div>
+    
+    <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600">Total Salary Expense</p>
+          <p className="text-2xl font-bold text-gray-900">
+            ${employees.reduce((sum, emp) => sum + (emp.salary || 0), 0).toFixed(2)}
+          </p>
+        </div>
+        <DollarSign className="h-10 w-10 text-green-500" />
+      </div>
+    </div>
+    
+    <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600">Average Salary</p>
+          <p className="text-2xl font-bold text-gray-900">
+            ${employees.length ? (employees.reduce((sum, emp) => sum + (emp.salary || 0), 0) / employees.length).toFixed(2) : '0.00'}
+          </p>
+        </div>
+        <TrendingUp className="h-10 w-10 text-purple-500" />
+      </div>
+    </div>
+  </div>
+</div>
 
           {error && (
             <div className="mx-6 mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
@@ -620,6 +650,9 @@ const EmployeeManagement = () => {
                     <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
                       Address
                     </th>
+                        <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
+      Salary
+    </th>
                     <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
                       Joined Date
                     </th>
@@ -691,6 +724,11 @@ const EmployeeManagement = () => {
                             {employee.address}
                           </div>
                         </td>
+<td className="py-4 px-6">
+  <div className="text-gray-600">
+    {employee.salary ? `$${employee.salary.toFixed(2)}` : "$0.00"}
+  </div>
+</td>
                         <td className="py-4 px-6">
                           <div className="text-gray-600">
                             {formatDate(employee.joinedDate)}
@@ -898,6 +936,24 @@ const EmployeeManagement = () => {
                     </p>
                   )}
                 </div>
+                 <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Salary (Rs.)
+    </label>
+    <input
+      type="number"
+      name="salary"
+      value={formData.salary}
+      onChange={handleInputChange}
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+      placeholder="Enter salary"
+      min="0"
+      step="0.01"
+    />
+    {formErrors.salary && (
+      <p className="text-red-500 text-xs mt-1">{formErrors.salary}</p>
+    )}
+  </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4">

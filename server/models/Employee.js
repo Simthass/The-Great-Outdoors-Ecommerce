@@ -72,6 +72,12 @@ const employeeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+      salary: {
+      type: Number,
+      required: [true, "Salary is required"],
+      min: [0, "Salary cannot be negative"],
+      max: [1000000, "Salary cannot exceed 1,000,000"],
+    },
   },
   {
     timestamps: true,
