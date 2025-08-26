@@ -26,6 +26,7 @@ import adminOrderRoutes from "./routes/adminOrders.js";
 import bannerRoutes from "./routes/banners.js";
 import eventRoutes from "./routes/events.js";
 import eventNotificationRoutes from "./routes/eventNotifications.js";
+import reportRoutes from "./routes/reports.js";
 
 // Load environment variables
 dotenv.config();
@@ -225,6 +226,7 @@ if (dbConnected) {
   app.use("/api/banners", bannerRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/event-notifications", eventNotificationRoutes);
+  app.use("/api/reports", reportRoutes);
 }
 
 // 404 handler for undefined routes
