@@ -5,10 +5,10 @@ import mongoose from "mongoose";
 // Create new employee
 export const createEmployee = async (req, res) => {
   try {
-    const { name, position, email, phoneNumber, address } = req.body;
+    const { name, position, email, phoneNumber, address, salary } = req.body;
 
-    // Validation
-    if (!name || !position || !email || !phoneNumber || !address) {
+    // Validation - Make sure ALL fields are properly checked
+    if (!name || !position || !email || !phoneNumber || !address || !salary) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
@@ -18,6 +18,7 @@ export const createEmployee = async (req, res) => {
           ...(!email && { email: "Email is required" }),
           ...(!phoneNumber && { phoneNumber: "Phone number is required" }),
           ...(!address && { address: "Address is required" }),
+          ...(!salary && { salary: "Salary is required" }),
         },
       });
     }
@@ -40,6 +41,7 @@ export const createEmployee = async (req, res) => {
       email: email.toLowerCase().trim(),
       phoneNumber: phoneNumber.trim(),
       address: address.trim(),
+      salary: parseFloat(salary), // Convert string to number
       createdBy: req.user._id,
     });
 
@@ -82,7 +84,6 @@ export const createEmployee = async (req, res) => {
     });
   }
 };
-
 // Get all employees with pagination, search and filtering
 export const getAllEmployees = async (req, res) => {
   try {
@@ -184,11 +185,10 @@ export const getEmployeeById = async (req, res) => {
 };
 
 // Update employee
-// Update employee
 export const updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, position, email, phoneNumber, address } = req.body;
+    const { name, position, email, phoneNumber, address, salary } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -197,7 +197,8 @@ export const updateEmployee = async (req, res) => {
       });
     }
 
-    if (!name || !position || !email || !phoneNumber || !address) {
+    // Make sure ALL fields are properly checked
+    if (!name || !position || !email || !phoneNumber || !address || !salary) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
@@ -224,13 +225,14 @@ export const updateEmployee = async (req, res) => {
       });
     }
 
-    // Update fields (but keep createdBy unchanged!)
+    // Update fields
     employee.name = name.trim();
     employee.position = position;
     employee.email = email.toLowerCase().trim();
     employee.phoneNumber = phoneNumber.trim();
     employee.address = address.trim();
-    employee.updatedBy = req.user._id; // only set updatedBy
+    employee.salary = parseFloat(salary); // Convert string to number
+    employee.updatedBy = req.user._id;
 
     await employee.save();
 
