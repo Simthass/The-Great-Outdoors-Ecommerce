@@ -34,6 +34,8 @@
     "get-caller-file": "^2.0.5",
     "has-flag": "^4.0.0",
     "is-fullwidth-code-point": "^3.0.0",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.534.0",
     "multer": "^2.0.2",

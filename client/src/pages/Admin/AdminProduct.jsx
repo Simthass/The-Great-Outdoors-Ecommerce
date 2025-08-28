@@ -511,7 +511,7 @@ const AdminProduct = () => {
                   </div>
                   <div className="absolute top-2 left-2 flex flex-col gap-1">
                     <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
-                      {product.category.categoryName}
+                      {product.categoryName}
                     </span>
                     {product.isHotThisWeek && (
                       <span className="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
