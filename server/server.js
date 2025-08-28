@@ -28,6 +28,7 @@ import eventRoutes from "./routes/events.js";
 import eventNotificationRoutes from "./routes/eventNotifications.js";
 import productReviewRoutes from "./routes/productReviews.js"; // User review functionality
 import productReportsRoutes from "./routes/productReports.js";
+import inventoryRoutes from "./routes/inventory.js";
 
 // Load environment variables
 dotenv.config();
@@ -203,8 +204,8 @@ if (dbConnected) {
   app.use("/api/event-notifications", eventNotificationRoutes);
   app.use("/api/admin/reviews", adminReviewsRoutes);
   app.use("/api/reports", productReportsRoutes);
-  // Review routes - Fixed duplicate endpoints
-  app.use("/api/product-reviews", productReviewRoutes); // User review functionality (changed from /api/reviews)
+  app.use("/api/product-reviews", productReviewRoutes);
+  app.use("/api/inventory", inventoryRoutes);
 }
 
 // 404 handler for undefined routes
