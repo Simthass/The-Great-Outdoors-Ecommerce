@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import StarRating from "../../components/StarRating";
 import Sidebar from "../../components/Sidebar";
-import { listReviews, deleteReview } from "../../lib/ReviewsApi";
+import { listAdminReviews, deleteAdminReview } from "../../lib/ReviewsApi"; // Make sure this path is correct
 import { useNavigate } from "react-router-dom";
 import { Star, Filter, Plus, FileText, ChevronUp } from "lucide-react";
 
@@ -39,7 +39,7 @@ export default function ReviewsList() {
     (async () => {
       setLoading(true);
       try {
-        const res = await listReviews();
+        const res = await listAdminReviews();
         // Ensure res is an array
         setData(Array.isArray(res) ? res : []);
       } catch (error) {
@@ -100,7 +100,7 @@ export default function ReviewsList() {
 
   const onDelete = async (id) => {
     if (!confirm("Delete this review?")) return;
-    await deleteReview(id);
+    await deleteAdminReview(id);
     setData((rows) => rows.filter((r) => r.reviewId !== id));
   };
 
@@ -230,10 +230,10 @@ export default function ReviewsList() {
                       Rating
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
-                      Product ID
+                      Product Name
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
-                      Customer ID
+                      Customer Name
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
                       Review ID
@@ -281,7 +281,9 @@ export default function ReviewsList() {
                           <StarRating value={Number(r.rating) || 0} />
                         </td>
                         <td className="py-4 px-6 text-gray-900">
-                          {r.productId}
+                          {r.productId.length > 30
+                            ? `${r.productId.substring(0, 30)}...`
+                            : r.productId}
                         </td>
                         <td className="py-4 px-6 text-gray-900">
                           {r.customerId}

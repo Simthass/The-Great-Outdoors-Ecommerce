@@ -66,7 +66,15 @@ const productSchema = mongoose.Schema(
       required: true,
       default: false,
     },
+    // Add this field to the existing productSchema
+    reviews: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ProductReview",
+      },
+    ],
   },
+
   {
     timestamps: true,
   }

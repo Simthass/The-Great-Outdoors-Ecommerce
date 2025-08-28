@@ -127,7 +127,7 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
     } else if (key === "Products") {
       navigate("/Admin/AdminProduct");
     } else if (key === "reports") {
-      navigate("/Admin/ReportGeneration/userReport");
+      navigate("/Admin/ReportGeneration/productReport");
     }
   };
 
