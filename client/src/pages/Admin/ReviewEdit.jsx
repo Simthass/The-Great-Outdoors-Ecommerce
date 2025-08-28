@@ -286,31 +286,40 @@ export default function ReviewEdit() {
                   </div>
 
                   {/* Customer and Product Info */}
+                  {/* Customer and Product Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         <User className="h-4 w-4 inline mr-1" />
-                        Customer ID <span className="text-red-500">*</span>
+                        Customer Name <span className="text-red-500">
+                          *
+                        </span>{" "}
+                        {/* Changed label */}
                       </label>
                       <input
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         name="customerId"
                         value={form.customerId}
                         onChange={onChange}
-                        placeholder="C001"
+                        placeholder="John Doe"
+                        readOnly // Make it read-only since it's a name, not editable ID
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         <Package className="h-4 w-4 inline mr-1" />
-                        Product ID <span className="text-red-500">*</span>
+                        Product Name <span className="text-red-500">
+                          *
+                        </span>{" "}
+                        {/* Changed label */}
                       </label>
                       <input
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         name="productId"
                         value={form.productId}
                         onChange={onChange}
-                        placeholder="P001"
+                        placeholder="Product Name"
+                        readOnly // Make it read-only since it's a name, not editable ID
                       />
                     </div>
                     <div>
@@ -327,7 +336,6 @@ export default function ReviewEdit() {
                       />
                     </div>
                   </div>
-
                   {/* Status */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">

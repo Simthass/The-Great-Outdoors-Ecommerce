@@ -41,24 +41,52 @@ const ProductDetails = () => {
     comment: "",
     reviewerName: "",
   });
-
+  // Add these missing state variables after your existing useState declarations:
+  const [canReview, setCanReview] = useState(false);
+  const [reviewCheckLoading, setReviewCheckLoading] = useState(false);
+  const [userExistingReview, setUserExistingReview] = useState(null);
   // Modal State
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmModalMessage, setConfirmModalMessage] = useState("");
   const [confirmModalAction, setConfirmModalAction] = useState(null);
 
+  const [userProfile, setUserProfile] = useState(null);
+
   // Fallback API URL since import.meta.env is not available
   const API_URL = "http://localhost:5000/api";
 
   useEffect(() => {
-    // Scroll to top first
     window.scrollTo(0, 0);
-
-    // Then fetch data
     fetchProduct();
     fetchReviews();
-  }, [id]);
+    checkCanReview();
+    if (isLoggedIn()) {
+      fetchUserProfile();
+    }
+  }, [id, editingReview]);
 
+  const fetchUserProfile = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await axios.get(`${API_URL}/users/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.success) {
+        setUserProfile(response.data.data);
+
+        // Only auto-fill reviewer name if we're NOT editing an existing review
+        if (!editingReview) {
+          setNewReview((prev) => ({
+            ...prev,
+            reviewerName: `${response.data.data.firstName} ${response.data.data.lastName}`,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  };
   const fetchProduct = async () => {
     try {
       const response = await axios.get(`${API_URL}/products/${id}`);
@@ -100,45 +128,69 @@ const ProductDetails = () => {
   };
   const fetchReviews = async () => {
     try {
-      const response = await axios.get(`${API_URL}/products/${id}/reviews`);
-      setReviews(response.data);
+      setReviewsLoading(true);
+      const response = await axios.get(
+        `${API_URL}/product-reviews/product/${id}`
+      );
+
+      if (response.data.success) {
+        const reviewsData = response.data.data.reviews;
+
+        // If user is logged in, mark their own reviews as editable
+        if (isLoggedIn()) {
+          const token = getAuthToken();
+          const userResponse = await axios.get(`${API_URL}/users/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (userResponse.data.success) {
+            const userId = userResponse.data.data._id;
+            reviewsData.forEach((review) => {
+              if (review.user && review.user._id === userId) {
+                review.canEdit = true;
+              }
+            });
+          }
+        }
+
+        setReviews(reviewsData);
+      }
     } catch (error) {
       console.error("Error fetching reviews:", error);
-      // Fallback to sample reviews if API fails
-      setReviews([
-        {
-          _id: "1",
-          reviewerName: "Sarah M.",
-          rating: 5,
-          title: "Excellent Quality!",
-          comment:
-            "Excellent quality! Exactly what I was looking for. Fast shipping and great customer service.",
-          createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-          canEdit: true,
-        },
-        {
-          _id: "2",
-          reviewerName: "John D.",
-          rating: 5,
-          title: "Exceeded Expectations",
-          comment:
-            "Very satisfied with this purchase. The product exceeded my expectations and arrived quickly.",
-          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          canEdit: false,
-        },
-        {
-          _id: "3",
-          reviewerName: "Emily R.",
-          rating: 4,
-          title: "Good Product",
-          comment:
-            "Good product overall. Minor issues but customer service was helpful in resolving them.",
-          createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
-          canEdit: false,
-        },
-      ]);
+      setReviews([]);
     } finally {
       setReviewsLoading(false);
+    }
+  };
+  const checkCanReview = async () => {
+    if (!isLoggedIn()) {
+      setCanReview(false);
+      return;
+    }
+
+    try {
+      setReviewCheckLoading(true);
+      const response = await axios.get(
+        `${API_URL}/product-reviews/can-review/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setCanReview(response.data.canReview);
+
+        if (response.data.existingReview) {
+          setUserExistingReview(response.data.existingReview);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking review eligibility:", error);
+      setCanReview(false);
+    } finally {
+      setReviewCheckLoading(false);
     }
   };
 
@@ -206,99 +258,115 @@ const ProductDetails = () => {
     // Reset image selection when color changes
     setSelectedImage(0);
   };
-
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
 
-    if (!newReview.reviewerName.trim() || !newReview.comment.trim()) {
-      setConfirmModalMessage("Please fill in all required fields.");
+    if (!isLoggedIn()) {
+      navigate("/login");
+      return;
+    }
+
+    // Add validation for reviewerName
+    if (!newReview.reviewerName || newReview.reviewerName.trim() === "") {
+      setConfirmModalMessage("Please enter your name");
       setShowConfirmModal(true);
       return;
     }
 
     try {
       const reviewData = {
-        ...newReview,
         productId: id,
-        createdAt: new Date(),
-        canEdit: true,
+        rating: parseInt(newReview.rating),
+        title: newReview.title ? newReview.title.trim() : "",
+        comment: newReview.comment.trim(),
+        reviewerName: newReview.reviewerName.trim(), // This should now be defined
       };
 
+      console.log("📝 Submitting review data:", reviewData);
+
+      let response;
       if (editingReview) {
-        // Update existing review
-        const response = await axios.put(
-          `${API_URL}/reviews/${editingReview._id}`,
-          reviewData
-        );
-        setReviews(
-          reviews.map((review) =>
-            review._id === editingReview._id
-              ? { ...response.data, canEdit: true }
-              : review
-          )
-        );
-        setEditingReview(null);
-      } else {
-        // Add new review
-        const response = await axios.post(
-          `${API_URL}/products/${id}/reviews`,
-          reviewData
-        );
-        setReviews([
+        response = await axios.put(
+          `${API_URL}/product-reviews/${editingReview._id}`, // ✅ fixed
+          reviewData,
           {
-            ...(response.data || { ...reviewData, _id: Date.now().toString() }),
-            canEdit: true,
-          },
-          ...reviews,
-        ]);
-      }
-
-      // Reset form
-      setNewReview({
-        rating: 5,
-        title: "",
-        comment: "",
-        reviewerName: "",
-      });
-      setShowReviewForm(false);
-    } catch (error) {
-      console.error("Error submitting review:", error);
-      // For demo purposes, add review locally if API fails
-      const reviewData = {
-        _id: Date.now().toString(),
-        ...newReview,
-        productId: id,
-        createdAt: new Date(),
-        canEdit: true,
-      };
-
-      if (editingReview) {
-        setReviews(
-          reviews.map((review) =>
-            review._id === editingReview._id ? reviewData : review
-          )
+            headers: {
+              Authorization: `Bearer ${getAuthToken()}`,
+              "Content-Type": "application/json",
+            },
+          }
         );
-        setEditingReview(null);
       } else {
-        setReviews([reviewData, ...reviews]);
+        response = await axios.post(`${API_URL}/product-reviews`, reviewData, {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        });
       }
 
-      setNewReview({
-        rating: 5,
-        title: "",
-        comment: "",
-        reviewerName: "",
-      });
-      setShowReviewForm(false);
+      console.log("✅ Review response:", response.data);
+
+      if (response.data.success) {
+        // Refresh reviews and check review status
+        await fetchReviews();
+        await checkCanReview();
+
+        // Reset form
+        setNewReview({
+          rating: 5,
+          title: "",
+          comment: "",
+          reviewerName: "",
+        });
+        setShowReviewForm(false);
+        setEditingReview(null);
+
+        alert(
+          editingReview
+            ? "Review updated successfully!"
+            : "Review submitted successfully!"
+        );
+      }
+    } catch (error) {
+      console.error("❌ Error submitting review:", error);
+      console.error("❌ Error response:", error.response?.data);
+
+      let errorMessage = "Failed to submit review. Please try again.";
+
+      if (error.response?.status === 400) {
+        errorMessage = error.response.data.message || errorMessage;
+
+        // If there are validation errors, show them
+        if (error.response.data.errors) {
+          const errorDetails = error.response.data.errors
+            .map((err) => `${err.field}: ${err.message}`)
+            .join(", ");
+          errorMessage += ` Details: ${errorDetails}`;
+        }
+      } else if (error.response?.status === 401) {
+        errorMessage = "Please log in again to submit your review.";
+        navigate("/login");
+        return;
+      }
+
+      setConfirmModalMessage(errorMessage);
+      setShowConfirmModal(true);
     }
   };
-
   const handleEditReview = (review) => {
+    let reviewerName = review.reviewerName;
+
+    // If user is logged in, force fill from profile
+    if (isLoggedIn() && userProfile) {
+      reviewerName = `${userProfile.firstName} ${userProfile.lastName}`;
+    }
+
     setNewReview({
-      rating: review.rating,
+      rating: review.rating || 5,
       title: review.title || "",
-      comment: review.comment,
-      reviewerName: review.reviewerName,
+      comment: review.comment || "",
+      reviewerName: reviewerName || "",
     });
     setEditingReview(review);
     setShowReviewForm(true);
@@ -309,13 +377,22 @@ const ProductDetails = () => {
     setShowConfirmModal(true);
     setConfirmModalAction(() => async () => {
       try {
-        await axios.delete(`${API_URL}/reviews/${reviewId}`);
-        setReviews(reviews.filter((review) => review._id !== reviewId));
+        await axios.delete(`${API_URL}/product-reviews/${reviewId}`, {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        });
+
+        // Refresh reviews and check review status
+        await fetchReviews();
+        await checkCanReview();
         setShowConfirmModal(false);
+
+        alert("Review deleted successfully!");
       } catch (error) {
         console.error("Error deleting review:", error);
-        setReviews(reviews.filter((review) => review._id !== reviewId));
         setShowConfirmModal(false);
+        alert("Failed to delete review. Please try again.");
       }
     });
   };
@@ -796,22 +873,70 @@ const ProductDetails = () => {
         </div>
 
         {/* Reviews Section */}
+        {/* Reviews Section */}
         <div
+          className="bg-white rounded-3xl shadow-lg mt-8 p-6 sm:p-8 lg:p-10 space-y-8"
           id="reviews-section"
-          className="bg-white rounded-3xl shadow-lg mt-8 p-6 sm:p-8 lg:p-10 space-y-6"
         >
+          {/* Reviews Section Header */}
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-900">
               Customer Reviews ({reviews.length})
             </h2>
-            <button
-              onClick={() => setShowReviewForm(true)}
-              className="bg-green-600 text-white text-sm font-semibold rounded-full px-5 py-2 hover:bg-green-700 transition-colors duration-200"
-            >
-              Write a Review
-            </button>
+
+            {/* Conditional Review Button */}
+            {isLoggedIn() ? (
+              <div>
+                {reviewCheckLoading ? (
+                  <div className="flex items-center text-sm text-gray-500">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+                    Checking...
+                  </div>
+                ) : canReview ? (
+                  <button
+                    onClick={() => setShowReviewForm(true)}
+                    className="bg-green-600 text-white text-sm font-semibold rounded-full px-5 py-2 hover:bg-green-700 transition-colors duration-200"
+                  >
+                    Write a Review
+                  </button>
+                ) : userExistingReview ? (
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600 mb-2">
+                      You've already reviewed this product
+                    </p>
+                    <button
+                      onClick={() => handleEditReview(userExistingReview)}
+                      className="bg-blue-600 text-white text-sm font-semibold rounded-full px-5 py-2 hover:bg-blue-700 transition-colors duration-200"
+                    >
+                      Edit Your Review
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <button
+                      disabled
+                      className="bg-gray-400 text-white text-sm font-semibold rounded-full px-5 py-2 cursor-not-allowed"
+                      title="You can only review products you have purchased and received"
+                    >
+                      Purchase Required to Review
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Only verified purchasers can leave reviews
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate("/login")}
+                className="bg-gray-600 text-white text-sm font-semibold rounded-full px-5 py-2 hover:bg-gray-700 transition-colors duration-200"
+              >
+                Login to Review
+              </button>
+            )}
           </div>
 
+          {/* Reviews List */}
           {reviewsLoading ? (
             <div className="flex justify-center py-10">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
@@ -829,8 +954,15 @@ const ProductDetails = () => {
                         {review.reviewerName.charAt(0)}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">
-                          {review.reviewerName}
+                        <div className="flex items-center space-x-2">
+                          <div className="font-semibold text-gray-900">
+                            {review.reviewerName}
+                          </div>
+                          {review.isVerifiedPurchase && (
+                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                              ✓ Verified Purchase
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500">
                           {formatDate(review.createdAt)}
@@ -841,13 +973,13 @@ const ProductDetails = () => {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleEditReview(review)}
-                          className="text-blue-500 hover:text-blue-600"
+                          className="text-blue-500 hover:text-blue-600 text-sm"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDeleteReview(review._id)}
-                          className="text-red-500 hover:text-red-600"
+                          className="text-red-500 hover:text-red-600 text-sm"
                         >
                           Delete
                         </button>
@@ -869,9 +1001,11 @@ const ProductDetails = () => {
                         />
                       ))}
                   </div>
-                  <h4 className="font-bold text-gray-900 text-sm">
-                    {review.title || "Review"}
-                  </h4>
+                  {review.title && (
+                    <h4 className="font-bold text-gray-900 text-sm">
+                      {review.title}
+                    </h4>
+                  )}
                   <p className="text-sm text-gray-700 leading-relaxed">
                     {review.comment}
                   </p>
@@ -880,7 +1014,10 @@ const ProductDetails = () => {
             </div>
           ) : (
             <div className="text-center text-gray-500 py-10">
-              No reviews yet. Be the first to review this product!
+              No reviews yet.{" "}
+              {canReview
+                ? "Be the first to review this product!"
+                : "Purchase this product to leave the first review!"}
             </div>
           )}
         </div>
@@ -942,6 +1079,7 @@ const ProductDetails = () => {
             });
           }}
         >
+          <form onSubmit={handleReviewSubmit} className="space-y-4"></form>
           <div
             className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-xl"
             onClick={(e) => e.stopPropagation()}
@@ -1006,6 +1144,7 @@ const ProductDetails = () => {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
                   placeholder="Enter your name"
                   required
+                  disabled={isLoggedIn()} // Disable if logged in
                 />
               </div>
               <div>
