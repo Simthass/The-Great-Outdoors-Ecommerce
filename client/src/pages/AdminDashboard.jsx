@@ -3,16 +3,22 @@ import { Link } from "react-router-dom";
 
 const AdminDashboard = () => {
   return (
-    <div>
+    <div data-testid="admin-dashboard-page">
       <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center mb-20 ">
-        <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
+        <p
+          className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]"
+          data-testid="admin-dashboard-title"
+        >
           Admin Dashboard
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mr-[75px] ml-[75px]">
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mr-[75px] ml-[75px]"
+        data-testid="admin-dashboard-links"
+      >
         {/* User Management */}
-        <Link to="/Admin/User">
+        <Link to="/Admin/User" data-testid="link-user-management">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/User-Mana.png')" }}
@@ -24,8 +30,9 @@ const AdminDashboard = () => {
             </div>
           </div>
         </Link>
+
         {/* Order Management */}
-        <Link to="/Admin/OrderManagement">
+        <Link to="/Admin/OrderManagement" data-testid="link-order-management">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Order-Management.png')" }}
@@ -39,7 +46,7 @@ const AdminDashboard = () => {
         </Link>
 
         {/* Employee Management */}
-        <Link to="/Admin/Employee">
+        <Link to="/Admin/Employee" data-testid="link-employee-management">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Employee Management.png')" }}
@@ -53,7 +60,7 @@ const AdminDashboard = () => {
         </Link>
 
         {/* Product Management */}
-        <Link to="/Admin/AdminProduct">
+        <Link to="/Admin/AdminProduct" data-testid="link-product-management">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Product-Management.png')" }}
@@ -67,7 +74,7 @@ const AdminDashboard = () => {
         </Link>
 
         {/* Inventory Management */}
-        <Link to="/Admin/Inventory">
+        <Link to="/Admin/Inventory" data-testid="link-inventory-management">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Inventory-Management.png')" }}
@@ -81,7 +88,7 @@ const AdminDashboard = () => {
         </Link>
 
         {/* Review Management */}
-        <Link to="/Admin/ReviewList">
+        <Link to="/Admin/ReviewList" data-testid="link-review-management">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/Review-Management.png')" }}
@@ -93,7 +100,9 @@ const AdminDashboard = () => {
             </div>
           </div>
         </Link>
-        <Link to="/Admin/EventManagement">
+
+        {/* Event / Others */}
+        <Link to="/Admin/EventManagement" data-testid="link-other-management">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
             style={{ backgroundImage: "url('/User-Mana.png')" }}
