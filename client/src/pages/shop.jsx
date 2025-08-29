@@ -34,7 +34,7 @@ const Shop = () => {
     "Camping",
     "Fishing",
     "Hiking",
-    "Hunting",
+    "Sports Shooting",
     "Outfitting",
     "Hydration",
     "Knives & Multitools",

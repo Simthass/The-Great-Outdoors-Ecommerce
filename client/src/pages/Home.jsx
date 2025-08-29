@@ -95,7 +95,7 @@ const Home = () => {
         <div className="flex flex-wrap items-center justify-between ml-[75px] mr-[75px]">
           {/* Hunting */}
           <div
-            onClick={() => navigate(`/shop?category=Hunting`)}
+            onClick={() => navigate(`/shop?category=Sports Shooting`)}
             data-testid="tile-hunting"
             style={{
               backgroundColor: "#EFEFEF",
@@ -111,7 +111,7 @@ const Home = () => {
           >
             <div className="pl-[20px] pr-[20px] pt-[20px] pb-[15px]">
               <h2 className="text-2xl font-bold text-left mb-3 text-gray-800">
-                Shop Hunting
+                Shop Sports Shooting
               </h2>
               <p className="text-sm text-left mb-2 text-gray-600 leading-relaxed">
                 🔥 Adventure-ready gear at your fingertips
