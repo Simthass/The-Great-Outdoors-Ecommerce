@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import * as XLSX from "xlsx";
 import { 
   Edit3, Package, AlertTriangle, XCircle, Search, Filter, Plus, 
   TrendingUp, TrendingDown, RefreshCw, X, Save, ArrowUpDown,
-  ChevronDown, ChevronUp, Download, Upload, FileText, Bell
+  ChevronDown, ChevronUp, Download, FileText, Bell
 } from 'lucide-react';
 
 const InventoryDashboard = () => {
@@ -38,9 +37,6 @@ const InventoryDashboard = () => {
   // API configuration
   const API_BASE_URL = 'http://localhost:5000/api/inventory';
 
-// Load data from backend
-// (removed duplicate declaration, see below for the actual function)
-
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -66,164 +62,163 @@ const InventoryDashboard = () => {
   };
 
   // Handle Add Inventory
-// In your handleAddInventory function
-// In your handleAddInventory function
-const handleAddInventory = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('No authentication token found. Please log in again.');
-    }
-
-    const response = await fetch(API_BASE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        name: formData.name,
-        quantity: parseInt(formData.quantity),
-        price: parseFloat(formData.price),
-        lowStockThreshold: parseInt(formData.lowStockThreshold),
-        reorderPoint: parseInt(formData.reorderPoint),
-        maxStockLevel: formData.maxStockLevel ? parseInt(formData.maxStockLevel) : undefined,
-        location: formData.location,
-        supplier: formData.supplier,
-        category: formData.category
-      })
-    });
+  const handleAddInventory = async (e) => {
+    e.preventDefault();
+    setLoading(true);
     
-    const responseData = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(responseData.message || `Failed to add inventory: ${response.status} ${response.statusText}`);
-    }
-    
-    await loadInventoryData();
-    setShowAddModal(false);
-    resetForm();
-  } catch (error) {
-    console.error('Failed to add inventory:', error);
-    alert(`Error: ${error.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
-
-// In your loadInventoryData function
-const loadInventoryData = async () => {
-  setLoading(true);
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}?status=${filterStatus}&search=${searchTerm}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
       }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to load inventory');
-    }
-    
-    const data = await response.json();
-    
-    // Update this part to match the API response format
-    setInventoryData(data.data || []);
-    setStats({
-      totalProducts: data.stats?.totalProducts || 0,
-      lowStockItems: data.stats?.lowStockItems || 0,
-      outOfStockItems: data.stats?.outOfStockItems || 0,
-      totalValue: data.stats?.totalValue || 0,
-    });
-  } catch (error) {
-    console.error('Failed to load inventory:', error);
-    // Fallback to mock data if API fails
-    setInventoryData(mockInventoryData);
-    calculateStats(mockInventoryData);
-    alert(`Warning: ${error.message}. Using mock data for demonstration.`);
-  } finally {
-    setLoading(false);
-  }
-};
 
-// Add this function to your component
-const handleEditInventory = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('No authentication token found. Please log in again.');
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          quantity: parseInt(formData.quantity),
+          price: parseFloat(formData.price),
+          lowStockThreshold: parseInt(formData.lowStockThreshold),
+          reorderPoint: parseInt(formData.reorderPoint),
+          maxStockLevel: formData.maxStockLevel ? parseInt(formData.maxStockLevel) : undefined,
+          location: formData.location,
+          supplier: formData.supplier,
+          category: formData.category,
+        })
+      });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || `Failed to add inventory: ${response.status} ${response.statusText}`);
+      }
+      
+      await loadInventoryData();
+      setShowAddModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Failed to add inventory:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const response = await fetch(`${API_BASE_URL}/${editingItem._id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        name: formData.name,
-        quantity: parseInt(formData.quantity),
-        price: parseFloat(formData.price),
-        lowStockThreshold: parseInt(formData.lowStockThreshold),
-        reorderPoint: parseInt(formData.reorderPoint),
-        maxStockLevel: formData.maxStockLevel ? parseInt(formData.maxStockLevel) : undefined,
-        location: formData.location,
-        supplier: formData.supplier,
-        category: formData.category
-      })
-    });
-    
-    const responseData = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(responseData.message || `Failed to update inventory: ${response.status} ${response.statusText}`);
+  // Load inventory data
+  const loadInventoryData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}?status=${filterStatus}&search=${searchTerm}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to load inventory');
+      }
+      
+      const data = await response.json();
+      
+      setInventoryData(data.data || []);
+      setStats({
+        totalProducts: data.stats?.totalProducts || 0,
+        lowStockItems: data.stats?.lowStockItems || 0,
+        outOfStockItems: data.stats?.outOfStockItems || 0,
+        totalValue: data.stats?.totalValue || 0,
+      });
+    } catch (error) {
+      console.error('Failed to load inventory:', error);
+      // Fallback to mock data if API fails
+      setInventoryData(mockInventoryData);
+      calculateStats(mockInventoryData);
+      alert(`Warning: ${error.message}. Using mock data for demonstration.`);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Handle Edit Inventory
+  const handleEditInventory = async (e) => {
+    e.preventDefault();
+    setLoading(true);
     
-    await loadInventoryData();
-    setShowEditModal(false);
-    resetForm();
-  } catch (error) {
-    console.error('Failed to update inventory:', error);
-    alert(`Error: ${error.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/${editingItem._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          quantity: parseInt(formData.quantity),
+          price: parseFloat(formData.price),
+          lowStockThreshold: parseInt(formData.lowStockThreshold),
+          reorderPoint: parseInt(formData.reorderPoint),
+          maxStockLevel: formData.maxStockLevel ? parseInt(formData.maxStockLevel) : undefined,
+          location: formData.location,
+          supplier: formData.supplier,
+          category: formData.category
+        })
+      });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || `Failed to update inventory: ${response.status} ${response.statusText}`);
+      }
+      
+      await loadInventoryData();
+      setShowEditModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Failed to update inventory:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle Delete Inventory
-const handleDeleteInventory = async (id) => {
-  if (!window.confirm('Are you sure you want to delete this item?')) return;
-  
-  setLoading(true);
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
+  const handleDeleteInventory = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this item?')) return;
+    
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }); 
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete inventory');
       }
-    }); 
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete inventory');
+      
+      await loadInventoryData();
+    } catch (error) {
+      console.error('Failed to delete inventory:', error);
+      alert(error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    await loadInventoryData();
-  } catch (error) {
-    console.error('Failed to delete inventory:', error);
-    alert(error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
   // Open edit modal with item data
   const openEditModal = (item) => {
     setEditingItem(item);
@@ -275,13 +270,13 @@ const handleDeleteInventory = async (id) => {
     return 0;
   });
 
-  // Mock data for fallback - replace with actual API calls
+  // Mock data for fallback
   const mockInventoryData = [
-    { id: 1, name: 'ElkHorn Compound Bow Set', quantity: 3, price: 20, status: 'low', lastRestocked: '2024-07-15', location: 'Warehouse A', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Archery Pro' },
-    { id: 2, name: 'HawksBill Long Bow Set', quantity: 1, price: 15, status: 'low', lastRestocked: '2024-07-10', location: 'Warehouse A', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Archery Pro' },
-    { id: 3, name: 'Sentinel Recurve Bow Set', quantity: 4, price: 25, status: 'low', lastRestocked: '2024-07-20', location: 'Warehouse B', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Target Sports' },
-    { id: 4, name: 'Upland Compound Bow Set', quantity: 2, price: 30, status: 'low', lastRestocked: '2024-07-18', location: 'Warehouse A', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Archery Pro' },
-    { id: 5, name: 'Coleman Sundome Tents', quantity: 10, price: 30, status: 'normal', lastRestocked: '2024-07-25', location: 'Warehouse C', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Coleman Inc' },
+    { _id: '1', name: 'ElkHorn Compound Bow Set', quantity: 3, price: 20, status: 'low', lastRestocked: '2024-07-15', location: 'Warehouse A', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Archery Pro' },
+    { _id: '2', name: 'HawksBill Long Bow Set', quantity: 1, price: 15, status: 'low', lastRestocked: '2024-07-10', location: 'Warehouse A', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Archery Pro' },
+    { _id: '3', name: 'Sentinel Recurve Bow Set', quantity: 4, price: 25, status: 'low', lastRestocked: '2024-07-20', location: 'Warehouse B', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Target Sports' },
+    { _id: '4', name: 'Upland Compound Bow Set', quantity: 2, price: 30, status: 'low', lastRestocked: '2024-07-18', location: 'Warehouse A', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Archery Pro' },
+    { _id: '5', name: 'Coleman Sundome Tents', quantity: 10, price: 30, status: 'normal', lastRestocked: '2024-07-25', location: 'Warehouse C', lowStockThreshold: 5, reorderPoint: 10, supplier: 'Coleman Inc' },
   ];
 
   useEffect(() => {
@@ -330,35 +325,74 @@ const handleDeleteInventory = async (id) => {
     );
   };
 
-const handleStockUpdate = async (id, newQuantity) => {
-  setLoading(true);
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/${id}/stock`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ quantity: newQuantity })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update stock');
+  const handleStockUpdate = async (id, newQuantity) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/${id}/stock`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ quantity: newQuantity })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update stock');
+      }
+      
+      await loadInventoryData();
+    } catch (error) {
+      console.error('Failed to update stock:', error);
+      alert(error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    await loadInventoryData();
-  } catch (error) {
-    console.error('Failed to update stock:', error);
-    alert(error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const refreshData = () => {
     loadInventoryData();
+  };
+
+  // Function to generate PDF report from backend
+  const handleGenerateReport = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/report?status=${filterStatus}&search=${searchTerm}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate report');
+      }
+
+      // Create a blob from the response
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const StatCard = ({ title, value, color, icon: Icon, trend }) => {
@@ -579,13 +613,13 @@ const handleStockUpdate = async (id, newQuantity) => {
                 ) : (
                   filteredData.map((item) => (
                     <tr 
-                      key={item.id}
+                      key={item._id}
                       className={`${getRowStyle(item.status)} border-b border-gray-100 transition-colors`}
                     >
                       <td className="px-4 py-4 font-medium text-gray-800">
                         <div className="font-semibold">{item.name}</div>
                         <div className="text-gray-500 text-xs mt-1">
-                          Last restocked: {item.lastRestocked}
+                          Last restocked: {new Date(item.lastRestocked).toLocaleDateString()}
                         </div>
                       </td>
                       <td 
@@ -593,7 +627,7 @@ const handleStockUpdate = async (id, newQuantity) => {
                         onClick={() => {
                           const newQuantity = prompt(`Update quantity for ${item.name}:`, item.quantity);
                           if (newQuantity !== null && !isNaN(newQuantity)) {
-                            handleStockUpdate(item.id, parseInt(newQuantity));
+                            handleStockUpdate(item._id, parseInt(newQuantity));
                           }
                         }}
                       >
@@ -619,7 +653,7 @@ const handleStockUpdate = async (id, newQuantity) => {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDeleteInventory(item.id)}
+                          onClick={() => handleDeleteInventory(item._id)}
                           className="px-3 py-2 bg-red-100 text-red-600 rounded text-xs font-medium flex items-center gap-1.5 transition-all hover:bg-red-200"
                         >
                           <X size={14} />
@@ -643,7 +677,11 @@ const handleStockUpdate = async (id, newQuantity) => {
               Quick Actions
             </h3>
             <div className="flex flex-col gap-2.5"> 
-              <button className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-left flex items-center gap-2.5 transition-all hover:bg-gray-100">
+              <button 
+                onClick={handleGenerateReport}
+                disabled={loading}
+                className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-left flex items-center gap-2.5 transition-all hover:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
                 <FileText size={16} />
                 Generate Inventory Report
               </button>
