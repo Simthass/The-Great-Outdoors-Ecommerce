@@ -229,7 +229,31 @@ router.get("/user", protect, async (req, res) => {
     });
   }
 });
+// In your server/routes/orders.js - Add this BEFORE any /:id routes
+router.get("/all", async (req, res) => {
+  try {
+    const { limit = 1000 } = req.query;
 
+    const orders = await Order.find({})
+      .populate("user", "firstName lastName email city state role")
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
+
+    res.json({
+      success: true,
+      data: {
+        orders,
+        count: orders.length,
+      },
+    });
+  } catch (error) {
+    console.error("Get all orders error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching orders",
+    });
+  }
+});
 // @desc    Get single order
 // @route   GET /api/orders/:id
 // @access  Private

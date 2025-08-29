@@ -1,9 +1,10 @@
+// src/pages/Register.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Add this import
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
 const Register = () => {
-  const navigate = useNavigate(); // Add this hook
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -29,7 +30,6 @@ const Register = () => {
     e.preventDefault();
     setError("");
 
-    // Check if terms are agreed
     if (!formData.agreeToTerms) {
       setError("Please agree to the Terms and Conditions");
       return;
@@ -38,38 +38,16 @@ const Register = () => {
     setLoading(true);
 
     try {
-      console.log("Attempting to register with data:", {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phoneNumber: formData.phoneNumber,
-        address: formData.address,
-      });
-
-      // Test if server is reachable first
-      console.log("Testing server connection...");
-
+      // Optional health check before register
       try {
-        const healthCheck = await fetch("http://localhost:5000/api/health");
-        console.log(
-          "Health check response:",
-          healthCheck.status,
-          healthCheck.ok
-        );
-        const healthData = await healthCheck.json();
-        console.log("Health data:", healthData);
+        await fetch("http://localhost:5000/api/health");
       } catch (healthError) {
-        console.error("Health check failed:", healthError);
         throw new Error("Cannot reach server - health check failed");
       }
 
-      console.log("Server is reachable, attempting registration...");
-
       const response = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -80,47 +58,27 @@ const Register = () => {
         }),
       });
 
-      console.log("Registration response status:", response.status);
-      console.log("Registration response ok:", response.ok);
-      console.log("Registration response headers:", [
-        ...response.headers.entries(),
-      ]);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.log("Error response text:", errorText);
-        throw new Error(
-          `HTTP error! status: ${response.status} - ${errorText}`
-        );
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log("Registration response data:", data);
 
       if (data.success) {
-        // Store user data and token (Note: localStorage not available in artifacts)
-        console.log("Registration successful!", data.data);
-
-        // In a real app with localStorage:
-        // localStorage.setItem('userInfo', JSON.stringify(data.data));
-        // localStorage.setItem('token', data.data.token);
-
-        // Redirect to home page after successful registration
-        navigate("/login"); // This will redirect to home page
+        navigate("/login");
       } else {
         setError(data.message || "Registration failed");
       }
     } catch (error) {
-      console.error("Full error object:", error);
-
       if (error.message.includes("Failed to fetch")) {
         setError(
           "Cannot connect to server. Please make sure the backend server is running on port 5000."
         );
       } else if (error.message.includes("HTTP error")) {
-        setError(
-          `Server error: ${error.message}. Please check the server logs.`
-        );
+        setError(`Server error: ${error.message}. Please check the server logs.`);
+      } else if (error.message.includes("Cannot reach server")) {
+        setError("Cannot connect to server. Please make sure the backend server is running on port 5000.");
       } else {
         setError("Network error. Please try again.");
       }
@@ -140,13 +98,14 @@ const Register = () => {
       agreeToTerms: false,
     });
     setError("");
-
-    // Redirect to previous page
-    navigate(-1); // This will go back to the previous page
+    navigate(-1);
   };
 
   return (
-    <div className="m-[100px] bg-[#ECEAEA] rounded-[20px] overflow-hidden shadow-xl">
+    <div
+      className="m-[100px] bg-[#ECEAEA] rounded-[20px] overflow-hidden shadow-xl"
+      data-testid="register-page"
+    >
       <div className="flex md:flex-row">
         {/* Left Side - Image */}
         <div className="md:w-1/2 w-full relative overflow-hidden">
@@ -156,6 +115,7 @@ const Register = () => {
             alt="Adventure"
             className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
             style={{ minHeight: "600px", maxHeight: "1000px" }}
+            data-testid="register-image"
           />
         </div>
 
@@ -165,6 +125,7 @@ const Register = () => {
             <h2
               className="text-[48px] font-bold mb-[15px] text-center leading-tight"
               style={{ color: "#7d9d49ff" }}
+              data-testid="register-title"
             >
               Join The <br />
               <span style={{ color: "#6B8E3D" }}>Adventure Challenge</span>
@@ -172,30 +133,26 @@ const Register = () => {
             <p
               className="text-[16px] mb-[40px] text-center font-medium"
               style={{ color: "#4f4f4f" }}
+              data-testid="register-subtitle"
             >
               Sign Up To Embark On An Unforgettable Outdoor Experience
             </p>
 
             {error && (
-              <div className="w-full mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm">
-                <div className="flex items-center">
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {error}
-                </div>
+              <div
+                className="w-full mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm"
+                data-testid="error-alert"
+              >
+                <div className="flex items-center">{error}</div>
               </div>
             )}
 
-            <form className="w-full space-y-[25px]" onSubmit={handleSubmit}>
+            <form
+              className="w-full space-y-[25px]"
+              onSubmit={handleSubmit}
+              data-testid="register-form"
+              noValidate
+            >
               <div className="flex gap-[30px] w-full">
                 <div className="flex-1 relative">
                   <input
@@ -205,6 +162,7 @@ const Register = () => {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     required
+                    data-testid="firstName-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
                   />
                 </div>
@@ -216,6 +174,7 @@ const Register = () => {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     required
+                    data-testid="lastName-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
                   />
                 </div>
@@ -230,6 +189,7 @@ const Register = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
+                    data-testid="email-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
                   />
                 </div>
@@ -240,6 +200,7 @@ const Register = () => {
                     placeholder="Phone Number"
                     value={formData.phoneNumber}
                     onChange={handleInputChange}
+                    data-testid="phone-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
                   />
                 </div>
@@ -253,6 +214,7 @@ const Register = () => {
                     placeholder="Address"
                     value={formData.address}
                     onChange={handleInputChange}
+                    data-testid="address-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
                   />
                 </div>
@@ -265,6 +227,7 @@ const Register = () => {
                     onChange={handleInputChange}
                     required
                     minLength="6"
+                    data-testid="password-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
                   />
                 </div>
@@ -278,6 +241,7 @@ const Register = () => {
                   onChange={handleInputChange}
                   className="mt-1 w-4 h-4 accent-[#7d9d49ff] rounded focus:ring-2 focus:ring-[#7d9d49ff]/50"
                   required
+                  data-testid="terms-checkbox"
                 />
                 <label
                   className="text-[15px] leading-relaxed"
@@ -299,10 +263,8 @@ const Register = () => {
                   onClick={handleCancel}
                   disabled={loading}
                   className="w-full h-[50px] text-[16px] font-semibold rounded-[8px] outline-none border-2 border-[#79a730ff] disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95"
-                  style={{
-                    backgroundColor: "transparent",
-                    color: "#79a730ff",
-                  }}
+                  style={{ backgroundColor: "transparent", color: "#79a730ff" }}
+                  data-testid="cancel-btn"
                 >
                   Cancel
                 </button>
@@ -310,43 +272,16 @@ const Register = () => {
                   type="submit"
                   disabled={loading}
                   className="w-full h-[50px] text-[16px] font-semibold rounded-[8px] outline-none border-2 border-[#79a730ff] disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 relative overflow-hidden"
-                  style={{
-                    backgroundColor: "#79a730ff",
-                    color: "#ffffff",
-                  }}
+                  style={{ backgroundColor: "#79a730ff", color: "#ffffff" }}
+                  data-testid="submit-btn"
                 >
                   <span className="relative z-10">
-                    {loading ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <svg
-                          className="animate-spin h-5 w-5"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Registering...
-                      </div>
-                    ) : (
-                      "Submit"
-                    )}
+                    {loading ? "Registering..." : "Submit"}
                   </span>
                 </button>
               </div>
 
-              <div className="text-center pt-[25px]">
+              <div className="text-center pt-[25px]" data-testid="login-link">
                 <p className="text-[15px]" style={{ color: "#4f4f4f" }}>
                   Already have an account?{" "}
                   <Link
@@ -367,3 +302,4 @@ const Register = () => {
 };
 
 export default Register;
+

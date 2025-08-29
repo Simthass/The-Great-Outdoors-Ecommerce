@@ -1,321 +1,587 @@
 import express from "express";
 import Inventory from "../models/Inventory.js";
-import Product from "../models/Product.js";
-import { protect, adminOnly } from "../middleware/authMiddleware.js";
+import { authenticateUser, admin } from "../middleware/authMiddleware.js";
+import PDFDocument from "pdfkit";
 
 const router = express.Router();
 
-// @desc    Get all inventory items with product details
+// Apply authentication middleware to all inventory routes
+router.use(authenticateUser);
+
+// Helper function to calculate inventory stats
+const calculateStats = async (filter = {}) => {
+  try {
+    const totalProducts = await Inventory.countDocuments(filter);
+    const lowStockItems = await Inventory.countDocuments({
+      ...filter,
+      $expr: { $lte: ["$quantity", "$lowStockThreshold"] },
+      quantity: { $gt: 0 },
+    });
+    const outOfStockItems = await Inventory.countDocuments({
+      ...filter,
+      quantity: 0,
+    });
+    
+    const inventoryValue = await Inventory.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: null,
+          totalValue: { $sum: { $multiply: ["$quantity", "$price"] } },
+        },
+      },
+    ]);
+
+    // New aggregation to get value per category for the chart
+    const categoryValue = await Inventory.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$category",
+          totalValue: { $sum: { $multiply: ["$quantity", "$price"] } },
+        },
+      },
+      { $sort: { totalValue: -1 } },
+    ]);
+
+    return {
+      totalProducts: totalProducts || 0,
+      lowStockItems: lowStockItems || 0,
+      outOfStockItems: outOfStockItems || 0,
+      totalValue: inventoryValue[0]?.totalValue || 0,
+      categoryValue: categoryValue || [],
+    };
+  } catch (error) {
+    console.error('Error calculating stats:', error);
+    return {
+      totalProducts: 0,
+      lowStockItems: 0,
+      outOfStockItems: 0,
+      totalValue: 0,
+      categoryValue: [],
+    };
+  }
+};
+
+// Simplified table drawing function
+const drawSimpleTable = (doc, headers, rows, startY, title) => {
+  const startX = 50;
+  let currentY = startY;
+  const cellHeight = 20;
+  const cellWidth = (doc.page.width - 100) / headers.length;
+
+  // Draw title
+  doc.fontSize(14).font('Helvetica-Bold').text(title, startX, currentY);
+  currentY += 25;
+
+  // Draw headers
+  doc.fontSize(10).font('Helvetica-Bold');
+  headers.forEach((header, i) => {
+    doc.rect(startX + i * cellWidth, currentY, cellWidth, cellHeight)
+       .fill('#f0f0f0')
+       .stroke();
+    doc.fillColor('black')
+       .text(header, startX + i * cellWidth + 5, currentY + 5, {
+         width: cellWidth - 10,
+         height: cellHeight - 10,
+         align: 'left'
+       });
+  });
+  currentY += cellHeight;
+
+  // Draw rows
+  doc.font('Helvetica');
+  rows.forEach((row, rowIndex) => {
+    // Check for page break
+    if (currentY + cellHeight > doc.page.height - 50) {
+      doc.addPage();
+      currentY = 50;
+      
+      // Redraw headers on new page
+      doc.fontSize(10).font('Helvetica-Bold');
+      headers.forEach((header, i) => {
+        doc.rect(startX + i * cellWidth, currentY, cellWidth, cellHeight)
+           .fill('#f0f0f0')
+           .stroke();
+        doc.fillColor('black')
+           .text(header, startX + i * cellWidth + 5, currentY + 5, {
+             width: cellWidth - 10,
+             height: cellHeight - 10,
+             align: 'left'
+           });
+      });
+      currentY += cellHeight;
+    }
+
+    // Draw row background
+    const fillColor = rowIndex % 2 === 0 ? '#f9f9f9' : 'white';
+    row.forEach((cell, i) => {
+      doc.rect(startX + i * cellWidth, currentY, cellWidth, cellHeight)
+          .fill(fillColor)
+          .stroke();
+      doc.fillColor('black')
+          .text(String(cell), startX + i * cellWidth + 5, currentY + 5, {
+            width: cellWidth - 10,
+            height: cellHeight - 10,
+            align: 'left'
+          });
+    });
+    currentY += cellHeight;
+  });
+
+  return currentY + 20;
+};
+
+// New helper function to draw a bar chart
+const drawBarChart = (doc, data, startY, title) => {
+  const startX = 50;
+  const chartWidth = doc.page.width - 100;
+  const chartHeight = 200;
+  let currentY = startY;
+
+  // Chart title
+  doc.fontSize(14).font('Helvetica-Bold').text(title, startX, currentY);
+  currentY += 25;
+
+  // If no data, display a message and return
+  if (data.length === 0) {
+    doc.fontSize(12).font('Helvetica-Italic').text('No data available for this chart.', startX, currentY + 10);
+    return currentY + chartHeight + 40;
+  }
+
+  // Find max value for scaling the bars
+  const maxValue = Math.max(...data.map(d => d.totalValue));
+  const barWidth = 20;
+  const spacing = (chartWidth - (data.length * barWidth)) / (data.length + 1);
+  const chartTopY = currentY + 20;
+  const chartBottomY = chartTopY + chartHeight;
+
+  // Draw chart border
+  doc.rect(startX, chartTopY, chartWidth, chartHeight).stroke();
+
+  // Draw Y-axis labels
+  doc.fontSize(8).font('Helvetica-Bold');
+  const yAxisLabelCount = 5;
+  for (let i = 0; i <= yAxisLabelCount; i++) {
+    const value = (maxValue / yAxisLabelCount) * i;
+    const yPos = chartBottomY - (value / maxValue) * chartHeight;
+    doc.text(`$${Math.round(value)}`, startX - 45, yPos - 3, { width: 40, align: 'right' });
+    doc.moveTo(startX, yPos).lineTo(startX + chartWidth, yPos).strokeOpacity(0.1).stroke();
+  }
+
+  // Draw bars and X-axis labels
+  doc.font('Helvetica');
+  let currentX = startX + spacing;
+  data.forEach((d, i) => {
+    const barHeight = (d.totalValue / maxValue) * chartHeight;
+    doc.fillColor('#4CAF50')
+       .rect(currentX, chartBottomY - barHeight, barWidth, barHeight)
+       .fill();
+    
+    // Label for the bar
+    doc.fillColor('black')
+       .fontSize(8)
+       .text(d._id, currentX - 10, chartBottomY + 5, { width: barWidth + 20, align: 'center' });
+       
+    doc.text(`$${d.totalValue.toFixed(2)}`, currentX - 10, chartBottomY - barHeight - 15, { width: barWidth + 20, align: 'center' });
+       
+    currentX += barWidth + spacing;
+  });
+
+  return chartBottomY + 40;
+};
+
+// @desc    Get all inventory items
 // @route   GET /api/inventory
 // @access  Private/Admin
-router.get("/", protect, adminOnly, async (req, res) => {
+router.get("/", admin, async (req, res) => {
   try {
-    const inventory = await Inventory.find({})
-      .populate("product", "name description price imageUrl category sku")
-      .sort({ updatedAt: -1 });
+    const { status, search } = req.query;
+    const query = {};
+    
+    if (status && status !== "all") {
+      query.status = status;
+    }
+    
+    if (search && search.trim()) {
+      query.$or = [
+        { name: { $regex: search.trim(), $options: "i" } },
+        { supplier: { $regex: search.trim(), $options: "i" } },
+        { category: { $regex: search.trim(), $options: "i" } },
+      ];
+    }
 
-    // Get stats
-    const totalProducts = inventory.length;
-    const lowStock = inventory.filter(
-      (item) => item.stockLevel <= item.lowStockThreshold
-    ).length;
-    const outOfStock = inventory.filter((item) => item.stockLevel === 0).length;
+    const inventory = await Inventory.find(query).sort({ updatedAt: -1 });
+    const stats = await calculateStats(query);
+
+    const sanitizedInventory = inventory.map(item => ({
+      _id: item._id?.toString() || '',
+      name: item.name || 'N/A',
+      quantity: Number.isFinite(item.quantity) ? item.quantity : 0,
+      price: Number.isFinite(item.price) ? item.price : 0,
+      lowStockThreshold: Number.isFinite(item.lowStockThreshold) ? item.lowStockThreshold : 5,
+      reorderPoint: Number.isFinite(item.reorderPoint) ? item.reorderPoint : 10,
+      maxStockLevel: Number.isFinite(item.maxStockLevel) ? item.maxStockLevel : null,
+      location: item.location || 'Warehouse A',
+      supplier: item.supplier || 'N/A',
+      category: item.category || 'N/A',
+      lastRestocked: item.lastRestocked ? item.lastRestocked.toISOString() : null,
+      status: item.status || 'normal',
+    }));
 
     res.json({
       success: true,
-      data: inventory,
-      stats: {
-        totalProducts,
-        lowStock,
-        outOfStock,
-      },
+      count: inventory.length,
+      data: sanitizedInventory,
+      stats: stats,
     });
   } catch (error) {
     console.error("Error fetching inventory:", error);
     res.status(500).json({
       success: false,
-      message: "Error fetching inventory",
+      message: "Server error",
       error: error.message,
     });
   }
 });
 
-// @desc    Get inventory by product ID
-// @route   GET /api/inventory/product/:productId
-// @access  Private/Admin
-router.get("/product/:productId", protect, adminOnly, async (req, res) => {
-  try {
-    const inventory = await Inventory.findOne({
-      product: req.params.productId,
-    }).populate("product", "name description price imageUrl category sku");
-
-    if (!inventory) {
-      return res.status(404).json({
-        success: false,
-        message: "Inventory record not found for this product",
-      });
-    }
-
-    res.json({
-      success: true,
-      data: inventory,
-    });
-  } catch (error) {
-    console.error("Error fetching inventory for product:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching inventory for product",
-      error: error.message,
-    });
-  }
-});
-
-// @desc    Create inventory record for a product
+// @desc    Create new inventory item
 // @route   POST /api/inventory
 // @access  Private/Admin
-router.post("/", protect, adminOnly, async (req, res) => {
+router.post("/", admin, async (req, res) => {
   try {
     const {
-      productId,
-      stockLevel,
-      lowStockThreshold = 10,
-      reorderPoint = 20,
+      name,
+      quantity,
+      price,
+      lowStockThreshold,
+      reorderPoint,
       maxStockLevel,
+      location,
+      supplier,
+      category,
     } = req.body;
 
-    // Check if product exists
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
-
-    // Check if inventory already exists for this product
-    const existingInventory = await Inventory.findOne({ product: productId });
-    if (existingInventory) {
+    if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: "Inventory record already exists for this product",
+        message: "Name must be a non-empty string",
+      });
+    }
+    if (!Number.isFinite(Number(quantity)) || Number(quantity) < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Quantity must be a valid non-negative number",
+      });
+    }
+    if (!Number.isFinite(Number(price)) || Number(price) < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Price must be a valid non-negative number",
       });
     }
 
     const inventory = new Inventory({
-      product: productId,
-      stockLevel: stockLevel || 0,
-      lowStockThreshold,
-      reorderPoint,
-      maxStockLevel,
-      lastRestocked: new Date(),
+      name: name.trim(),
+      quantity: parseInt(quantity),
+      price: parseFloat(price),
+      lowStockThreshold: Number.isFinite(Number(lowStockThreshold)) ? parseInt(lowStockThreshold) : 5,
+      reorderPoint: Number.isFinite(Number(reorderPoint)) ? parseInt(reorderPoint) : 10,
+      maxStockLevel: Number.isFinite(Number(maxStockLevel)) ? parseInt(maxStockLevel) : null,
+      location: location || "Warehouse A",
+      supplier: supplier || null,
+      category: category || null,
     });
 
     await inventory.save();
-    const populatedInventory = await Inventory.findById(inventory._id).populate(
-      "product",
-      "name description price imageUrl category sku"
-    );
 
     res.status(201).json({
       success: true,
-      data: populatedInventory,
-      message: "Inventory record created successfully",
+      data: inventory,
+      message: "Inventory item created successfully",
     });
   } catch (error) {
     console.error("Error creating inventory:", error);
     res.status(500).json({
       success: false,
-      message: "Error creating inventory record",
+      message: "Server error",
+      error: error.message,
+    });
+  }
+});
+
+// @desc    Update inventory item
+// @route   PUT /api/inventory/:id
+// @access  Private/Admin
+router.put("/:id", admin, async (req, res) => {
+  try {
+    const {
+      name,
+      quantity,
+      price,
+      lowStockThreshold,
+      reorderPoint,
+      maxStockLevel,
+      location,
+      supplier,
+      category,
+    } = req.body;
+
+    const inventory = await Inventory.findById(req.params.id);
+    if (!inventory) {
+      return res.status(404).json({
+        success: false,
+        message: "Inventory item not found",
+      });
+    }
+
+    const originalQuantity = inventory.quantity;
+
+    if (name !== undefined) inventory.name = name.trim();
+    if (quantity !== undefined) inventory.quantity = parseInt(quantity);
+    if (price !== undefined) inventory.price = parseFloat(price);
+    if (lowStockThreshold !== undefined) inventory.lowStockThreshold = parseInt(lowStockThreshold) || 5;
+    if (reorderPoint !== undefined) inventory.reorderPoint = parseInt(reorderPoint) || 10;
+    if (maxStockLevel !== undefined) inventory.maxStockLevel = maxStockLevel ? parseInt(maxStockLevel) : null;
+    if (location !== undefined) inventory.location = location || "Warehouse A";
+    if (supplier !== undefined) inventory.supplier = supplier || null;
+    if (category !== undefined) inventory.category = category || null;
+
+    if (quantity !== undefined && parseInt(quantity) > originalQuantity) {
+      inventory.lastRestocked = new Date();
+    }
+
+    await inventory.save();
+
+    res.json({
+      success: true,
+      data: inventory,
+      message: "Inventory item updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating inventory:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
       error: error.message,
     });
   }
 });
 
 // @desc    Update inventory stock level
-// @route   PUT /api/inventory/:id
+// @route   PATCH /api/inventory/:id/stock
 // @access  Private/Admin
-router.put("/:id", protect, adminOnly, async (req, res) => {
+router.patch("/:id/stock", admin, async (req, res) => {
   try {
-    const { stockLevel, lowStockThreshold, reorderPoint, maxStockLevel } =
-      req.body;
+    const { quantity } = req.body;
 
-    const inventory = await Inventory.findById(req.params.id);
-
-    if (!inventory) {
-      return res.status(404).json({
+    if (!Number.isFinite(Number(quantity)) || Number(quantity) < 0) {
+      return res.status(400).json({
         success: false,
-        message: "Inventory record not found",
+        message: "Quantity must be a valid non-negative number",
       });
     }
 
-    // Update fields if provided
-    if (stockLevel !== undefined) {
-      inventory.stockLevel = stockLevel;
+    const inventory = await Inventory.findById(req.params.id);
+    if (!inventory) {
+      return res.status(404).json({
+        success: false,
+        message: "Inventory item not found",
+      });
+    }
+
+    const originalQuantity = inventory.quantity;
+    inventory.quantity = parseInt(quantity);
+
+    if (parseInt(quantity) > originalQuantity) {
       inventory.lastRestocked = new Date();
     }
-    if (lowStockThreshold !== undefined)
-      inventory.lowStockThreshold = lowStockThreshold;
-    if (reorderPoint !== undefined) inventory.reorderPoint = reorderPoint;
-    if (maxStockLevel !== undefined) inventory.maxStockLevel = maxStockLevel;
 
     await inventory.save();
-    const updatedInventory = await Inventory.findById(inventory._id).populate(
-      "product",
-      "name description price imageUrl category sku"
-    );
 
     res.json({
       success: true,
-      data: updatedInventory,
-      message: "Inventory updated successfully",
+      data: inventory,
+      message: "Stock level updated successfully",
     });
   } catch (error) {
-    console.error("Error updating inventory:", error);
+    console.error("Error updating stock level:", error);
     res.status(500).json({
       success: false,
-      message: "Error updating inventory",
+      message: "Server error",
       error: error.message,
     });
   }
 });
 
-// @desc    Delete inventory record
+// @desc    Delete inventory item
 // @route   DELETE /api/inventory/:id
 // @access  Private/Admin
-router.delete("/:id", protect, adminOnly, async (req, res) => {
+router.delete("/:id", admin, async (req, res) => {
   try {
-    const inventory = await Inventory.findById(req.params.id);
-
+    const inventory = await Inventory.findByIdAndDelete(req.params.id);
     if (!inventory) {
       return res.status(404).json({
         success: false,
-        message: "Inventory record not found",
+        message: "Inventory item not found",
       });
     }
 
-    await Inventory.findByIdAndDelete(req.params.id);
-
     res.json({
       success: true,
-      message: "Inventory record deleted successfully",
+      message: "Inventory item deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting inventory:", error);
     res.status(500).json({
       success: false,
-      message: "Error deleting inventory record",
+      message: "Server error",
       error: error.message,
     });
   }
 });
 
-// @desc    Get low stock alerts
-// @route   GET /api/inventory/alerts/low-stock
+// @desc    Generate inventory report as PDF
+// @route   GET /api/inventory/report
 // @access  Private/Admin
-router.get("/alerts/low-stock", protect, adminOnly, async (req, res) => {
+router.get("/report", admin, async (req, res) => {
   try {
-    const lowStockItems = await Inventory.find({
-      $expr: { $lte: ["$stockLevel", "$lowStockThreshold"] },
-    })
-      .populate("product", "name description price imageUrl category sku")
-      .sort({ stockLevel: 1 });
+    const { status, search } = req.query;
+    const query = {};
 
-    res.json({
-      success: true,
-      data: lowStockItems,
-      count: lowStockItems.length,
+    // Apply filters
+    if (status && status !== "all") {
+      query.status = status;
+    }
+
+    if (search && search.trim()) {
+      query.$or = [
+        { name: { $regex: search.trim(), $options: "i" } },
+        { supplier: { $regex: search.trim(), $options: "i" } },
+        { category: { $regex: search.trim(), $options: "i" } },
+      ];
+    }
+
+    console.log('Report query:', JSON.stringify(query, null, 2));
+
+    const inventory = await Inventory.find(query).sort({ name: 1 });
+    const stats = await calculateStats(query);
+
+    console.log(`Found ${inventory.length} items for report`);
+
+    // Set response headers for PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf"`);
+
+    // Create PDF document
+    const doc = new PDFDocument({ 
+      margin: 50,
+      size: 'A4',
+      bufferPages: true
     });
+
+    // Pipe directly to response
+    doc.pipe(res);
+
+    // Title and Header
+    doc.fontSize(20).font('Helvetica-Bold').text('Inventory Management Report', 50, 50);
+    doc.fontSize(12).font('Helvetica').text(`Generated on: ${new Date().toLocaleString()}`, 50, 80);
+    doc.text(`Filter: ${status === 'all' ? 'All Items' : status || 'All Items'}`, 50, 95);
+    if (search) {
+      doc.text(`Search: "${search}"`, 50, 110);
+    }
+
+    let currentY = search ? 140 : 125;
+
+    // Summary Statistics
+    currentY = drawSimpleTable(doc, 
+      ['Metric', 'Value'], 
+      [
+        ['Total Products', stats.totalProducts.toString()],
+        ['Low Stock Items', stats.lowStockItems.toString()],
+        ['Out of Stock Items', stats.outOfStockItems.toString()],
+        ['Total Value (LKR)', stats.totalValue.toFixed(2)],
+      ], 
+      currentY, 
+      'Summary Statistics'
+    );
+
+    // New: Graph of Inventory Value by Category
+    currentY = drawBarChart(doc, stats.categoryValue, currentY, 'Inventory Value by Category (LKR)');
+
+    // Main Inventory Table
+    if (inventory.length > 0) {
+      const inventoryRows = inventory.map(item => [
+        item.name || 'N/A',
+        (item.quantity || 0).toString(),
+        (item.price || 0).toFixed(2),
+        ((item.quantity || 0) * (item.price || 0)).toFixed(2),
+        item.status || 'normal',
+        item.location || 'N/A',
+        item.supplier || 'N/A'
+      ]);
+
+      currentY = drawSimpleTable(doc,
+        ['Product Name', 'Qty', 'Price', 'Value', 'Status', 'Location', 'Supplier'],
+        inventoryRows,
+        currentY,
+        'Inventory Details'
+      );
+    }
+
+    // Low Stock Alert Section
+    const lowStockItems = inventory.filter(item => item.status === 'low');
+    if (lowStockItems.length > 0) {
+      const lowStockRows = lowStockItems.map(item => [
+        item.name || 'N/A',
+        (item.quantity || 0).toString(),
+        (item.lowStockThreshold || 5).toString(),
+        item.supplier || 'N/A'
+      ]);
+
+      currentY = drawSimpleTable(doc,
+        ['Product Name', 'Current Qty', 'Threshold', 'Supplier'],
+        lowStockRows,
+        currentY,
+        'Low Stock Alert'
+      );
+    }
+
+    // Out of Stock Section
+    const outOfStockItems = inventory.filter(item => item.status === 'out');
+    if (outOfStockItems.length > 0) {
+      const outOfStockRows = outOfStockItems.map(item => [
+        item.name || 'N/A',
+        item.supplier || 'N/A',
+        item.location || 'N/A'
+      ]);
+
+      currentY = drawSimpleTable(doc,
+        ['Product Name', 'Supplier', 'Location'],
+        outOfStockRows,
+        currentY,
+        'Out of Stock Items'
+      );
+    }
+
+    // Footer
+    doc.fontSize(10).font('Helvetica').fillColor('gray');
+    doc.text('Generated by Inventory Management System', 50, doc.page.height - 50);
+
+    // Finalize the PDF
+    doc.end();
+
   } catch (error) {
-    console.error("Error fetching low stock alerts:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching low stock alerts",
-      error: error.message,
-    });
-  }
-});
-
-// @desc    Get out of stock items
-// @route   GET /api/inventory/alerts/out-of-stock
-// @access  Private/Admin
-router.get("/alerts/out-of-stock", protect, adminOnly, async (req, res) => {
-  try {
-    const outOfStockItems = await Inventory.find({ stockLevel: 0 })
-      .populate("product", "name description price imageUrl category sku")
-      .sort({ updatedAt: -1 });
-
-    res.json({
-      success: true,
-      data: outOfStockItems,
-      count: outOfStockItems.length,
-    });
-  } catch (error) {
-    console.error("Error fetching out of stock items:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching out of stock items",
-      error: error.message,
-    });
-  }
-});
-
-// @desc    Bulk update inventory
-// @route   PUT /api/inventory/bulk-update
-// @access  Private/Admin
-router.put("/bulk-update", protect, adminOnly, async (req, res) => {
-  try {
-    const { updates } = req.body; // Array of { id, stockLevel, lowStockThreshold, etc. }
-
-    if (!updates || !Array.isArray(updates)) {
-      return res.status(400).json({
+    console.error("Error generating report:", error);
+    
+    // Make sure we haven't started streaming the PDF yet
+    if (!res.headersSent) {
+      res.status(500).json({
         success: false,
-        message: "Updates array is required",
+        message: "Error generating report",
+        error: error.message,
       });
     }
-
-    const results = [];
-    const errors = [];
-
-    for (const update of updates) {
-      try {
-        const inventory = await Inventory.findById(update.id);
-        if (!inventory) {
-          errors.push({ id: update.id, error: "Inventory record not found" });
-          continue;
-        }
-
-        // Update fields
-        if (update.stockLevel !== undefined) {
-          inventory.stockLevel = update.stockLevel;
-          inventory.lastRestocked = new Date();
-        }
-        if (update.lowStockThreshold !== undefined)
-          inventory.lowStockThreshold = update.lowStockThreshold;
-        if (update.reorderPoint !== undefined)
-          inventory.reorderPoint = update.reorderPoint;
-        if (update.maxStockLevel !== undefined)
-          inventory.maxStockLevel = update.maxStockLevel;
-
-        await inventory.save();
-        results.push({ id: update.id, success: true });
-      } catch (error) {
-        errors.push({ id: update.id, error: error.message });
-      }
-    }
-
-    res.json({
-      success: true,
-      message: `Bulk update completed. ${results.length} successful, ${errors.length} failed.`,
-      results,
-      errors,
-    });
-  } catch (error) {
-    console.error("Error in bulk update:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error in bulk update",
-      error: error.message,
-    });
   }
 });
 

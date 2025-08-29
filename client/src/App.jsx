@@ -51,6 +51,7 @@ import OthersManagement from "./pages/Admin/AdminOthers";
 import Events from "./pages/events";
 import EventManagement from "./pages/Admin/EventManagement";
 import EventDetail from "./pages/EventDetail";
+import ProductReports from "./pages/Admin/ReportGeneration/ProductReports";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -213,6 +214,10 @@ const App = () => {
                 element={<EventManagement />}
               />
               <Route path="/events/:id" element={<EventDetail />} />
+              <Route
+                path="/Admin/ReportGeneration/ProductReport"
+                element={<ProductReports />}
+              />
 
               <Route path="/events" element={<Events />} />
               <Route path="*" element={<NotFoundPage />} />

@@ -20,13 +20,16 @@ import { dirname } from "path";
 import contactRoute from "./routes/contact.js";
 import settingsRoutes from "./routes/settings.js";
 import employeeRoutes from "./routes/employee.js";
-import reviewsRouter from "./routes/review.js";
+import adminReviewsRoutes from "./routes/adminReviews.js";
 import searchRoutes from "./routes/search.js";
 import adminOrderRoutes from "./routes/adminOrders.js";
 import bannerRoutes from "./routes/banners.js";
 import eventRoutes from "./routes/events.js";
 import eventNotificationRoutes from "./routes/eventNotifications.js";
-import reportRoutes from "./routes/reports.js";
+import productReviewRoutes from "./routes/productReviews.js"; // User review functionality
+import productReportsRoutes from "./routes/productReports.js";
+import inventoryRoutes from "./routes/inventory.js";
+import orderReportRoutes from "./routes/reports.js";
 
 // Load environment variables
 dotenv.config();
@@ -73,19 +76,14 @@ app.use(
     optionsSuccessStatus: 200,
   })
 );
+
 const uploadsPath = path.join(__dirname, "uploads");
-console.log("Serving static files from:", uploadsPath); // Debug log
+console.log("Serving static files from:", uploadsPath);
 
 app.use("/uploads", express.static(uploadsPath));
+
 // Handle preflight requests
 app.options("*", cors());
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://localhost:5173"], // Add both common ports
-    credentials: true,
-    optionsSuccessStatus: 200,
-  })
-);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(
@@ -95,6 +93,7 @@ app.use(
     parameterLimit: 50000,
   })
 );
+
 // Session middleware
 app.use(
   session({
@@ -117,30 +116,10 @@ app.use(
 );
 app.use(express.static(path.join(process.cwd(), "public")));
 
-// Body parser middleware
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
-// app.use(
-//   fileUpload({
-//     useTempFiles: true,
-//     tempFileDir: "/tmp/",
-//     limits: {
-//       fileSize: 5 * 1024 * 1024, // 5MB limit
-//       files: 1,
-//     },
-//     abortOnLimit: true,
-//     responseOnLimit: "File size exceeds the 5MB limit",
-//     safeFileNames: true,
-//     preserveExtension: true,
-//   })
-// );
-
 // Rate limiting configuration
 const authLimiter = rateLimit({
   windowMs: 3 * 60 * 1000, // 3 minutes
-  max: 20, // Limit each IP to 20 login requests per windowMs
+  max: 20,
   message: {
     success: false,
     message:
@@ -152,7 +131,7 @@ const authLimiter = rateLimit({
 
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 100,
   message: {
     success: false,
     message: "Too many requests from this IP, please try again later.",
@@ -165,7 +144,6 @@ const generalLimiter = rateLimit({
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 app.use("/api/", generalLimiter);
-app.use("/api/contact", contactRoute);
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -173,7 +151,6 @@ app.use((req, res, next) => {
     `📝 ${req.method} ${req.originalUrl} - ${new Date().toISOString()}`
   );
   if (req.method === "POST" && req.body && Object.keys(req.body).length > 0) {
-    // Log request body but hide sensitive data
     const logBody = { ...req.body };
     if (logBody.password) logBody.password = "[HIDDEN]";
     if (logBody.newPassword) logBody.newPassword = "[HIDDEN]";
@@ -218,15 +195,19 @@ if (dbConnected) {
   app.use("/api/users", userRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/cart", cartRoutes);
+  app.use("/api/contact", contactRoute);
   app.use("/api/settings", settingsRoutes);
   app.use("/api/employee", employeeRoutes);
-  app.use("/api/reviews", reviewsRouter);
   app.use("/api/search", searchRoutes);
-  app.use("/api/admin/orders", adminOrderRoutes); // Admin orders
+  app.use("/api/admin/orders", adminOrderRoutes);
   app.use("/api/banners", bannerRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/event-notifications", eventNotificationRoutes);
-  app.use("/api/reports", reportRoutes);
+  app.use("/api/admin/reviews", adminReviewsRoutes);
+  app.use("/api/reports", productReportsRoutes);
+  app.use("/api/product-reviews", productReviewRoutes);
+  app.use("/api/inventory", inventoryRoutes);
+  app.use("/api/reports", orderReportRoutes);
 }
 
 // 404 handler for undefined routes
@@ -243,19 +224,24 @@ app.all("*", (req, res) => {
       "GET /api/products",
       "GET /api/categories",
       "GET /api/cart",
+      "GET /api/product-reviews/product/:productId",
+      "GET /api/admin/reviews",
     ],
   });
 });
-app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
+
 // Global error handling middleware (must be last)
 app.use(errorHandler);
-
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const PORT = process.env.PORT || 5000;
 
 // Start server
-const server = app.listen(PORT, "0.0.0.0", () => {});
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📍 Server address: http://localhost:${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log("✨ Ready to handle requests!");
+});
 
 // Enhanced error handling
 server.on("error", (error) => {
