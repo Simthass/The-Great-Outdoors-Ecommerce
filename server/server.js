@@ -29,6 +29,7 @@ import eventNotificationRoutes from "./routes/eventNotifications.js";
 import productReviewRoutes from "./routes/productReviews.js"; // User review functionality
 import productReportsRoutes from "./routes/productReports.js";
 import inventoryRoutes from "./routes/inventory.js";
+import orderReportRoutes from "./routes/reports.js";
 
 // Load environment variables
 dotenv.config();
@@ -206,6 +207,7 @@ if (dbConnected) {
   app.use("/api/reports", productReportsRoutes);
   app.use("/api/product-reviews", productReviewRoutes);
   app.use("/api/inventory", inventoryRoutes);
+  app.use("/api/reports", orderReportRoutes);
 }
 
 // 404 handler for undefined routes
@@ -295,4 +297,3 @@ process.on("uncaughtException", (err) => {
   console.log("🛑 Shutting down server due to uncaught exception");
   process.exit(1);
 });
-  
