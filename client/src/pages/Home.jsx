@@ -11,6 +11,7 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addedItems, setAddedItems] = useState([]);
+  const [homeReviews, setHomeReviews] = useState([]);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
   const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
@@ -23,6 +24,18 @@ const Home = () => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    fetchHomeReviews();
+  }, []);
+
+  const fetchHomeReviews = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/reviews/homepage`);
+      setHomeReviews(response.data);
+    } catch (error) {
+      console.error("Error fetching homepage reviews:", error);
+    }
+  };
   const fetchProducts = async () => {
     try {
       const response = await axios.get(`${API_URL}/products`);
@@ -339,17 +352,55 @@ const Home = () => {
       </div>
 
       {/* Feature strip */}
-      <div data-testid="feature-strip">
+      <div className="">
         <hr className="mr-[75px] ml-[75px]" />
         <div className="flex flex-wrap justify-between items-center ml-[150px] mr-[150px] pt-[20px] pb-[20px]">
-          {/* three features ... unchanged */}
+          <div className="flex flex-wrap justify-between items-center">
+            <div>
+              <img
+                src="/Award.svg"
+                alt=""
+                className="width=[28px] height-[51px] mr-[20px]"
+              />
+            </div>
+            <div>
+              <p className="text-[18px] mb-1 font-bold">BEST PRICE GUARANTEE</p>
+              <p className="text-[16px] text-black">100% Authentic Products</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-between items-center">
+            <div>
+              <img
+                src="/Shipping.svg"
+                alt=""
+                className="width=[28px] height-[51px] mr-[20px]"
+              />
+            </div>
+            <div>
+              <p className="text-[18px] mb-1 font-bold">FREE SHIPPING</p>
+              <p className="text-[16px]">On Orders Over Rs. 5000</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-between items-center">
+            <div>
+              <img
+                src="/card.svg"
+                alt=""
+                className="width=[28px] height-[51px] mr-[20px]"
+              />
+            </div>
+            <div>
+              <p className="text-[18px] mb-1 font-bold">SECURE PAYMENTS</p>
+              <p className="text-[16px]">Secure Checkout verified</p>
+            </div>
+          </div>
         </div>
         <hr className="mr-[75px] ml-[75px]" />
       </div>
 
       {/* Subscription section */}
       <div
-        className="mt-[70px] mb-[30px] bg-[#195E29]/80 w-auto h-[590px] relative"
+        className="mt-[70px] mb-[60px] bg-[#195E29]/80 w-auto h-[590px] relative"
         data-testid="subscription-section"
       >
         <div className="w-[1205px] h-[610px] flex items-center justify-between absolute top-[80px] left-1/2 -translate-x-1/2 bg-[#ffffff] rounded-2xl shadow-2xl overflow-hidden">
@@ -484,99 +535,49 @@ const Home = () => {
         <p className="text-[40px] text-[#FFA81D] text-center mt-[10px] pt-12 pb-12 font-bold">
           CUSTOMER SAYS
         </p>
-        <div className="flex justify-between items-center  text-center">
-          {/* REVIEW 1 */}
-          <div className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full">
-            <img
-              src="/AK.jpg"
-              alt=""
-              className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3"
-            />
-            <p className="text-[25px] mb-[5px] font-bold">Ajith Kumar</p>
-            <p className="text-[20px]">CAR RACER</p>
-            <div className="flex mt-[20px] justify-center">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
-                    fill="#FFA81D"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
+        <div className="flex justify-between items-center text-center">
+          {homeReviews.slice(0, 3).map((review, index) => (
+            <div
+              key={review._id}
+              className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full"
+            >
+              <img
+                src={
+                  review.customerImage
+                    ? `${API_URL.replace("/api", "")}${review.customerImage}`
+                    : "/default-avatar.png"
+                }
+                alt={review.customerName}
+                className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3 object-cover"
+              />
+              <p className="text-[25px] mb-[5px] font-bold">
+                {review.customerName}
+              </p>
+              <p className="text-[20px]">{review.customerTitle}</p>
+              <div className="flex mt-[20px] justify-center">
+                {Array(5)
+                  .fill()
+                  .map((_, i) => (
+                    <svg
+                      key={i}
+                      className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
+                      fill={i < review.rating ? "#FFA81D" : "#374151"}
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                    </svg>
+                  ))}
+              </div>
+              <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3">
+                {review.description.split("\n").map((line, i) => (
+                  <span key={i}>
+                    {line}
+                    {i < review.description.split("\n").length - 1 && <br />}
+                  </span>
                 ))}
+              </p>
             </div>
-            <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3">
-              "Absolutely thrilled with the quality!" <br />
-              I bought my hiking gear from here for a trip <br />
-              through the Knuckles Range—everything held <br />
-              up beautifully. Lightweight, durable, and weatherproof.
-            </p>
-          </div>
-
-          {/* REVIEW 2 */}
-          <div className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full">
-            <img
-              src="/prabhas.jpg"
-              alt=""
-              className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3"
-            />
-            <p className="text-[25px] mb-[5px] font-bold">Prabhas</p>
-            <p className="text-[20px]">ACTOR</p>
-            <div className="flex mt-[20px] justify-center">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
-                    fill="#FFA81D"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-            <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3">
-              "Fast delivery & top-notch customer service." <br />
-              Ordered last-minute before a weekend trek and my package <br />
-              arrived early! Plus, the team was super responsive when <br />I
-              had questions. Will definitely shop again!
-            </p>
-          </div>
-
-          {/* REVIEW 3 */}
-          <div className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full">
-            <img
-              src="/vijay.png"
-              alt=""
-              className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3"
-            />
-            <p className="text-[25px] mb-[5px] font-bold">Joseph Vijay</p>
-            <p className="text-[20px]">POLITICIAN</p>
-            <div className="flex mt-[20px] justify-center">
-              {Array(5)
-                .fill()
-                .map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
-                    fill="#FFA81D"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                  </svg>
-                ))}
-            </div>
-            <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3 ">
-              "More than gear—this is adventure made easy." <br />
-              From browsing to checkout, the whole experience felt <br />
-              for explorers like me. Everything I ordered was just as <br />
-              described and made my trip smooth and unforgettable.
-            </p>
-          </div>
+          ))}
         </div>
       </div>
     </div>
