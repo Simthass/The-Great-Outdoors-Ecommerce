@@ -236,9 +236,18 @@ const Home = () => {
       </div>
 
       {/* Hot This Week */}
-      <div id="hot-this-week" className="text-center ml-[75px] mr-[75px]" data-testid="hot-section">
-        <p className="text-[30px] font-bold mb-[50px]" data-testid="hot-title">Hot This Week</p>
-        <div className="flex flex-wrap items-center justify-between mb-7" data-testid="hot-grid">
+      <div
+        id="hot-this-week"
+        className="text-center ml-[75px] mr-[75px]"
+        data-testid="hot-section"
+      >
+        <p className="text-[30px] font-bold mb-[50px]" data-testid="hot-title">
+          Hot This Week
+        </p>
+        <div
+          className="flex flex-wrap items-center justify-between mb-7"
+          data-testid="hot-grid"
+        >
           {products
             .filter((product) => product.isHotThisWeek)
             .slice(0, 4)
@@ -280,21 +289,38 @@ const Home = () => {
                 <hr className="mt-[25px] mb-[20px]" />
 
                 <div className="flex justify-between items-center text-[15px]">
-                  <span className="font-bold text-left" data-testid={`hot-card-price-${product._id}`}>
+                  <span
+                    className="font-bold text-left"
+                    data-testid={`hot-card-price-${product._id}`}
+                  >
                     Rs. {product.price}
                   </span>
                   <span
-                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] cursor-pointer ${
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] ${
                       addedItems.includes(product._id)
                         ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] "
+                        : product.stockStatus === "out_of_stock" ||
+                          (product.inventory &&
+                            product.inventory.quantity === 0)
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] cursor-pointer"
                     }`}
-                    role="button"
-                    aria-disabled={addedItems.includes(product._id) ? "true" : "false"}
-                    onClick={() => handleAddToCart(product._id)}
-                    data-testid={`hot-card-add-${product._id}`}
+                    onClick={() => {
+                      if (
+                        !addedItems.includes(product._id) &&
+                        product.stockStatus !== "out_of_stock" &&
+                        !(product.inventory && product.inventory.quantity === 0)
+                      ) {
+                        handleAddToCart(product._id);
+                      }
+                    }}
                   >
-                    {addedItems.includes(product._id) ? "Added ✓" : "+ Add to Cart"}
+                    {addedItems.includes(product._id)
+                      ? "Added ✓"
+                      : product.stockStatus === "out_of_stock" ||
+                        (product.inventory && product.inventory.quantity === 0)
+                      ? "Out of Stock"
+                      : "+ Add to Cart"}
                   </span>
                 </div>
               </div>
@@ -304,7 +330,10 @@ const Home = () => {
 
       {/* Banner slider */}
       <div>
-        <div className="ml-[75px] mr-[75px] mb-[70px] mt-[30px] overflow-hidden" data-testid="banner-slider">
+        <div
+          className="ml-[75px] mr-[75px] mb-[70px] mt-[30px] overflow-hidden"
+          data-testid="banner-slider"
+        >
           <BannerSlider />
         </div>
       </div>
@@ -319,22 +348,32 @@ const Home = () => {
       </div>
 
       {/* Subscription section */}
-      <div className="mt-[70px] mb-[30px] bg-[#195E29]/80 w-auto h-[590px] relative" data-testid="subscription-section">
+      <div
+        className="mt-[70px] mb-[30px] bg-[#195E29]/80 w-auto h-[590px] relative"
+        data-testid="subscription-section"
+      >
         <div className="w-[1205px] h-[610px] flex items-center justify-between absolute top-[80px] left-1/2 -translate-x-1/2 bg-[#ffffff] rounded-2xl shadow-2xl overflow-hidden">
           <div className="w-[585px] h-fit relative">
-            <img src="/Subs-Home.jpg" alt="Outdoor" className="w-full h-full object-cover" />
+            <img
+              src="/Subs-Home.jpg"
+              alt="Outdoor"
+              className="w-full h-full object-cover"
+            />
             <div className="absolute top-6 left-6 bg-[#8DC53E] text-white px-4 py-2 rounded-full text-sm font-semibold">
               🏔️ Join 10,000+ Adventurers
             </div>
           </div>
 
           <div className="pr-[110px] pl-[10px]">
-            <p className="text-[20px] mb-[10px] text-[#797979] font-bold">Never Miss an Adventure</p>
+            <p className="text-[20px] mb-[10px] text-[#797979] font-bold">
+              Never Miss an Adventure
+            </p>
             <p className="text-4xl font-bold leading-12 mb-4">
               Get Notified About New <br /> Outdoor Events
             </p>
             <p className="text-[16px] leading-8 mb-8 mt-3">
-              Be the first to know about hiking trips, camping adventures, <br />
+              Be the first to know about hiking trips, camping adventures,{" "}
+              <br />
               climbing expeditions, fishing tours, and outdoor workshops. <br />
               Join our community of outdoor enthusiasts!
             </p>
@@ -347,11 +386,21 @@ const Home = () => {
       </div>
 
       {/* Featured products */}
-      <div className="text-center ml-[75px] mr-[75px]" data-testid="featured-section">
-        <p className="text-[30px] mb-[50px]" style={{ fontWeight: "bold" }} data-testid="featured-title">
+      <div
+        className="text-center ml-[75px] mr-[75px]"
+        data-testid="featured-section"
+      >
+        <p
+          className="text-[30px] mb-[50px]"
+          style={{ fontWeight: "bold" }}
+          data-testid="featured-title"
+        >
           FEATURED PRODUCTS
         </p>
-        <div className="flex flex-wrap items-center justify-between mb-7" data-testid="featured-grid">
+        <div
+          className="flex flex-wrap items-center justify-between mb-7"
+          data-testid="featured-grid"
+        >
           {products
             .filter((product) => product.isFeatured)
             .slice(0, 4)
@@ -393,21 +442,38 @@ const Home = () => {
                 <hr className="mt-[25px] mb-[20px]" />
 
                 <div className="flex justify-between items-center text-[15px]">
-                  <span className="font-bold text-left" data-testid={`feat-card-price-${product._id}`}>
+                  <span
+                    className="font-bold text-left"
+                    data-testid={`feat-card-price-${product._id}`}
+                  >
                     Rs. {product.price}
                   </span>
                   <span
-                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] cursor-pointer ${
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] ${
                       addedItems.includes(product._id)
                         ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] "
+                        : product.stockStatus === "out_of_stock" ||
+                          (product.inventory &&
+                            product.inventory.quantity === 0)
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] cursor-pointer"
                     }`}
-                    role="button"
-                    aria-disabled={addedItems.includes(product._id) ? "true" : "false"}
-                    onClick={() => handleAddToCart(product._id)}
-                    data-testid={`feat-card-add-${product._id}`}
+                    onClick={() => {
+                      if (
+                        !addedItems.includes(product._id) &&
+                        product.stockStatus !== "out_of_stock" &&
+                        !(product.inventory && product.inventory.quantity === 0)
+                      ) {
+                        handleAddToCart(product._id);
+                      }
+                    }}
                   >
-                    {addedItems.includes(product._id) ? "Added ✓" : "+ Add to Cart"}
+                    {addedItems.includes(product._id)
+                      ? "Added ✓"
+                      : product.stockStatus === "out_of_stock" ||
+                        (product.inventory && product.inventory.quantity === 0)
+                      ? "Out of Stock"
+                      : "+ Add to Cart"}
                   </span>
                 </div>
               </div>
@@ -419,4 +485,3 @@ const Home = () => {
 };
 
 export default Home;
-

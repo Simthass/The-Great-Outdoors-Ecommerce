@@ -30,6 +30,7 @@ import productReviewRoutes from "./routes/productReviews.js"; // User review fun
 import productReportsRoutes from "./routes/productReports.js";
 import inventoryRoutes from "./routes/inventory.js";
 import orderReportRoutes from "./routes/reports.js";
+import { syncAllInventoryStatus } from "./middleware/inventorySync.js";
 
 // Load environment variables
 dotenv.config();
@@ -183,6 +184,11 @@ try {
   console.error("❌ Database connection failed:", error.message);
   console.log("🛑 Server cannot start without database connection");
   process.exit(1);
+}
+
+if (dbConnected) {
+  syncAllInventoryStatus();
+  console.log("✅ Inventory status synced with products");
 }
 
 // Register routes only after successful database connection

@@ -4,6 +4,7 @@ import Category from "../models/Category.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { syncInventoryStatus } from "../middleware/inventorySync.js";
 
 const router = express.Router();
 
@@ -49,6 +50,7 @@ router.get("/", async (req, res) => {
   try {
     const products = await Product.find({ isActive: true })
       .populate("category", "categoryName")
+      .populate("inventory", "quantity status")
       .sort({ createdAt: -1 });
 
     // Add full image URL to each product
@@ -64,6 +66,21 @@ router.get("/", async (req, res) => {
     });
 
     res.json(productsWithImageUrls);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id)
+      .populate("category", "categoryName")
+      .populate("inventory", "quantity status lowStockThreshold"); // Populate inventory data
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.json(product);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -85,6 +102,7 @@ router.post("/", upload.array("images", 5), async (req, res) => {
       size,
       isFeatured,
       isHotThisWeek,
+      inventory,
     } = req.body;
 
     // Validate required fields
@@ -130,6 +148,7 @@ router.post("/", upload.array("images", 5), async (req, res) => {
       isActive: true,
       isFeatured: isFeatured === "true",
       isHotThisWeek: isHotThisWeek === "true",
+      inventory: inventory || undefined,
     };
 
     // Add image URLs if files were uploaded
@@ -144,6 +163,9 @@ router.post("/", upload.array("images", 5), async (req, res) => {
     const product = new Product(productData);
     const savedProduct = await product.save();
 
+    if (inventory) {
+      await syncInventoryStatus(inventory);
+    }
     // Populate category info before sending response
     await savedProduct.populate("category", "categoryName");
 
@@ -178,6 +200,7 @@ router.put("/:id", upload.array("images", 5), async (req, res) => {
       isActive,
       isFeatured,
       isHotThisWeek,
+      inventory,
       existingImages = "[]", // JSON string of existing images
     } = req.body;
 
@@ -234,6 +257,9 @@ router.put("/:id", upload.array("images", 5), async (req, res) => {
     if (isFeatured !== undefined) updateData.isFeatured = isFeatured === "true";
     if (isHotThisWeek !== undefined)
       updateData.isHotThisWeek = isHotThisWeek === "true";
+    if (inventory !== undefined) {
+      updateData.inventory = inventory || undefined;
+    }
 
     // Handle images update
     if (req.files && req.files.length > 0) {
@@ -256,6 +282,9 @@ router.put("/:id", upload.array("images", 5), async (req, res) => {
       { new: true, runValidators: true }
     ).populate("category", "categoryName");
 
+    if (updateData.inventory) {
+      await syncInventoryStatus(updateData.inventory);
+    }
     res.json(updatedProduct);
   } catch (error) {
     // Clean up uploaded files if update failed
@@ -297,6 +326,62 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// Add to routes/products.js
+router.delete("/:id/inventory", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    product.inventory = undefined;
+    product.stockStatus = "in_stock"; // Reset to default
+    await product.save();
+
+    res.json({
+      success: true,
+      message: "Inventory link removed successfully",
+      data: product,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+// Add this route to manually link a product to inventory
+router.post("/:productId/link-inventory/:inventoryId", async (req, res) => {
+  try {
+    const { productId, inventoryId } = req.params;
+
+    const product = await Product.findById(productId);
+    const inventory = await Inventory.findById(inventoryId);
+
+    if (!product || !inventory) {
+      return res.status(404).json({
+        success: false,
+        message: "Product or inventory not found",
+      });
+    }
+
+    // Link the inventory to the product
+    product.inventory = inventoryId;
+    await product.save();
+
+    // Sync the status immediately
+    const stockStatus = await syncInventoryStatus(inventoryId);
+
+    res.json({
+      success: true,
+      message: "Product linked to inventory successfully",
+      product: product,
+      stockStatus: stockStatus,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
 // GET single product (if you don't have this)
 router.get("/:id", async (req, res) => {
   try {
