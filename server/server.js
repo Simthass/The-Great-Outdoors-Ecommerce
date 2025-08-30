@@ -29,6 +29,8 @@ import eventNotificationRoutes from "./routes/eventNotifications.js";
 import productReviewRoutes from "./routes/productReviews.js"; // User review functionality
 import productReportsRoutes from "./routes/productReports.js";
 import inventoryRoutes from "./routes/inventory.js";
+import orderReportRoutes from "./routes/reports.js";
+import { syncAllInventoryStatus } from "./middleware/inventorySync.js";
 
 // Load environment variables
 dotenv.config();
@@ -184,6 +186,11 @@ try {
   process.exit(1);
 }
 
+if (dbConnected) {
+  syncAllInventoryStatus();
+  console.log("✅ Inventory status synced with products");
+}
+
 // Register routes only after successful database connection
 if (dbConnected) {
   console.log("📋 Registering routes...");
@@ -206,6 +213,7 @@ if (dbConnected) {
   app.use("/api/reports", productReportsRoutes);
   app.use("/api/product-reviews", productReviewRoutes);
   app.use("/api/inventory", inventoryRoutes);
+  app.use("/api/reports", orderReportRoutes);
 }
 
 // 404 handler for undefined routes

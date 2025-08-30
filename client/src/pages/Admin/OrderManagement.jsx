@@ -43,6 +43,15 @@ const OrderManagement = () => {
     estimatedDelivery: "",
   });
   const [analytics, setAnalytics] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportConfig, setReportConfig] = useState({
+    reportType: "orders",
+    format: "pdf",
+    period: "last30days",
+    startDate: "",
+    endDate: "",
+  });
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -215,16 +224,87 @@ const OrderManagement = () => {
     });
   };
 
+  // Handle report generation
+  const handleGenerateReport = async (e) => {
+    e.preventDefault();
+    setReportLoading(true);
+
+    try {
+      const params = {
+        reportType: reportConfig.reportType,
+        period: reportConfig.period,
+        ...(reportConfig.startDate && { startDate: reportConfig.startDate }),
+        ...(reportConfig.endDate && { endDate: reportConfig.endDate }),
+      };
+
+      const endpoint =
+        reportConfig.format === "pdf"
+          ? `${API_URL}/reports/export/pdf`
+          : `${API_URL}/reports/export/excel`;
+
+      const response = await axios.get(endpoint, {
+        params,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        responseType: "blob", // Important for file downloads
+      });
+
+      // Create blob and download file
+      const blob = new Blob([response.data], {
+        type:
+          reportConfig.format === "pdf"
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      
+      const timestamp = new Date().toISOString().split('T')[0];
+      const fileName = `${reportConfig.reportType}-report-${timestamp}.${reportConfig.format}`;
+      link.download = fileName;
+      
+      document.body.appendChild(link);
+      link.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+
+      toast.success(
+        `${reportConfig.format.toUpperCase()} report generated successfully!`
+      );
+      setShowReportModal(false);
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to generate report. Please try again."
+      );
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Order Management
-        </h1>
-        <p className="text-gray-600">
-          Manage customer orders, update status, and track deliveries
-        </p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Order Management
+          </h1>
+          <p className="text-gray-600">
+            Manage customer orders, update status, and track deliveries
+          </p>
+        </div>
+        <button
+          onClick={() => setShowReportModal(true)}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+        >
+          <Download className="h-4 w-4" />
+          Generate Report
+        </button>
       </div>
 
       {/* Analytics Cards */}
@@ -697,6 +777,166 @@ const OrderManagement = () => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   Update Order
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Report Generation Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Generate Report
+            </h3>
+            <form onSubmit={handleGenerateReport}>
+              <div className="space-y-4">
+                {/* Report Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Report Type
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={reportConfig.reportType}
+                    onChange={(e) =>
+                      setReportConfig((prev) => ({
+                        ...prev,
+                        reportType: e.target.value,
+                      }))
+                    }
+                    required
+                  >
+                    <option value="orders">Orders Report</option>
+                    <option value="sales">Sales Summary</option>
+                    <option value="customers">Customer Analytics</option>
+                    <option value="products">Product Performance</option>
+                  </select>
+                </div>
+
+                {/* Format */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Format
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={reportConfig.format}
+                    onChange={(e) =>
+                      setReportConfig((prev) => ({
+                        ...prev,
+                        format: e.target.value,
+                      }))
+                    }
+                    required
+                  >
+                    <option value="pdf">PDF</option>
+                    <option value="excel">Excel</option>
+                  </select>
+                </div>
+
+                {/* Period */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Time Period
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={reportConfig.period}
+                    onChange={(e) =>
+                      setReportConfig((prev) => ({
+                        ...prev,
+                        period: e.target.value,
+                      }))
+                    }
+                    required
+                  >
+                    <option value="last7days">Last 7 Days</option>
+                    <option value="last30days">Last 30 Days</option>
+                    <option value="last3months">Last 3 Months</option>
+                    <option value="last6months">Last 6 Months</option>
+                    <option value="lastyear">Last Year</option>
+                    <option value="custom">Custom Range</option>
+                  </select>
+                </div>
+
+                {/* Custom Date Range */}
+                {reportConfig.period === "custom" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={reportConfig.startDate}
+                        onChange={(e) =>
+                          setReportConfig((prev) => ({
+                            ...prev,
+                            startDate: e.target.value,
+                          }))
+                        }
+                        required={reportConfig.period === "custom"}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={reportConfig.endDate}
+                        onChange={(e) =>
+                          setReportConfig((prev) => ({
+                            ...prev,
+                            endDate: e.target.value,
+                          }))
+                        }
+                        required={reportConfig.period === "custom"}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportConfig({
+                      reportType: "orders",
+                      format: "pdf",
+                      period: "last30days",
+                      startDate: "",
+                      endDate: "",
+                    });
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  disabled={reportLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                  disabled={reportLoading}
+                >
+                  {reportLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      Generate Report
+                    </>
+                  )}
                 </button>
               </div>
             </form>

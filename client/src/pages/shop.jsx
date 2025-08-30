@@ -34,7 +34,7 @@ const Shop = () => {
     "Camping",
     "Fishing",
     "Hiking",
-    "Hunting",
+    "Sports Shooting",
     "Outfitting",
     "Hydration",
     "Knives & Multitools",
@@ -385,15 +385,30 @@ const Shop = () => {
                     Rs. {product.price}
                   </span>
                   <span
-                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] cursor-pointer ${
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] ${
                       addedItems.includes(product._id)
                         ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] "
+                        : product.stockStatus === "out_of_stock" ||
+                          (product.inventory &&
+                            product.inventory.quantity === 0)
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] cursor-pointer"
                     }`}
-                    onClick={() => handleAddToCart(product._id)}
+                    onClick={() => {
+                      if (
+                        !addedItems.includes(product._id) &&
+                        product.stockStatus !== "out_of_stock" &&
+                        !(product.inventory && product.inventory.quantity === 0)
+                      ) {
+                        handleAddToCart(product._id);
+                      }
+                    }}
                   >
                     {addedItems.includes(product._id)
                       ? "Added ✓"
+                      : product.stockStatus === "out_of_stock" ||
+                        (product.inventory && product.inventory.quantity === 0)
+                      ? "Out of Stock"
                       : "+ Add to Cart"}
                   </span>
                 </div>

@@ -95,7 +95,7 @@ const Home = () => {
         <div className="flex flex-wrap items-center justify-between ml-[75px] mr-[75px]">
           {/* Hunting */}
           <div
-            onClick={() => navigate(`/shop?category=Hunting`)}
+            onClick={() => navigate(`/shop?category=Sports Shooting`)}
             data-testid="tile-hunting"
             style={{
               backgroundColor: "#EFEFEF",
@@ -111,7 +111,7 @@ const Home = () => {
           >
             <div className="pl-[20px] pr-[20px] pt-[20px] pb-[15px]">
               <h2 className="text-2xl font-bold text-left mb-3 text-gray-800">
-                Shop Hunting
+                Shop Sports Shooting
               </h2>
               <p className="text-sm text-left mb-2 text-gray-600 leading-relaxed">
                 🔥 Adventure-ready gear at your fingertips
@@ -236,9 +236,18 @@ const Home = () => {
       </div>
 
       {/* Hot This Week */}
-      <div id="hot-this-week" className="text-center ml-[75px] mr-[75px]" data-testid="hot-section">
-        <p className="text-[30px] font-bold mb-[50px]" data-testid="hot-title">Hot This Week</p>
-        <div className="flex flex-wrap items-center justify-between mb-7" data-testid="hot-grid">
+      <div
+        id="hot-this-week"
+        className="text-center ml-[75px] mr-[75px]"
+        data-testid="hot-section"
+      >
+        <p className="text-[30px] font-bold mb-[50px]" data-testid="hot-title">
+          Hot This Week
+        </p>
+        <div
+          className="flex flex-wrap items-center justify-between mb-7"
+          data-testid="hot-grid"
+        >
           {products
             .filter((product) => product.isHotThisWeek)
             .slice(0, 4)
@@ -280,21 +289,38 @@ const Home = () => {
                 <hr className="mt-[25px] mb-[20px]" />
 
                 <div className="flex justify-between items-center text-[15px]">
-                  <span className="font-bold text-left" data-testid={`hot-card-price-${product._id}`}>
+                  <span
+                    className="font-bold text-left"
+                    data-testid={`hot-card-price-${product._id}`}
+                  >
                     Rs. {product.price}
                   </span>
                   <span
-                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] cursor-pointer ${
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] ${
                       addedItems.includes(product._id)
                         ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] "
+                        : product.stockStatus === "out_of_stock" ||
+                          (product.inventory &&
+                            product.inventory.quantity === 0)
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] cursor-pointer"
                     }`}
-                    role="button"
-                    aria-disabled={addedItems.includes(product._id) ? "true" : "false"}
-                    onClick={() => handleAddToCart(product._id)}
-                    data-testid={`hot-card-add-${product._id}`}
+                    onClick={() => {
+                      if (
+                        !addedItems.includes(product._id) &&
+                        product.stockStatus !== "out_of_stock" &&
+                        !(product.inventory && product.inventory.quantity === 0)
+                      ) {
+                        handleAddToCart(product._id);
+                      }
+                    }}
                   >
-                    {addedItems.includes(product._id) ? "Added ✓" : "+ Add to Cart"}
+                    {addedItems.includes(product._id)
+                      ? "Added ✓"
+                      : product.stockStatus === "out_of_stock" ||
+                        (product.inventory && product.inventory.quantity === 0)
+                      ? "Out of Stock"
+                      : "+ Add to Cart"}
                   </span>
                 </div>
               </div>
@@ -304,7 +330,10 @@ const Home = () => {
 
       {/* Banner slider */}
       <div>
-        <div className="ml-[75px] mr-[75px] mb-[70px] mt-[30px] overflow-hidden" data-testid="banner-slider">
+        <div
+          className="ml-[75px] mr-[75px] mb-[70px] mt-[30px] overflow-hidden"
+          data-testid="banner-slider"
+        >
           <BannerSlider />
         </div>
       </div>
@@ -319,22 +348,32 @@ const Home = () => {
       </div>
 
       {/* Subscription section */}
-      <div className="mt-[70px] mb-[30px] bg-[#195E29]/80 w-auto h-[590px] relative" data-testid="subscription-section">
+      <div
+        className="mt-[70px] mb-[30px] bg-[#195E29]/80 w-auto h-[590px] relative"
+        data-testid="subscription-section"
+      >
         <div className="w-[1205px] h-[610px] flex items-center justify-between absolute top-[80px] left-1/2 -translate-x-1/2 bg-[#ffffff] rounded-2xl shadow-2xl overflow-hidden">
           <div className="w-[585px] h-fit relative">
-            <img src="/Subs-Home.jpg" alt="Outdoor" className="w-full h-full object-cover" />
+            <img
+              src="/Subs-Home.jpg"
+              alt="Outdoor"
+              className="w-full h-full object-cover"
+            />
             <div className="absolute top-6 left-6 bg-[#8DC53E] text-white px-4 py-2 rounded-full text-sm font-semibold">
               🏔️ Join 10,000+ Adventurers
             </div>
           </div>
 
           <div className="pr-[110px] pl-[10px]">
-            <p className="text-[20px] mb-[10px] text-[#797979] font-bold">Never Miss an Adventure</p>
+            <p className="text-[20px] mb-[10px] text-[#797979] font-bold">
+              Never Miss an Adventure
+            </p>
             <p className="text-4xl font-bold leading-12 mb-4">
               Get Notified About New <br /> Outdoor Events
             </p>
             <p className="text-[16px] leading-8 mb-8 mt-3">
-              Be the first to know about hiking trips, camping adventures, <br />
+              Be the first to know about hiking trips, camping adventures,{" "}
+              <br />
               climbing expeditions, fishing tours, and outdoor workshops. <br />
               Join our community of outdoor enthusiasts!
             </p>
@@ -347,11 +386,21 @@ const Home = () => {
       </div>
 
       {/* Featured products */}
-      <div className="text-center ml-[75px] mr-[75px]" data-testid="featured-section">
-        <p className="text-[30px] mb-[50px]" style={{ fontWeight: "bold" }} data-testid="featured-title">
+      <div
+        className="text-center ml-[75px] mr-[75px]"
+        data-testid="featured-section"
+      >
+        <p
+          className="text-[30px] mb-[50px]"
+          style={{ fontWeight: "bold" }}
+          data-testid="featured-title"
+        >
           FEATURED PRODUCTS
         </p>
-        <div className="flex flex-wrap items-center justify-between mb-7" data-testid="featured-grid">
+        <div
+          className="flex flex-wrap items-center justify-between mb-7"
+          data-testid="featured-grid"
+        >
           {products
             .filter((product) => product.isFeatured)
             .slice(0, 4)
@@ -393,25 +442,141 @@ const Home = () => {
                 <hr className="mt-[25px] mb-[20px]" />
 
                 <div className="flex justify-between items-center text-[15px]">
-                  <span className="font-bold text-left" data-testid={`feat-card-price-${product._id}`}>
+                  <span
+                    className="font-bold text-left"
+                    data-testid={`feat-card-price-${product._id}`}
+                  >
                     Rs. {product.price}
                   </span>
                   <span
-                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] cursor-pointer ${
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] ${
                       addedItems.includes(product._id)
                         ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] "
+                        : product.stockStatus === "out_of_stock" ||
+                          (product.inventory &&
+                            product.inventory.quantity === 0)
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] cursor-pointer"
                     }`}
-                    role="button"
-                    aria-disabled={addedItems.includes(product._id) ? "true" : "false"}
-                    onClick={() => handleAddToCart(product._id)}
-                    data-testid={`feat-card-add-${product._id}`}
+                    onClick={() => {
+                      if (
+                        !addedItems.includes(product._id) &&
+                        product.stockStatus !== "out_of_stock" &&
+                        !(product.inventory && product.inventory.quantity === 0)
+                      ) {
+                        handleAddToCart(product._id);
+                      }
+                    }}
                   >
-                    {addedItems.includes(product._id) ? "Added ✓" : "+ Add to Cart"}
+                    {addedItems.includes(product._id)
+                      ? "Added ✓"
+                      : product.stockStatus === "out_of_stock" ||
+                        (product.inventory && product.inventory.quantity === 0)
+                      ? "Out of Stock"
+                      : "+ Add to Cart"}
                   </span>
                 </div>
               </div>
             ))}
+        </div>
+      </div>
+      <div className="w-full mt-[30px] mb-[30px] bg-[url('/Review-BG.png')] bg-no-repeat bg-center bg-cover pb-10">
+        <p className="text-[40px] text-[#FFA81D] text-center mt-[10px] pt-12 pb-12 font-bold">
+          CUSTOMER SAYS
+        </p>
+        <div className="flex justify-between items-center  text-center">
+          {/* REVIEW 1 */}
+          <div className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full">
+            <img
+              src="/AK.jpg"
+              alt=""
+              className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3"
+            />
+            <p className="text-[25px] mb-[5px] font-bold">Ajith Kumar</p>
+            <p className="text-[20px]">CAR RACER</p>
+            <div className="flex mt-[20px] justify-center">
+              {Array(5)
+                .fill()
+                .map((_, i) => (
+                  <svg
+                    key={i}
+                    className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
+                    fill="#FFA81D"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                  </svg>
+                ))}
+            </div>
+            <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3">
+              "Absolutely thrilled with the quality!" <br />
+              I bought my hiking gear from here for a trip <br />
+              through the Knuckles Range—everything held <br />
+              up beautifully. Lightweight, durable, and weatherproof.
+            </p>
+          </div>
+
+          {/* REVIEW 2 */}
+          <div className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full">
+            <img
+              src="/prabhas.jpg"
+              alt=""
+              className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3"
+            />
+            <p className="text-[25px] mb-[5px] font-bold">Prabhas</p>
+            <p className="text-[20px]">ACTOR</p>
+            <div className="flex mt-[20px] justify-center">
+              {Array(5)
+                .fill()
+                .map((_, i) => (
+                  <svg
+                    key={i}
+                    className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
+                    fill="#FFA81D"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                  </svg>
+                ))}
+            </div>
+            <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3">
+              "Fast delivery & top-notch customer service." <br />
+              Ordered last-minute before a weekend trek and my package <br />
+              arrived early! Plus, the team was super responsive when <br />I
+              had questions. Will definitely shop again!
+            </p>
+          </div>
+
+          {/* REVIEW 3 */}
+          <div className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full">
+            <img
+              src="/vijay.png"
+              alt=""
+              className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3"
+            />
+            <p className="text-[25px] mb-[5px] font-bold">Joseph Vijay</p>
+            <p className="text-[20px]">POLITICIAN</p>
+            <div className="flex mt-[20px] justify-center">
+              {Array(5)
+                .fill()
+                .map((_, i) => (
+                  <svg
+                    key={i}
+                    className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
+                    fill="#FFA81D"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                  </svg>
+                ))}
+            </div>
+            <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3 ">
+              "More than gear—this is adventure made easy." <br />
+              From browsing to checkout, the whole experience felt <br />
+              for explorers like me. Everything I ordered was just as <br />
+              described and made my trip smooth and unforgettable.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -419,4 +584,3 @@ const Home = () => {
 };
 
 export default Home;
-

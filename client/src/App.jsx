@@ -216,7 +216,7 @@ const App = () => {
               />
               <Route path="/events/:id" element={<EventDetail />} />
               <Route
-                path="/Admin/ReportGeneration/ProductReport"
+                path="/Admin/ReportGeneration/ProductReports"
                 element={<ProductReports />}
               />
               <Route path="/Admin/ReportGeneration/reviewReport" element={<ReviewReport />} />

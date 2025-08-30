@@ -73,6 +73,16 @@ const productSchema = mongoose.Schema(
         ref: "ProductReview",
       },
     ],
+    inventory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Inventory",
+      required: false,
+    },
+    stockStatus: {
+      type: String,
+      enum: ["in_stock", "low_stock", "out_of_stock"],
+      default: "in_stock",
+    },
   },
 
   {
