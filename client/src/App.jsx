@@ -52,6 +52,7 @@ import Events from "./pages/events";
 import EventManagement from "./pages/Admin/EventManagement";
 import EventDetail from "./pages/EventDetail";
 import ProductReports from "./pages/Admin/ReportGeneration/ProductReports";
+import ContentManagement from "./pages/Admin/ContentManagement";
 import ReviewReport from "./pages/Admin/ReportGeneration/ReviewReport";
 
 const BackgroundSlider = ({ children }) => {
@@ -219,9 +220,16 @@ const App = () => {
                 path="/Admin/ReportGeneration/ProductReports"
                 element={<ProductReports />}
               />
-              <Route path="/Admin/ReportGeneration/reviewReport" element={<ReviewReport />} />
+              <Route
+                path="/Admin/ReportGeneration/reviewReport"
+                element={<ReviewReport />}
+              />
 
               <Route path="/events" element={<Events />} />
+              <Route
+                path="/Admin/ContentManagement"
+                element={<ContentManagement />}
+              />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <ToastContainer position="top-right" autoClose={3000} />

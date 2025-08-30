@@ -2,7 +2,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginStart, loginSuccess, loginFailure } from "../store/slices/authSlice";
+import {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+} from "../store/slices/authSlice";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -31,13 +35,18 @@ const Login = () => {
       const response = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email, password: formData.password }),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        dispatch(loginSuccess({ user: data.data.user, token: data.data.token }));
+        dispatch(
+          loginSuccess({ user: data.data.user, token: data.data.token })
+        );
         setFormData({ email: "", password: "" });
         navigate("/");
       } else {
@@ -64,16 +73,21 @@ const Login = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/auth/forgot-password",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email }),
+        }
+      );
 
       const data = await response.json();
 
       if (data.success) {
-        alert("Password reset instructions have been sent to your email (if the account exists).");
+        alert(
+          "Password reset instructions have been sent to your email (if the account exists)."
+        );
       } else {
         setError(data.message || "Failed to send reset email");
       }
@@ -119,7 +133,11 @@ const Login = () => {
                 role="alert"
               >
                 <div className="flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -146,6 +164,7 @@ const Login = () => {
                     placeholder="Email Address"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                     required
                     disabled={loading}
                     autoComplete="username"
@@ -163,6 +182,7 @@ const Login = () => {
                       placeholder="Password"
                       value={formData.password}
                       onChange={handleInputChange}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                       required
                       disabled={loading}
                       autoComplete="current-password"
@@ -197,7 +217,10 @@ const Login = () => {
                           className="flex items-center justify-center gap-2"
                           data-testid="signin-loading"
                         >
-                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <svg
+                            className="animate-spin h-5 w-5"
+                            viewBox="0 0 24 24"
+                          >
                             <circle
                               className="opacity-25"
                               cx="12"
@@ -235,7 +258,10 @@ const Login = () => {
                     disabled={loading}
                     data-testid="google-btn"
                     className="w-full h-[50px] text-[16px] font-semibold rounded-[8px] outline-none border-2 border-[#79a730ff] flex items-center justify-center gap-[12px] disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 relative overflow-hidden"
-                    style={{ backgroundColor: "transparent", color: "#79a730ff" }}
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "#79a730ff",
+                    }}
                   >
                     <img
                       src="/Google.png"
@@ -282,4 +308,3 @@ const Login = () => {
 };
 
 export default Login;
-

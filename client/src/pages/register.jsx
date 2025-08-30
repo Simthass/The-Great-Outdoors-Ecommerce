@@ -60,7 +60,9 @@ const Register = () => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        throw new Error(
+          `HTTP error! status: ${response.status} - ${errorText}`
+        );
       }
 
       const data = await response.json();
@@ -76,9 +78,13 @@ const Register = () => {
           "Cannot connect to server. Please make sure the backend server is running on port 5000."
         );
       } else if (error.message.includes("HTTP error")) {
-        setError(`Server error: ${error.message}. Please check the server logs.`);
+        setError(
+          `Server error: ${error.message}. Please check the server logs.`
+        );
       } else if (error.message.includes("Cannot reach server")) {
-        setError("Cannot connect to server. Please make sure the backend server is running on port 5000.");
+        setError(
+          "Cannot connect to server. Please make sure the backend server is running on port 5000."
+        );
       } else {
         setError("Network error. Please try again.");
       }
@@ -161,6 +167,7 @@ const Register = () => {
                     placeholder="First Name"
                     value={formData.firstName}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                     required
                     data-testid="firstName-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
@@ -173,6 +180,7 @@ const Register = () => {
                     placeholder="Last Name"
                     value={formData.lastName}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                     required
                     data-testid="lastName-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
@@ -188,6 +196,7 @@ const Register = () => {
                     placeholder="Email Address"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                     required
                     data-testid="email-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
@@ -200,6 +209,7 @@ const Register = () => {
                     placeholder="Phone Number"
                     value={formData.phoneNumber}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                     data-testid="phone-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
                   />
@@ -214,6 +224,7 @@ const Register = () => {
                     placeholder="Address"
                     value={formData.address}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                     data-testid="address-input"
                     className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
                   />
@@ -225,6 +236,7 @@ const Register = () => {
                     placeholder="Password"
                     value={formData.password}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                     required
                     minLength="6"
                     data-testid="password-input"
@@ -239,6 +251,7 @@ const Register = () => {
                   name="agreeToTerms"
                   checked={formData.agreeToTerms}
                   onChange={handleInputChange}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                   className="mt-1 w-4 h-4 accent-[#7d9d49ff] rounded focus:ring-2 focus:ring-[#7d9d49ff]/50"
                   required
                   data-testid="terms-checkbox"
@@ -302,4 +315,3 @@ const Register = () => {
 };
 
 export default Register;
-
