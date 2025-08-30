@@ -52,6 +52,7 @@ import Events from "./pages/events";
 import EventManagement from "./pages/Admin/EventManagement";
 import EventDetail from "./pages/EventDetail";
 import ProductReports from "./pages/Admin/ReportGeneration/ProductReports";
+import ReviewReport from "./pages/Admin/ReportGeneration/ReviewReport";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -218,6 +219,7 @@ const App = () => {
                 path="/Admin/ReportGeneration/ProductReport"
                 element={<ProductReports />}
               />
+              <Route path="/Admin/ReportGeneration/reviewReport" element={<ReviewReport />} />
 
               <Route path="/events" element={<Events />} />
               <Route path="*" element={<NotFoundPage />} />
