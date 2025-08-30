@@ -5,12 +5,15 @@ import Cart from "../models/Cart.js";
 import Product from "../models/Product.js";
 import { protect } from "../middleware/authMiddleware.js";
 import Address from "../models/Address.js";
+import Inventory from "../models/Inventory.js";
+import { syncInventoryStatus } from "../middleware/inventorySync.js";
 
 const router = express.Router();
 
 // @desc    Create new order from cart
 // @route   POST /api/orders/checkout
 // @access  Private
+// routes/orders.js - Update your checkout route
 router.post("/checkout", protect, async (req, res) => {
   try {
     console.log("Checkout request received from user:", req.user._id);
@@ -24,7 +27,11 @@ router.post("/checkout", protect, async (req, res) => {
     // Get user's cart
     const cart = await Cart.findOne({ user: req.user._id }).populate({
       path: "items.product",
-      select: "productName price imageUrl brand stock",
+      select: "productName price imageUrl brand stock inventory",
+      populate: {
+        path: "inventory",
+        select: "quantity name",
+      },
     });
 
     if (!cart || cart.items.length === 0) {
@@ -47,9 +54,10 @@ router.post("/checkout", protect, async (req, res) => {
       });
     }
 
-    // Calculate totals
+    // Calculate totals and validate stock
     let subtotal = 0;
     const orderItems = [];
+    const inventoryUpdates = []; // Track inventory updates
 
     // Validate stock and prepare order items
     for (const item of cart.items) {
@@ -60,11 +68,28 @@ router.post("/checkout", protect, async (req, res) => {
         });
       }
 
-      // Check stock availability
+      // Check product stock availability
       if (item.product.stock < item.quantity) {
         return res.status(400).json({
           success: false,
           message: `Insufficient stock for ${item.product.productName}. Available: ${item.product.stock}`,
+        });
+      }
+
+      // Check inventory stock if product is linked to inventory
+      if (item.product.inventory) {
+        const inventoryItem = item.product.inventory;
+        if (inventoryItem.quantity < item.quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient inventory for ${item.product.productName}. Available: ${inventoryItem.quantity}`,
+          });
+        }
+        // Store inventory update info
+        inventoryUpdates.push({
+          inventoryId: inventoryItem._id,
+          quantityToDeduct: item.quantity,
+          productName: item.product.productName,
         });
       }
 
@@ -83,7 +108,7 @@ router.post("/checkout", protect, async (req, res) => {
     }
 
     // Calculate tax and shipping
-    const taxRate = 0.13; // 13% tax (adjust as needed)
+    const taxRate = 0.13; // 13% tax
     const tax = subtotal * taxRate;
     const shippingCost = subtotal > 100 ? 0 : 15; // Free shipping over $100
     const discount = 0; // Implement coupon logic if needed
@@ -130,14 +155,46 @@ router.post("/checkout", protect, async (req, res) => {
       estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
     });
 
+    // Update product stock and inventory quantities
+    const updatePromises = [];
+
     // Update product stock
     for (const item of cart.items) {
-      await Product.findByIdAndUpdate(
-        item.product._id,
-        { $inc: { stock: -item.quantity } },
-        { new: true }
+      updatePromises.push(
+        Product.findByIdAndUpdate(
+          item.product._id,
+          { $inc: { stock: -item.quantity } },
+          { new: true }
+        )
       );
     }
+
+    // Update inventory quantities
+    for (const update of inventoryUpdates) {
+      console.log(
+        `Deducting ${update.quantityToDeduct} from inventory ${update.inventoryId} for ${update.productName}`
+      );
+
+      updatePromises.push(
+        Inventory.findByIdAndUpdate(
+          update.inventoryId,
+          { $inc: { quantity: -update.quantityToDeduct } },
+          { new: true }
+        ).then(async (updatedInventory) => {
+          if (updatedInventory) {
+            console.log(
+              `Updated inventory ${updatedInventory.name}: ${updatedInventory.quantity} remaining`
+            );
+            // Sync inventory status after update
+            await syncInventoryStatus(update.inventoryId);
+          }
+          return updatedInventory;
+        })
+      );
+    }
+
+    // Execute all updates
+    await Promise.all(updatePromises);
 
     // Clear the cart
     await Cart.findOneAndUpdate(
@@ -146,6 +203,7 @@ router.post("/checkout", protect, async (req, res) => {
     );
 
     console.log("Order created successfully:", order.orderId);
+    console.log(`Updated ${inventoryUpdates.length} inventory items`);
 
     res.status(201).json({
       success: true,
@@ -174,7 +232,6 @@ router.post("/checkout", protect, async (req, res) => {
     });
   }
 });
-
 // @desc    Get user's orders
 // @route   GET /api/orders/user
 // @access  Private
