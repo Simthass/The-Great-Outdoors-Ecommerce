@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../../components/Sidebar";
 import InventoryLink from "../../components/InventoryLink";
+import { FileText } from "lucide-react";
 
 const AdminProduct = () => {
   const [products, setProducts] = useState([]);
@@ -20,6 +22,8 @@ const AdminProduct = () => {
   const [currentSidebarPage, setCurrentSidebarPage] = useState("Products");
   const [draggedItem, setDraggedItem] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     category: "",
@@ -516,6 +520,15 @@ const AdminProduct = () => {
                     className="bg-[#8DC53E] hover:bg-[#76A337] text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl"
                   >
                     + Add New Product
+                  </button>
+                  <button
+                    onClick={() =>
+                      navigate("../Admin/ReportGeneration/ProductReports")
+                    }
+                    className="bg-[#8DC53E] hover:bg-[#76A337] text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Generate Report
                   </button>
                 </div>
               </div>
