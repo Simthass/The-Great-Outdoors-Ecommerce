@@ -1,13 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Camera, MapPin, Mail, Phone } from "lucide-react";
+import {
+  Camera,
+  MapPin,
+  Mail,
+  Phone,
+  CheckCircle,
+  XCircle,
+  X,
+} from "lucide-react";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
 import axios from "axios";
 
 const Profile = () => {
   const { user: currentUser } = useSelector((state) => state.auth);
   const [profileImage, setProfileImage] = useState("/default-profile.jpg");
   const [isEditing, setIsEditing] = useState(false);
+  const [notification, setNotification] = useState(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -20,6 +28,15 @@ const Profile = () => {
   });
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Custom notification function
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
+  };
 
   // Load user data on component mount
   useEffect(() => {
@@ -47,11 +64,11 @@ const Profile = () => {
           });
           setProfileImage(data.data.profileImage || "/default-profile.jpg");
         } else {
-          toast.error(data.message || "Failed to load profile");
+          showNotification("error", data.message || "Failed to load profile");
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
-        toast.error("Error loading profile data");
+        showNotification("error", "Error loading profile data");
       } finally {
         setLoading(false);
       }
@@ -74,13 +91,16 @@ const Profile = () => {
 
     // Validate file type
     if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
-      toast.error("Please select a valid image file (JPEG, JPG, PNG, GIF)");
+      showNotification(
+        "error",
+        "Please select a valid image file (JPEG, JPG, PNG, GIF)"
+      );
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size should be less than 5MB");
+      showNotification("error", "Image size should be less than 5MB");
       return;
     }
 
@@ -100,24 +120,26 @@ const Profile = () => {
         }
       );
 
-      // Note: axios returns response.data, not response.json()
       const data = response.data;
 
       if (response.status === 200) {
-        // Add timestamp to URL to prevent caching issues
         setProfileImage(`${data.data.profileImage}?t=${Date.now()}`);
-        toast.success("Profile image updated successfully");
+        showNotification("success", "Profile image updated successfully");
       } else {
-        toast.error(data.message || "Failed to update profile image");
+        showNotification(
+          "error",
+          data.message || "Failed to update profile image"
+        );
       }
     } catch (error) {
       console.error("Error updating profile image:", error);
       if (error.response) {
-        toast.error(
+        showNotification(
+          "error",
           error.response.data.message || "Failed to update profile image"
         );
       } else {
-        toast.error("Error updating profile image");
+        showNotification("error", "Error updating profile image");
       }
     } finally {
       setLoading(false);
@@ -139,14 +161,14 @@ const Profile = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success("Profile updated successfully");
+        showNotification("success", "Profile updated successfully");
         setIsEditing(false);
       } else {
-        toast.error(data.message || "Failed to update profile");
+        showNotification("error", data.message || "Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Error updating profile");
+      showNotification("error", "Error updating profile");
     } finally {
       setLoading(false);
     }
@@ -177,6 +199,47 @@ const Profile = () => {
       });
   };
 
+  // Professional Notification Component
+  const Notification = ({ type, message, onClose }) => {
+    const getStyles = () => {
+      const baseStyles =
+        "flex items-center p-4 mb-4 text-sm rounded-lg border shadow-md transition-all duration-300";
+
+      switch (type) {
+        case "success":
+          return `${baseStyles} bg-green-50 text-black border-green-200`;
+        case "error":
+          return `${baseStyles} bg-red-50 text-red-800 border-red-200`;
+        default:
+          return `${baseStyles} bg-blue-50 text-blue-800 border-blue-200`;
+      }
+    };
+
+    const getIcon = () => {
+      switch (type) {
+        case "success":
+          return <CheckCircle size={18} className="mr-3 text-green-600" />;
+        case "error":
+          return <XCircle size={18} className="mr-3 text-red-600" />;
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div className={getStyles()}>
+        {getIcon()}
+        <span className="flex-1 font-medium">{message}</span>
+        <button
+          onClick={onClose}
+          className="ml-3 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    );
+  };
+
   if (loading && !formData.firstName) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -193,8 +256,20 @@ const Profile = () => {
       <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
         <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">Profile</p>
       </div>
+
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 max-w-screen">
         <div className="max-w-7xl mx-auto">
+          {/* Professional Notification */}
+          {notification && (
+            <div className="mb-6">
+              <Notification
+                type={notification.type}
+                message={notification.message}
+                onClose={() => setNotification(null)}
+              />
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="h-32 bg-gradient-to-r from-[#8DC53E] to-[#97D243] relative">
               <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
