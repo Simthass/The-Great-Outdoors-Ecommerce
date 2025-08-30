@@ -6,7 +6,7 @@ const HomeHero = () => {
     <div className="text-center px-4 sm:px-6 lg:px-8">
       {/* Hero Heading */}
       <h1
-        className="text-3xl xs:text-4xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-white pt-8 sm:pt-12 md:pt-16 lg:pt-20 mb-4 sm:mb-5 lg:mb-7 leading-1"
+        className="text-3xl xs:text-4xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-white pt-8 sm:pt-12 md:pt-16 lg:pt-20 mb-4 sm:mb-5 lg:mb-7 leading-tight"
         style={{
           fontFamily: "Raleway, sans-serif",
         }}
