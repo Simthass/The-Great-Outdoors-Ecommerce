@@ -31,6 +31,7 @@ import productReportsRoutes from "./routes/productReports.js";
 import inventoryRoutes from "./routes/inventory.js";
 import orderReportRoutes from "./routes/reports.js";
 import { syncAllInventoryStatus } from "./middleware/inventorySync.js";
+import reviewRoutes from "./routes/review.js";
 
 // Load environment variables
 dotenv.config();
@@ -53,6 +54,7 @@ app.use(
 );
 app.use(compression());
 app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
 
 // CORS configuration - MUST be before other middleware
 const allowedOrigins = [
@@ -207,6 +209,7 @@ if (dbConnected) {
   app.use("/api/search", searchRoutes);
   app.use("/api/admin/orders", adminOrderRoutes);
   app.use("/api/banners", bannerRoutes);
+  app.use("/api/reviews", reviewRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/event-notifications", eventNotificationRoutes);
   app.use("/api/admin/reviews", adminReviewsRoutes);
