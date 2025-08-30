@@ -742,7 +742,7 @@ const AdminProduct = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEdit(product)}
-                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                            className="flex-1 hover: bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
                           >
                             <svg
                               className="w-4 h-4 mr-1"
