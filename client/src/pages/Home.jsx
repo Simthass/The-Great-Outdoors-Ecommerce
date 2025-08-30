@@ -480,6 +480,105 @@ const Home = () => {
             ))}
         </div>
       </div>
+      <div className="w-full mt-[30px] mb-[30px] bg-[url('/Review-BG.png')] bg-no-repeat bg-center bg-cover pb-10">
+        <p className="text-[40px] text-[#FFA81D] text-center mt-[10px] pt-12 pb-12 font-bold">
+          CUSTOMER SAYS
+        </p>
+        <div className="flex justify-between items-center  text-center">
+          {/* REVIEW 1 */}
+          <div className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full">
+            <img
+              src="/AK.jpg"
+              alt=""
+              className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3"
+            />
+            <p className="text-[25px] mb-[5px] font-bold">Ajith Kumar</p>
+            <p className="text-[20px]">CAR RACER</p>
+            <div className="flex mt-[20px] justify-center">
+              {Array(5)
+                .fill()
+                .map((_, i) => (
+                  <svg
+                    key={i}
+                    className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
+                    fill="#FFA81D"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                  </svg>
+                ))}
+            </div>
+            <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3">
+              "Absolutely thrilled with the quality!" <br />
+              I bought my hiking gear from here for a trip <br />
+              through the Knuckles Range—everything held <br />
+              up beautifully. Lightweight, durable, and weatherproof.
+            </p>
+          </div>
+
+          {/* REVIEW 2 */}
+          <div className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full">
+            <img
+              src="/prabhas.jpg"
+              alt=""
+              className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3"
+            />
+            <p className="text-[25px] mb-[5px] font-bold">Prabhas</p>
+            <p className="text-[20px]">ACTOR</p>
+            <div className="flex mt-[20px] justify-center">
+              {Array(5)
+                .fill()
+                .map((_, i) => (
+                  <svg
+                    key={i}
+                    className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
+                    fill="#FFA81D"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                  </svg>
+                ))}
+            </div>
+            <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3">
+              "Fast delivery & top-notch customer service." <br />
+              Ordered last-minute before a weekend trek and my package <br />
+              arrived early! Plus, the team was super responsive when <br />I
+              had questions. Will definitely shop again!
+            </p>
+          </div>
+
+          {/* REVIEW 3 */}
+          <div className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full">
+            <img
+              src="/vijay.png"
+              alt=""
+              className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3"
+            />
+            <p className="text-[25px] mb-[5px] font-bold">Joseph Vijay</p>
+            <p className="text-[20px]">POLITICIAN</p>
+            <div className="flex mt-[20px] justify-center">
+              {Array(5)
+                .fill()
+                .map((_, i) => (
+                  <svg
+                    key={i}
+                    className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
+                    fill="#FFA81D"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                  </svg>
+                ))}
+            </div>
+            <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3 ">
+              "More than gear—this is adventure made easy." <br />
+              From browsing to checkout, the whole experience felt <br />
+              for explorers like me. Everything I ordered was just as <br />
+              described and made my trip smooth and unforgettable.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
