@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import {
   Bell,
   Shield,
@@ -22,6 +21,8 @@ import {
   User,
   AlertTriangle,
   UserX,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 const UserSettings = () => {
@@ -31,7 +32,7 @@ const UserSettings = () => {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState("");
+  const [notification, setNotification] = useState(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -68,6 +69,56 @@ const UserSettings = () => {
   });
 
   const navigate = useNavigate();
+
+  // Custom notification function
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
+  };
+
+  // Professional Notification Component
+  const Notification = ({ type, message, onClose }) => {
+    const getStyles = () => {
+      const baseStyles =
+        "flex items-center p-4 mb-4 text-sm rounded-lg border shadow-md transition-all duration-300";
+
+      switch (type) {
+        case "success":
+          return `${baseStyles} bg-green-50 text-black border-green-200`;
+        case "error":
+          return `${baseStyles} bg-red-50 text-red-800 border-red-200`;
+        default:
+          return `${baseStyles} bg-blue-50 text-blue-800 border-blue-200`;
+      }
+    };
+
+    const getIcon = () => {
+      switch (type) {
+        case "success":
+          return <CheckCircle size={18} className="mr-3 text-green-600" />;
+        case "error":
+          return <XCircle size={18} className="mr-3 text-red-600" />;
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div className={getStyles()}>
+        {getIcon()}
+        <span className="flex-1 font-medium">{message}</span>
+        <button
+          onClick={onClose}
+          className="ml-3 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    );
+  };
 
   // Create axios instance with interceptors
   const api = axios.create({
@@ -132,7 +183,7 @@ const UserSettings = () => {
       const errorMessage =
         error.response?.data?.message || "Failed to load orders";
       setErrors({ orders: errorMessage });
-      toast.error(errorMessage);
+      showNotification("error", errorMessage);
     } finally {
       setOrdersLoading(false);
     }
@@ -141,7 +192,7 @@ const UserSettings = () => {
   // Delete Account Function
   const handleDeleteAccount = async () => {
     if (!deleteConfirm) {
-      toast.error("Please confirm account deletion");
+      showNotification("error", "Please confirm account deletion");
       return;
     }
 
@@ -153,7 +204,7 @@ const UserSettings = () => {
         data: { confirmDelete: true },
       });
 
-      toast.success("Account deleted successfully");
+      showNotification("success", "Account deleted successfully");
 
       // Clear local storage and redirect
       localStorage.removeItem("token");
@@ -166,7 +217,7 @@ const UserSettings = () => {
       const errorMessage =
         error.response?.data?.message || "Failed to delete account";
       setErrors({ delete: errorMessage });
-      toast.error(errorMessage);
+      showNotification("error", errorMessage);
     } finally {
       setDeleteLoading(false);
       setShowDeleteModal(false);
@@ -241,16 +292,14 @@ const UserSettings = () => {
 
       await api.put("/settings/notifications", settings.notifications);
 
-      setSuccess("Notification settings saved successfully");
-      toast.success("Notification settings saved successfully");
-      setTimeout(() => setSuccess(""), 3000);
+      showNotification("success", "Notification settings saved successfully");
     } catch (error) {
       console.error("Error saving notification settings:", error);
 
       const errorMessage =
         error.response?.data?.message || "Failed to save notification settings";
       setErrors({ save: errorMessage });
-      toast.error(errorMessage);
+      showNotification("error", errorMessage);
     } finally {
       setSaveLoading(false);
     }
@@ -262,7 +311,6 @@ const UserSettings = () => {
     if (!isAuthenticated()) return;
 
     setErrors({});
-    setSuccess("");
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setErrors({ confirmPassword: "Passwords do not match" });
@@ -282,21 +330,19 @@ const UserSettings = () => {
         newPassword: passwordForm.newPassword,
       });
 
-      setSuccess("Password updated successfully");
-      toast.success("Password updated successfully");
+      showNotification("success", "Password updated successfully");
       setPasswordForm({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
-      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
       console.error("Error updating password:", error);
 
       const errorMessage =
         error.response?.data?.message || "Failed to update password";
       setErrors({ save: errorMessage });
-      toast.error(errorMessage);
+      showNotification("error", errorMessage);
     } finally {
       setSaveLoading(false);
     }
@@ -327,8 +373,7 @@ const UserSettings = () => {
         addresses: [...prev.addresses, response.data.address],
       }));
 
-      setSuccess("Address added successfully");
-      toast.success("Address added successfully");
+      showNotification("success", "Address added successfully");
       setShowAddressForm(false);
       setAddressForm({
         addressType: "Home",
@@ -340,14 +385,13 @@ const UserSettings = () => {
         country: "Canada",
         isDefault: false,
       });
-      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
       console.error("Error adding address:", error);
 
       const errorMessage =
         error.response?.data?.message || "Failed to add address";
       setErrors({ save: errorMessage });
-      toast.error(errorMessage);
+      showNotification("error", errorMessage);
     } finally {
       setSaveLoading(false);
     }
@@ -370,16 +414,14 @@ const UserSettings = () => {
         addresses: prev.addresses.filter((addr) => addr._id !== addressId),
       }));
 
-      setSuccess("Address deleted successfully");
-      toast.success("Address deleted successfully");
-      setTimeout(() => setSuccess(""), 3000);
+      showNotification("success", "Address deleted successfully");
     } catch (error) {
       console.error("Error deleting address:", error);
 
       const errorMessage =
         error.response?.data?.message || "Failed to delete address";
       setErrors({ save: errorMessage });
-      toast.error(errorMessage);
+      showNotification("error", errorMessage);
     } finally {
       setSaveLoading(false);
     }
@@ -512,16 +554,7 @@ const UserSettings = () => {
       <h2 className="text-xl font-semibold text-gray-900 mb-6">
         Notification Preferences
       </h2>
-      {errors.save && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-          {errors.save}
-        </div>
-      )}
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
-          {success}
-        </div>
-      )}
+
       <div className="space-y-4">
         <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
           <div className="flex items-center space-x-3">
@@ -637,16 +670,7 @@ const UserSettings = () => {
       <h2 className="text-xl font-semibold text-gray-900 mb-6">
         Security Settings
       </h2>
-      {errors.save && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-          {errors.save}
-        </div>
-      )}
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
-          {success}
-        </div>
-      )}
+
       <div className="space-y-6">
         <div>
           <h3 className="font-medium text-gray-900 mb-4">Change Password</h3>
@@ -1049,12 +1073,6 @@ const UserSettings = () => {
         </button>
       </div>
 
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-          {success}
-        </div>
-      )}
-
       <div className="space-y-4">
         {settings.addresses && settings.addresses.length > 0 ? (
           settings.addresses.map((address) => (
@@ -1175,7 +1193,7 @@ const UserSettings = () => {
     { id: "Security", label: "Security", icon: Shield },
     { id: "My Orders", label: "My Orders", icon: Package },
     { id: "Addresses", label: "Addresses", icon: MapPin },
-    { id: "Account", label: "Account", icon: UserX }, // New Account tab
+    { id: "Account", label: "Account", icon: UserX },
     { id: "Help", label: "Help", icon: HelpCircle },
   ];
 
@@ -1187,6 +1205,17 @@ const UserSettings = () => {
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
         <div className="max-w-7xl mx-auto">
+          {/* Professional Notification */}
+          {notification && (
+            <div className="mb-6">
+              <Notification
+                type={notification.type}
+                message={notification.message}
+                onClose={() => setNotification(null)}
+              />
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             {/* Profile Header */}
             <div className="h-32 bg-gradient-to-r from-[#8DC53E] to-[#97D243] relative">

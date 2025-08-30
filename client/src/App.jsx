@@ -52,6 +52,7 @@ import Events from "./pages/events";
 import EventManagement from "./pages/Admin/EventManagement";
 import EventDetail from "./pages/EventDetail";
 import ProductReports from "./pages/Admin/ReportGeneration/ProductReports";
+import ContentManagement from "./pages/Admin/ContentManagement";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -215,11 +216,15 @@ const App = () => {
               />
               <Route path="/events/:id" element={<EventDetail />} />
               <Route
-                path="/Admin/ReportGeneration/ProductReport"
+                path="/Admin/ReportGeneration/ProductReports"
                 element={<ProductReports />}
               />
 
               <Route path="/events" element={<Events />} />
+              <Route
+                path="/Admin/ContentManagement"
+                element={<ContentManagement />}
+              />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <ToastContainer position="top-right" autoClose={3000} />

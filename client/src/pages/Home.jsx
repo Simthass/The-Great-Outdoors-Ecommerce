@@ -11,6 +11,7 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addedItems, setAddedItems] = useState([]);
+  const [homeReviews, setHomeReviews] = useState([]);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
   const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
@@ -23,6 +24,18 @@ const Home = () => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    fetchHomeReviews();
+  }, []);
+
+  const fetchHomeReviews = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/reviews/homepage`);
+      setHomeReviews(response.data);
+    } catch (error) {
+      console.error("Error fetching homepage reviews:", error);
+    }
+  };
   const fetchProducts = async () => {
     try {
       const response = await axios.get(`${API_URL}/products`);
@@ -236,9 +249,18 @@ const Home = () => {
       </div>
 
       {/* Hot This Week */}
-      <div id="hot-this-week" className="text-center ml-[75px] mr-[75px]" data-testid="hot-section">
-        <p className="text-[30px] font-bold mb-[50px]" data-testid="hot-title">Hot This Week</p>
-        <div className="flex flex-wrap items-center justify-between mb-7" data-testid="hot-grid">
+      <div
+        id="hot-this-week"
+        className="text-center ml-[75px] mr-[75px]"
+        data-testid="hot-section"
+      >
+        <p className="text-[30px] font-bold mb-[50px]" data-testid="hot-title">
+          Hot This Week
+        </p>
+        <div
+          className="flex flex-wrap items-center justify-between mb-7"
+          data-testid="hot-grid"
+        >
           {products
             .filter((product) => product.isHotThisWeek)
             .slice(0, 4)
@@ -280,21 +302,38 @@ const Home = () => {
                 <hr className="mt-[25px] mb-[20px]" />
 
                 <div className="flex justify-between items-center text-[15px]">
-                  <span className="font-bold text-left" data-testid={`hot-card-price-${product._id}`}>
+                  <span
+                    className="font-bold text-left"
+                    data-testid={`hot-card-price-${product._id}`}
+                  >
                     Rs. {product.price}
                   </span>
                   <span
-                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] cursor-pointer ${
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] ${
                       addedItems.includes(product._id)
                         ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] "
+                        : product.stockStatus === "out_of_stock" ||
+                          (product.inventory &&
+                            product.inventory.quantity === 0)
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] cursor-pointer"
                     }`}
-                    role="button"
-                    aria-disabled={addedItems.includes(product._id) ? "true" : "false"}
-                    onClick={() => handleAddToCart(product._id)}
-                    data-testid={`hot-card-add-${product._id}`}
+                    onClick={() => {
+                      if (
+                        !addedItems.includes(product._id) &&
+                        product.stockStatus !== "out_of_stock" &&
+                        !(product.inventory && product.inventory.quantity === 0)
+                      ) {
+                        handleAddToCart(product._id);
+                      }
+                    }}
                   >
-                    {addedItems.includes(product._id) ? "Added ✓" : "+ Add to Cart"}
+                    {addedItems.includes(product._id)
+                      ? "Added ✓"
+                      : product.stockStatus === "out_of_stock" ||
+                        (product.inventory && product.inventory.quantity === 0)
+                      ? "Out of Stock"
+                      : "+ Add to Cart"}
                   </span>
                 </div>
               </div>
@@ -304,37 +343,88 @@ const Home = () => {
 
       {/* Banner slider */}
       <div>
-        <div className="ml-[75px] mr-[75px] mb-[70px] mt-[30px] overflow-hidden" data-testid="banner-slider">
+        <div
+          className="ml-[75px] mr-[75px] mb-[70px] mt-[30px] overflow-hidden"
+          data-testid="banner-slider"
+        >
           <BannerSlider />
         </div>
       </div>
 
       {/* Feature strip */}
-      <div data-testid="feature-strip">
+      <div className="">
         <hr className="mr-[75px] ml-[75px]" />
         <div className="flex flex-wrap justify-between items-center ml-[150px] mr-[150px] pt-[20px] pb-[20px]">
-          {/* three features ... unchanged */}
+          <div className="flex flex-wrap justify-between items-center">
+            <div>
+              <img
+                src="/Award.svg"
+                alt=""
+                className="width=[28px] height-[51px] mr-[20px]"
+              />
+            </div>
+            <div>
+              <p className="text-[18px] mb-1 font-bold">BEST PRICE GUARANTEE</p>
+              <p className="text-[16px] text-black">100% Authentic Products</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-between items-center">
+            <div>
+              <img
+                src="/Shipping.svg"
+                alt=""
+                className="width=[28px] height-[51px] mr-[20px]"
+              />
+            </div>
+            <div>
+              <p className="text-[18px] mb-1 font-bold">FREE SHIPPING</p>
+              <p className="text-[16px]">On Orders Over Rs. 5000</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-between items-center">
+            <div>
+              <img
+                src="/card.svg"
+                alt=""
+                className="width=[28px] height-[51px] mr-[20px]"
+              />
+            </div>
+            <div>
+              <p className="text-[18px] mb-1 font-bold">SECURE PAYMENTS</p>
+              <p className="text-[16px]">Secure Checkout verified</p>
+            </div>
+          </div>
         </div>
         <hr className="mr-[75px] ml-[75px]" />
       </div>
 
       {/* Subscription section */}
-      <div className="mt-[70px] mb-[30px] bg-[#195E29]/80 w-auto h-[590px] relative" data-testid="subscription-section">
+      <div
+        className="mt-[70px] mb-[60px] bg-[#195E29]/80 w-auto h-[590px] relative"
+        data-testid="subscription-section"
+      >
         <div className="w-[1205px] h-[610px] flex items-center justify-between absolute top-[80px] left-1/2 -translate-x-1/2 bg-[#ffffff] rounded-2xl shadow-2xl overflow-hidden">
           <div className="w-[585px] h-fit relative">
-            <img src="/Subs-Home.jpg" alt="Outdoor" className="w-full h-full object-cover" />
+            <img
+              src="/Subs-Home.jpg"
+              alt="Outdoor"
+              className="w-full h-full object-cover"
+            />
             <div className="absolute top-6 left-6 bg-[#8DC53E] text-white px-4 py-2 rounded-full text-sm font-semibold">
               🏔️ Join 10,000+ Adventurers
             </div>
           </div>
 
           <div className="pr-[110px] pl-[10px]">
-            <p className="text-[20px] mb-[10px] text-[#797979] font-bold">Never Miss an Adventure</p>
+            <p className="text-[20px] mb-[10px] text-[#797979] font-bold">
+              Never Miss an Adventure
+            </p>
             <p className="text-4xl font-bold leading-12 mb-4">
               Get Notified About New <br /> Outdoor Events
             </p>
             <p className="text-[16px] leading-8 mb-8 mt-3">
-              Be the first to know about hiking trips, camping adventures, <br />
+              Be the first to know about hiking trips, camping adventures,{" "}
+              <br />
               climbing expeditions, fishing tours, and outdoor workshops. <br />
               Join our community of outdoor enthusiasts!
             </p>
@@ -347,11 +437,21 @@ const Home = () => {
       </div>
 
       {/* Featured products */}
-      <div className="text-center ml-[75px] mr-[75px]" data-testid="featured-section">
-        <p className="text-[30px] mb-[50px]" style={{ fontWeight: "bold" }} data-testid="featured-title">
+      <div
+        className="text-center ml-[75px] mr-[75px]"
+        data-testid="featured-section"
+      >
+        <p
+          className="text-[30px] mb-[50px]"
+          style={{ fontWeight: "bold" }}
+          data-testid="featured-title"
+        >
           FEATURED PRODUCTS
         </p>
-        <div className="flex flex-wrap items-center justify-between mb-7" data-testid="featured-grid">
+        <div
+          className="flex flex-wrap items-center justify-between mb-7"
+          data-testid="featured-grid"
+        >
           {products
             .filter((product) => product.isFeatured)
             .slice(0, 4)
@@ -393,25 +493,91 @@ const Home = () => {
                 <hr className="mt-[25px] mb-[20px]" />
 
                 <div className="flex justify-between items-center text-[15px]">
-                  <span className="font-bold text-left" data-testid={`feat-card-price-${product._id}`}>
+                  <span
+                    className="font-bold text-left"
+                    data-testid={`feat-card-price-${product._id}`}
+                  >
                     Rs. {product.price}
                   </span>
                   <span
-                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] cursor-pointer ${
+                    className={`font-bold w-[110px] h-[30px] flex items-center justify-center rounded-[5px] transition-all text-[16px] ${
                       addedItems.includes(product._id)
                         ? "bg-[#195E29] text-[#ffffff] cursor-not-allowed"
-                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] "
+                        : product.stockStatus === "out_of_stock" ||
+                          (product.inventory &&
+                            product.inventory.quantity === 0)
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "hover:bg-[#195E29] hover:w-30 hover:text-[#ffffff] cursor-pointer"
                     }`}
-                    role="button"
-                    aria-disabled={addedItems.includes(product._id) ? "true" : "false"}
-                    onClick={() => handleAddToCart(product._id)}
-                    data-testid={`feat-card-add-${product._id}`}
+                    onClick={() => {
+                      if (
+                        !addedItems.includes(product._id) &&
+                        product.stockStatus !== "out_of_stock" &&
+                        !(product.inventory && product.inventory.quantity === 0)
+                      ) {
+                        handleAddToCart(product._id);
+                      }
+                    }}
                   >
-                    {addedItems.includes(product._id) ? "Added ✓" : "+ Add to Cart"}
+                    {addedItems.includes(product._id)
+                      ? "Added ✓"
+                      : product.stockStatus === "out_of_stock" ||
+                        (product.inventory && product.inventory.quantity === 0)
+                      ? "Out of Stock"
+                      : "+ Add to Cart"}
                   </span>
                 </div>
               </div>
             ))}
+        </div>
+      </div>
+      <div className="w-full mt-[30px] mb-[30px] bg-[url('/Review-BG.png')] bg-no-repeat bg-center bg-cover pb-10">
+        <p className="text-[40px] text-[#FFA81D] text-center mt-[10px] pt-12 pb-12 font-bold">
+          CUSTOMER SAYS
+        </p>
+        <div className="flex justify-between items-center text-center">
+          {homeReviews.slice(0, 3).map((review, index) => (
+            <div
+              key={review._id}
+              className="text-[#ffffff] w-1/3 flex-shrink-0 min-h-full"
+            >
+              <img
+                src={
+                  review.customerImage
+                    ? `${API_URL.replace("/api", "")}${review.customerImage}`
+                    : "/default-avatar.png"
+                }
+                alt={review.customerName}
+                className="h-[105px] w-[105px] mx-auto rounded-full border-[5px] hover:border-[#FFA81D] transition mb-3 object-cover"
+              />
+              <p className="text-[25px] mb-[5px] font-bold">
+                {review.customerName}
+              </p>
+              <p className="text-[20px]">{review.customerTitle}</p>
+              <div className="flex mt-[20px] justify-center">
+                {Array(5)
+                  .fill()
+                  .map((_, i) => (
+                    <svg
+                      key={i}
+                      className="w-[18px] h-[18px] text-[#FFA81D] mr-[2px]"
+                      fill={i < review.rating ? "#FFA81D" : "#374151"}
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
+                    </svg>
+                  ))}
+              </div>
+              <p className="text-[15px] leading-[2.2] text-[#D9D7D7] mt-3">
+                {review.description.split("\n").map((line, i) => (
+                  <span key={i}>
+                    {line}
+                    {i < review.description.split("\n").length - 1 && <br />}
+                  </span>
+                ))}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -419,4 +585,3 @@ const Home = () => {
 };
 
 export default Home;
-

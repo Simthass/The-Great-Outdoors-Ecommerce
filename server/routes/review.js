@@ -1,82 +1,137 @@
-import { Router } from "express";
+import express from "express";
+import multer from "multer";
+import path from "path";
 import Review from "../models/Review.js";
 
-const router = Router();
+const router = express.Router();
 
-/**
- * GET /api/reviews
- * Optional query: q (search), sort ("asc"|"desc")
- */
-router.get("/", async (req, res, next) => {
+// Configure multer for customer image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/customers/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, "customer-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"));
+    }
+  },
+});
+
+// Get homepage reviews
+router.get("/homepage", async (req, res) => {
   try {
-    const { q = "", sort = "desc" } = req.query;
-    const find = q
-      ? {
-          $or: [
-            { productId: new RegExp(q, "i") },
-            { customerId: new RegExp(q, "i") },
-            { reviewId: new RegExp(q, "i") },
-          ],
-        }
-      : {};
-    const reviews = await Review.find(find).sort({
-      dateAdded: sort === "asc" ? 1 : -1,
-    });
+    const reviews = await Review.find({
+      isHomepageReview: true,
+      status: "Y",
+    }).sort({ order: 1, createdAt: -1 });
     res.json(reviews);
-  } catch (e) {
-    next(e);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
-/** GET /api/reviews/:id  (id is reviewId like R001) */
-router.get("/:id", async (req, res, next) => {
+// Get all reviews for admin
+router.get("/admin", async (req, res) => {
   try {
-    const doc = await Review.findOne({ reviewId: req.params.id });
-    if (!doc) return res.status(404).json({ message: "Not found" });
-    res.json(doc);
-  } catch (e) {
-    next(e);
+    const reviews = await Review.find().sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
-/** POST /api/reviews  (create) */
-router.post("/", async (req, res, next) => {
+// Create homepage review (admin only)
+router.post("/homepage", upload.single("customerImage"), async (req, res) => {
   try {
-    const payload = req.body;
-    // dateAdded can be string; normalize
-    if (payload.dateAdded) payload.dateAdded = new Date(payload.dateAdded);
-    const doc = await Review.create(payload);
-    res.status(201).json(doc);
-  } catch (e) {
-    next(e);
+    const { customerName, customerTitle, description, rating } = req.body;
+
+    // Get the current max order for homepage reviews
+    const maxOrderReview = await Review.findOne({
+      isHomepageReview: true,
+    }).sort({ order: -1 });
+    const currentOrder = maxOrderReview ? maxOrderReview.order + 1 : 1;
+
+    const review = new Review({
+      customerName,
+      customerTitle,
+      description,
+      rating: parseInt(rating),
+      customerImage: req.file ? `/uploads/customers/${req.file.filename}` : "",
+      isHomepageReview: true,
+      order: currentOrder,
+    });
+
+    await review.save();
+    res.status(201).json(review);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
-/** PUT /api/reviews/:id (update by reviewId) */
-router.put("/:id", async (req, res, next) => {
+// Update homepage review
+router.put(
+  "/homepage/:id",
+  upload.single("customerImage"),
+  async (req, res) => {
+    try {
+      const { customerName, customerTitle, description, rating } = req.body;
+      const review = await Review.findById(req.params.id);
+
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      review.customerName = customerName || review.customerName;
+      review.customerTitle = customerTitle || review.customerTitle;
+      review.description = description || review.description;
+      review.rating = rating ? parseInt(rating) : review.rating;
+
+      if (req.file) {
+        review.customerImage = `/uploads/customers/${req.file.filename}`;
+      }
+
+      await review.save();
+      res.json(review);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
+
+// Delete review
+router.delete("/:id", async (req, res) => {
   try {
-    const payload = req.body;
-    if (payload.dateAdded) payload.dateAdded = new Date(payload.dateAdded);
-    const doc = await Review.findOneAndUpdate(
-      { reviewId: req.params.id },
-      payload,
-      { new: true, runValidators: true }
-    );
-    if (!doc) return res.status(404).json({ message: "Not found" });
-    res.json(doc);
-  } catch (e) {
-    next(e);
+    const review = await Review.findByIdAndDelete(req.params.id);
+    if (!review) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+    res.json({ message: "Review deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
-/** DELETE /api/reviews/:id */
-router.delete("/:id", async (req, res, next) => {
+// Reorder homepage reviews
+router.put("/homepage/reorder", async (req, res) => {
   try {
-    const out = await Review.findOneAndDelete({ reviewId: req.params.id });
-    if (!out) return res.status(404).json({ message: "Not found" });
-    res.json({ ok: true });
-  } catch (e) {
-    next(e);
+    const { reviews } = req.body;
+    for (let i = 0; i < reviews.length; i++) {
+      await Review.findByIdAndUpdate(reviews[i]._id, { order: i });
+    }
+    res.json({ message: "Reviews reordered successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
