@@ -1,4 +1,4 @@
-// Checkout.jsx - MODERN UI VERSION
+// Checkout.jsx - MODERN UI VERSION WITH COUPON FUNCTIONALITY
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -15,6 +15,9 @@ import {
   Clock,
   Truck,
   Star,
+  Percent,
+  XCircle,
+  Tag,
 } from "lucide-react";
 
 const Checkout = () => {
@@ -25,6 +28,10 @@ const Checkout = () => {
   const [cart, setCart] = useState({ items: [] });
   const [paymentMethod, setPaymentMethod] = useState("Cash On Delivery");
   const [notes, setNotes] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState("");
 
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -57,6 +64,53 @@ const Checkout = () => {
     }
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+
+    setApplyingCoupon(true);
+    setCouponError("");
+
+    try {
+      const token = getAuthToken();
+      const subtotal = cart.items.reduce(
+        (t, item) => t + item.product.price * item.quantity,
+        0
+      );
+
+      const response = await axios.post(
+        `${API_URL}/coupons/validate`,
+        {
+          code: couponCode,
+          orderAmount: subtotal,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
+
+      if (response.data.success) {
+        setAppliedCoupon(response.data.data);
+        setCouponError("");
+      } else {
+        setCouponError(response.data.message);
+        setAppliedCoupon(null);
+      }
+    } catch (error) {
+      console.error("Error applying coupon:", error);
+      setCouponError(error.response?.data?.message || "Failed to apply coupon");
+      setAppliedCoupon(null);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError("");
+  };
+
   const handlePlaceOrder = async () => {
     if (cart.items.length === 0) {
       setError("Your cart is empty");
@@ -68,7 +122,11 @@ const Checkout = () => {
       const token = getAuthToken();
       const response = await axios.post(
         `${API_URL}/orders/checkout`,
-        { paymentMethod, notes },
+        {
+          paymentMethod,
+          notes,
+          couponCode: appliedCoupon ? appliedCoupon.code : "",
+        },
         { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
       );
       if (response.data.success) {
@@ -87,14 +145,15 @@ const Checkout = () => {
     }
   };
 
-  // Totals
+  // Calculate totals with coupon discount
   const subtotal = cart.items.reduce(
     (t, item) => t + item.product.price * item.quantity,
     0
   );
-  const tax = subtotal * 0.13;
+
+  const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const shipping = subtotal > 100 ? 0 : 15;
-  const grandTotal = subtotal + tax + shipping;
+  const grandTotal = subtotal - discount + shipping;
 
   if (orderSuccess) {
     return (
@@ -234,6 +293,112 @@ const Checkout = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Payment & Notes */}
           <div className="lg:col-span-2 space-y-8">
+            {/* Coupon Section */}
+            <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-50 to-green-50 px-8 py-6 border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: "rgba(141, 197, 62, 0.2)" }}
+                  >
+                    <Tag className="w-5 h-5" style={{ color: "#8DC53E" }} />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Apply Coupon
+                  </h2>
+                </div>
+                <p className="text-gray-600 mt-2">
+                  Enter a coupon code to get discounts on your order
+                </p>
+              </div>
+
+              <div className="p-8">
+                {!appliedCoupon ? (
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) =>
+                          setCouponCode(e.target.value.toUpperCase())
+                        }
+                        placeholder="Enter coupon code"
+                        className="w-full px-6 py-4 border-2 border-gray-200 rounded-2xl transition-colors duration-200 focus:outline-none focus:ring-0"
+                        style={{
+                          borderColor: couponCode ? "#8DC53E" : "#e5e7eb",
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#8DC53E";
+                        }}
+                        onBlur={(e) => {
+                          if (!e.target.value) {
+                            e.target.style.borderColor = "#e5e7eb";
+                          }
+                        }}
+                        disabled={applyingCoupon}
+                      />
+                      {couponError && (
+                        <div className="mt-2 flex items-center text-red-600 text-sm">
+                          <XCircle className="w-4 h-4 mr-1" />
+                          {couponError}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleApplyCoupon}
+                      disabled={applyingCoupon || !couponCode.trim()}
+                      className="px-8 py-4 bg-[#8DC53E] text-white rounded-2xl font-semibold hover:bg-[#7AB82D] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    >
+                      {applyingCoupon ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                          Applying...
+                        </>
+                      ) : (
+                        "Apply Coupon"
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-green-50 border border-green-200 rounded-2xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CheckCircle className="w-6 h-6 text-green-600 mr-3" />
+                        <div>
+                          <h3 className="font-semibold text-black">
+                            Coupon Applied: {appliedCoupon.code}
+                          </h3>
+                          <p className="text-green-600 text-sm">
+                            {appliedCoupon.discountType === "percentage" ? (
+                              <>
+                                {appliedCoupon.discountValue}% off (
+                                {appliedCoupon.maxDiscountAmount
+                                  ? `Max Rs. ${appliedCoupon.maxDiscountAmount.toFixed(
+                                      2
+                                    )}`
+                                  : "No maximum limit"}
+                                )
+                              </>
+                            ) : (
+                              <>
+                                Rs. {appliedCoupon.discountValue.toFixed(2)} off
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleRemoveCoupon}
+                        className="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 transition-colors"
+                      >
+                        <XCircle className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Payment Method Section */}
             <div
               data-testid="payment-method-section"
@@ -430,12 +595,19 @@ const Checkout = () => {
                         Rs. {subtotal.toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-gray-700">
-                      <span>Tax (13%)</span>
-                      <span data-testid="tax" className="font-semibold">
-                        Rs. {tax.toFixed(2)}
-                      </span>
-                    </div>
+
+                    {discount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span className="flex items-center">
+                          <Percent className="w-4 h-4 mr-1" />
+                          Discount
+                        </span>
+                        <span data-testid="discount" className="font-semibold">
+                          - Rs. {discount.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between text-gray-700">
                       <span className="flex items-center">
                         <Truck className="w-4 h-4 mr-1" />

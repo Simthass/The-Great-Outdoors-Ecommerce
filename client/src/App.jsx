@@ -54,6 +54,7 @@ import EventDetail from "./pages/EventDetail";
 import ProductReports from "./pages/Admin/ReportGeneration/ProductReports";
 import ContentManagement from "./pages/Admin/ContentManagement";
 import ReviewReport from "./pages/Admin/ReportGeneration/ReviewReport";
+import AdminCoupons from "./pages/Admin/AdminCoupons";
 
 const BackgroundSlider = ({ children }) => {
   const backgroundImages = [
@@ -230,6 +231,7 @@ const App = () => {
                 path="/Admin/ContentManagement"
                 element={<ContentManagement />}
               />
+              <Route path="/Admin/AdminCoupons" element={<AdminCoupons />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <ToastContainer position="top-right" autoClose={3000} />

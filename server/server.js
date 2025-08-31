@@ -32,6 +32,7 @@ import inventoryRoutes from "./routes/inventory.js";
 import orderReportRoutes from "./routes/reports.js";
 import { syncAllInventoryStatus } from "./middleware/inventorySync.js";
 import reviewRoutes from "./routes/review.js";
+import couponRoutes from "./routes/coupons.js";
 
 // Load environment variables
 dotenv.config();
@@ -217,6 +218,7 @@ if (dbConnected) {
   app.use("/api/product-reviews", productReviewRoutes);
   app.use("/api/inventory", inventoryRoutes);
   app.use("/api/reports", orderReportRoutes);
+  app.use("/api/coupons", couponRoutes);
 }
 
 // 404 handler for undefined routes
