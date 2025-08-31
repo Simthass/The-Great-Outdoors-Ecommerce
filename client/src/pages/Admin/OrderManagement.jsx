@@ -241,11 +241,11 @@ const OrderManagement = () => {
   };
 
   // Format currency
-  const formatCurrency = (amount) => {
+  const formatCurrency = (totalAmount) => {
     return new Intl.NumberFormat("en-LK", {
       style: "currency",
       currency: "LKR",
-    }).format(amount || 0);
+    }).format(totalAmount || 0);
   };
 
   // Format date
@@ -690,7 +690,6 @@ const OrderManagement = () => {
                           <div className="text-sm font-medium text-gray-900">
                             {formatCurrency(
                               order.totalAmount +
-                                order.tax +
                                 order.shippingCost -
                                 order.discount
                             )}
