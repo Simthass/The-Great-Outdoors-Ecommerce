@@ -131,6 +131,20 @@ const AdminDashboard = () => {
             </div>
           </div>
         </Link>
+        <Link to="/Admin/AdminCoupons" data-testid="link-other-management">
+          <div
+            className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
+            style={{
+              backgroundImage: "url('/pexels-max-fischer-5872354.jpg')",
+            }}
+          >
+            <div className="absolute inset-0 bg-black/50 bg-opacity-40 flex items-center justify-center rounded-xl">
+              <h2 className="text-white text-lg font-semibold text-center px-2">
+                Coupon Management
+              </h2>
+            </div>
+          </div>
+        </Link>
       </div>
     </div>
   );
