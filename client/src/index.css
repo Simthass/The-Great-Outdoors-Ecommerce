@@ -118,3 +118,7 @@ code {
 .animate-fadeIn {
   animation: fadeIn 0.25s ease-out;
 }
+.notification-icon {
+  width: 20px;
+  height: 20px;
+}
