@@ -37,6 +37,10 @@ const UserManagement = () => {
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
+
   // Fetch user profile for sidebar
   const fetchUserProfile = async () => {
     try {
