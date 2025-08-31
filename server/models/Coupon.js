@@ -11,7 +11,6 @@ const couponSchema = mongoose.Schema(
       trim: true,
       validate: {
         validator: function (v) {
-          // Only allow alphanumeric characters and hyphens
           return /^[A-Z0-9-]+$/.test(v);
         },
         message: "Coupon code can only contain letters, numbers, and hyphens",
@@ -59,12 +58,7 @@ const couponSchema = mongoose.Schema(
     endDate: {
       type: Date,
       required: true,
-      validate: {
-        validator: function (v) {
-          return v > this.startDate;
-        },
-        message: "End date must be after start date",
-      },
+      // ✅ Remove the problematic validator - we'll handle this in the route
     },
     usageLimit: {
       type: Number,
@@ -113,89 +107,28 @@ const couponSchema = mongoose.Schema(
   }
 );
 
-// Index for efficient querying
-couponSchema.index({ code: 1, isActive: 1 });
-couponSchema.index({ startDate: 1, endDate: 1 });
-couponSchema.index({ createdBy: 1 });
-
-// Static method to validate coupon with enhanced security
-// models/Coupon.js
-
-couponSchema.statics.validateCoupon = async function (
-  code,
-  orderAmount,
-  userId
-) {
-  try {
-    const sanitizedCode = code.toUpperCase().trim();
-
-    const coupon = await this.findOne({
-      code: sanitizedCode,
-      isActive: true,
-      startDate: { $lte: new Date() }, // This allows today's date
-      endDate: { $gte: new Date() },
-    });
-
-    if (!coupon) {
-      return { valid: false, message: "Invalid coupon code" };
+// ✅ Add pre-save middleware to validate dates
+couponSchema.pre(["save", "findOneAndUpdate"], function () {
+  // For save operations
+  if (this.endDate && this.startDate) {
+    if (this.endDate <= this.startDate) {
+      throw new Error("End date must be after start date");
     }
-
-    // Check usage limit
-    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
-      return {
-        valid: false,
-        message: "This coupon has reached its usage limit",
-      };
-    }
-
-    // Check min order
-    if (orderAmount < (coupon.minOrderAmount || 0)) {
-      return {
-        valid: false,
-        message: `Minimum order amount must be ${coupon.minOrderAmount}`,
-      };
-    }
-
-    // Allowed users check
-    if (coupon.allowedUsers?.length > 0 && userId) {
-      const isUserAllowed = coupon.allowedUsers.some(
-        (allowedUser) => allowedUser.toString() === userId.toString()
-      );
-      if (!isUserAllowed) {
-        return {
-          valid: false,
-          message: "This coupon is not available for your account",
-        };
-      }
-    }
-
-    // Single-use per user
-    if (coupon.singleUsePerUser && userId) {
-      const hasUserUsed = coupon.usedBy?.some(
-        (usage) => usage.user.toString() === userId.toString()
-      );
-      if (hasUserUsed) {
-        return { valid: false, message: "You have already used this coupon" };
-      }
-    }
-
-    // ✅ Calculate discount amount
-    let discountAmount = 0;
-    if (coupon.discountType === "percentage") {
-      discountAmount = (orderAmount * coupon.discountValue) / 100;
-      if (coupon.maxDiscountAmount) {
-        discountAmount = Math.min(discountAmount, coupon.maxDiscountAmount);
-      }
-    } else {
-      discountAmount = coupon.discountValue;
-    }
-
-    return { valid: true, coupon: { ...coupon.toObject(), discountAmount } };
-  } catch (err) {
-    console.error("Coupon.validateCoupon error:", err);
-    throw err;
   }
-};
+
+  // For update operations
+  if (this.getUpdate && this.getUpdate()) {
+    const update = this.getUpdate();
+    const startDate = update.startDate || update.$set?.startDate;
+    const endDate = update.endDate || update.$set?.endDate;
+
+    if (startDate && endDate) {
+      if (new Date(endDate) <= new Date(startDate)) {
+        throw new Error("End date must be after start date");
+      }
+    }
+  }
+});
 
 // Method to increment usage
 couponSchema.methods.incrementUsage = async function (userId) {

@@ -71,25 +71,19 @@ const validateCouponInput = [
 
   // Update the startDate validation in validateCouponInput
   body("startDate")
+    .optional()
     .isISO8601()
-    .withMessage("Start date must be a valid date")
-    .custom((value, { req }) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Set to beginning of today
-      const start = new Date(value);
-      start.setHours(0, 0, 0, 0); // Set to beginning of start date
-
-      if (start < today) {
-        throw new Error("Start date cannot be before today");
-      }
-      return true;
-    }),
+    .withMessage("Start date must be a valid date"),
 
   body("endDate")
+    .optional()
     .isISO8601()
     .withMessage("End date must be a valid date")
     .custom((value, { req }) => {
-      if (new Date(value) <= new Date(req.body.startDate)) {
+      if (
+        req.body.startDate &&
+        new Date(value) <= new Date(req.body.startDate)
+      ) {
         throw new Error("End date must be after start date");
       }
       return true;
@@ -313,10 +307,7 @@ router.put(
   "/:id",
   protect,
   admin,
-  [
-    param("id").isMongoId().withMessage("Invalid coupon ID"),
-    ...validateCouponInput,
-  ],
+  [param("id").isMongoId().withMessage("Invalid coupon ID")],
   async (req, res) => {
     try {
       // Check for validation errors
@@ -330,26 +321,104 @@ router.put(
       }
 
       const coupon = await Coupon.findById(req.params.id);
-
       if (!coupon) {
-        return res.status(404).json({
+        return res
+          .status(404)
+          .json({ success: false, message: "Coupon not found" });
+      }
+
+      // ✅ Build update data with proper validation
+      const updateData = {};
+
+      // Handle each field with proper type conversion
+      if (req.body.code !== undefined) {
+        updateData.code = req.body.code.trim().toUpperCase();
+      }
+      if (req.body.description !== undefined) {
+        updateData.description = req.body.description.trim();
+      }
+      if (req.body.discountType !== undefined) {
+        updateData.discountType = req.body.discountType;
+      }
+      if (req.body.discountValue !== undefined) {
+        updateData.discountValue = parseFloat(req.body.discountValue);
+      }
+      if (req.body.minOrderAmount !== undefined) {
+        updateData.minOrderAmount = req.body.minOrderAmount
+          ? parseFloat(req.body.minOrderAmount)
+          : 0;
+      }
+      if (req.body.maxDiscountAmount !== undefined) {
+        updateData.maxDiscountAmount = req.body.maxDiscountAmount
+          ? parseFloat(req.body.maxDiscountAmount)
+          : null;
+      }
+      if (req.body.startDate !== undefined) {
+        updateData.startDate = new Date(req.body.startDate);
+      }
+      if (req.body.endDate !== undefined) {
+        updateData.endDate = new Date(req.body.endDate);
+      }
+      if (req.body.usageLimit !== undefined) {
+        updateData.usageLimit = req.body.usageLimit
+          ? parseInt(req.body.usageLimit)
+          : null;
+      }
+      if (req.body.isActive !== undefined) {
+        updateData.isActive = req.body.isActive;
+      }
+      if (req.body.allowedUsers !== undefined) {
+        updateData.allowedUsers = req.body.allowedUsers;
+      }
+      if (req.body.singleUsePerUser !== undefined) {
+        updateData.singleUsePerUser = req.body.singleUsePerUser;
+      }
+
+      // ✅ Manual date validation before update
+      const finalStartDate = updateData.startDate || coupon.startDate;
+      const finalEndDate = updateData.endDate || coupon.endDate;
+
+      if (finalEndDate <= finalStartDate) {
+        return res.status(400).json({
           success: false,
-          message: "Coupon not found",
+          message: "End date must be after start date",
         });
       }
 
-      const updatedCoupon = await Coupon.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        { new: true, runValidators: true }
-      );
+      // ✅ Additional validations
+      if (
+        updateData.discountType === "percentage" ||
+        (!updateData.discountType && coupon.discountType === "percentage")
+      ) {
+        const discountValue =
+          updateData.discountValue !== undefined
+            ? updateData.discountValue
+            : coupon.discountValue;
+        if (discountValue < 1 || discountValue > 100) {
+          return res.status(400).json({
+            success: false,
+            message: "Percentage discount must be between 1 and 100",
+          });
+        }
+      }
 
-      res.json({
-        success: true,
-        data: updatedCoupon,
-      });
+      // ✅ Use updateOne instead of findByIdAndUpdate to avoid schema validators
+      await Coupon.updateOne({ _id: req.params.id }, { $set: updateData });
+
+      // ✅ Fetch the updated document
+      const updatedCoupon = await Coupon.findById(req.params.id);
+
+      res.json({ success: true, data: updatedCoupon });
     } catch (error) {
       console.error("Update coupon error:", error);
+
+      if (error.message === "End date must be after start date") {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
       res.status(500).json({
         success: false,
         message: "Failed to update coupon",
