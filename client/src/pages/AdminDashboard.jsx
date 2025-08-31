@@ -105,11 +105,28 @@ const AdminDashboard = () => {
         <Link to="/Admin/ContentManagement" data-testid="link-other-management">
           <div
             className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
-            style={{ backgroundImage: "url('/User-Mana.png')" }}
+            style={{
+              backgroundImage: "url('/swello-jA1V9iVxBXU-unsplash.jpg')",
+            }}
           >
             <div className="absolute inset-0 bg-black/50 bg-opacity-40 flex items-center justify-center rounded-xl">
               <h2 className="text-white text-lg font-semibold text-center px-2">
-                Others
+                Content Management
+              </h2>
+            </div>
+          </div>
+        </Link>
+        <Link to="/Admin/EventManagement" data-testid="link-other-management">
+          <div
+            className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
+            style={{
+              backgroundImage:
+                "url('/holly-mandarich-UVyOfX3v0Ls-unsplash.jpg')",
+            }}
+          >
+            <div className="absolute inset-0 bg-black/50 bg-opacity-40 flex items-center justify-center rounded-xl">
+              <h2 className="text-white text-lg font-semibold text-center px-2">
+                Event Management
               </h2>
             </div>
           </div>
