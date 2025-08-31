@@ -13,11 +13,32 @@ import {
   Plus,
   User,
   ChevronUp,
-  DollarSign, 
-  TrendingUp
+  DollarSign,
+  TrendingUp,
+  Download,
 } from "lucide-react";
+import { Bar, Pie } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import Sidebar from "../../components/Sidebar";
 import { useNavigate } from "react-router-dom";
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend
+);
 
 // API configuration
 const API_BASE_URL = "http://localhost:5000/api";
@@ -114,6 +135,26 @@ const api = {
 
     return { data: await response.json() };
   },
+
+  getFile: async (url) => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: "GET",
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: "Network error" }));
+      throw { response: { data: error, status: response.status } };
+    }
+
+    return response;
+  },
 };
 
 // Main Employee Management Component
@@ -124,6 +165,8 @@ const EmployeeManagement = () => {
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportData, setReportData] = useState(null);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -143,7 +186,7 @@ const EmployeeManagement = () => {
     email: "",
     phoneNumber: "",
     address: "",
-    salary: "", 
+    salary: "",
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -156,6 +199,80 @@ const EmployeeManagement = () => {
     "Cleaner",
     "Sales Associate",
   ];
+
+  // Chart data for salary distribution
+  const getSalaryChartData = () => {
+    if (!reportData) return {};
+    const { salaryDistribution } = reportData;
+    return {
+      labels: ["<30k", "30k-50k", "50k-70k", ">70k"],
+      datasets: [
+        {
+          label: "Number of Employees",
+          data: [
+            salaryDistribution["<30k"],
+            salaryDistribution["30k-50k"],
+            salaryDistribution["50k-70k"],
+            salaryDistribution[">70k"],
+          ],
+          backgroundColor: [
+            "rgba(75, 192, 192, 0.6)",
+            "rgba(54, 162, 235, 0.6)",
+            "rgba(255, 206, 86, 0.6)",
+            "rgba(255, 99, 132, 0.6)",
+          ],
+          borderColor: [
+            "rgba(75, 192, 192, 1)",
+            "rgba(54, 162, 235, 1)",
+            "rgba(255, 206, 86, 1)",
+            "rgba(255, 99, 132, 1)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  // Chart data for position distribution
+  const getPositionChartData = () => {
+    if (!reportData) return {};
+    const { positionDistribution } = reportData;
+    return {
+      labels: Object.keys(positionDistribution),
+      datasets: [
+        {
+          label: "Employees by Position",
+          data: Object.values(positionDistribution),
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.6)",
+            "rgba(54, 162, 235, 0.6)",
+            "rgba(255, 206, 86, 0.6)",
+            "rgba(75, 192, 192, 0.6)",
+            "rgba(153, 102, 255, 0.6)",
+          ],
+          borderColor: [
+            "rgba(255, 99, 132, 1)",
+            "rgba(54, 162, 235, 1)",
+            "rgba(255, 206, 86, 1)",
+            "rgba(75, 192, 192, 1)",
+            "rgba(153, 102, 255, 1)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  // Chart options
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+    },
+  };
 
   // Fetch user profile for sidebar
   const fetchUserProfile = async () => {
@@ -247,8 +364,8 @@ const EmployeeManagement = () => {
       errors.email = "Email is invalid";
     if (!formData.phoneNumber.trim())
       errors.phoneNumber = "Phone number is required";
-      if (!formData.salary || formData.salary <= 0) 
-    errors.salary = "Valid salary is required";
+    if (!formData.salary || formData.salary <= 0)
+      errors.salary = "Valid salary is required";
     if (!formData.address.trim()) errors.address = "Address is required";
 
     setFormErrors(errors);
@@ -262,7 +379,7 @@ const EmployeeManagement = () => {
       email: "",
       phoneNumber: "",
       address: "",
-      salary:"",
+      salary: "",
     });
     setFormErrors({});
     setError(null);
@@ -329,6 +446,7 @@ const EmployeeManagement = () => {
       email: employee.email,
       phoneNumber: employee.phoneNumber,
       address: employee.address,
+      salary: employee.salary.toString(),
     });
     setShowEditModal(true);
   };
@@ -405,9 +523,9 @@ const EmployeeManagement = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.get("/employee/report");
-      console.log("Employee Report:", response.data.data);
-      alert("Employee report generated! Check console for details.");
+      const response = await api.get("/employee/report-data");
+      setReportData(response.data.data);
+      setShowReportModal(true);
     } catch (err) {
       console.error("Report error:", err);
       if (err.response?.status === 0 || err.message === "Failed to fetch") {
@@ -422,10 +540,42 @@ const EmployeeManagement = () => {
     }
   };
 
+  const handleDownloadReport = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await api.getFile("/employee/analysis-report");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "employee_analysis_report.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      alert("Employee analysis report downloaded successfully!");
+    } catch (err) {
+      console.error("Download report error:", err);
+      if (err.response?.status === 0 || err.message === "Failed to fetch") {
+        setError(
+          "Unable to connect to server. Please make sure the backend is running on http://localhost:5000"
+        );
+      } else {
+        setError(err.response?.data?.error || "Failed to download report");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const closeModals = () => {
     setShowAddModal(false);
     setShowEditModal(false);
-    setEditingEmployee(null);
+    setShowReportModal(false);
+    setReportData(null);
     resetForm();
   };
 
@@ -517,43 +667,58 @@ const EmployeeManagement = () => {
         {/* Main Content */}
         <div className="flex-1" ref={topRef}>
           {/* Stats */}
-<div className="p-6">
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div className="bg-white p-6 rounded-lg shadow-sm border">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-600">Total Employees</p>
-          <p className="text-2xl font-bold text-gray-900">{totalEmployees}</p>
-        </div>
-        <Users className="h-10 w-10 text-blue-500" />
-      </div>
-    </div>
-    
-    <div className="bg-white p-6 rounded-lg shadow-sm border">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-600">Total Salary Expense</p>
-          <p className="text-2xl font-bold text-gray-900">
-            ${employees.reduce((sum, emp) => sum + (emp.salary || 0), 0).toFixed(2)}
-          </p>
-        </div>
-        <DollarSign className="h-10 w-10 text-green-500" />
-      </div>
-    </div>
-    
-    <div className="bg-white p-6 rounded-lg shadow-sm border">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-600">Average Salary</p>
-          <p className="text-2xl font-bold text-gray-900">
-            ${employees.length ? (employees.reduce((sum, emp) => sum + (emp.salary || 0), 0) / employees.length).toFixed(2) : '0.00'}
-          </p>
-        </div>
-        <TrendingUp className="h-10 w-10 text-purple-500" />
-      </div>
-    </div>
-  </div>
-</div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Employees</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {totalEmployees}
+                    </p>
+                  </div>
+                  <Users className="h-10 w-10 text-blue-500" />
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">
+                      Total Salary Expense
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      $
+                      {employees
+                        .reduce((sum, emp) => sum + (emp.salary || 0), 0)
+                        .toFixed(2)}
+                    </p>
+                  </div>
+                  <DollarSign className="h-10 w-10 text-green-500" />
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Average Salary</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      $
+                      {employees.length
+                        ? (
+                            employees.reduce(
+                              (sum, emp) => sum + (emp.salary || 0),
+                              0
+                            ) / employees.length
+                          ).toFixed(2)
+                        : "0.00"}
+                    </p>
+                  </div>
+                  <TrendingUp className="h-10 w-10 text-purple-500" />
+                </div>
+              </div>
+            </div>
+          </div>
 
           {error && (
             <div className="mx-6 mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
@@ -650,9 +815,9 @@ const EmployeeManagement = () => {
                     <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
                       Address
                     </th>
-                        <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
-      Salary
-    </th>
+                    <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
+                      Salary
+                    </th>
                     <th className="text-left py-4 px-6 font-medium text-gray-600 text-sm">
                       Joined Date
                     </th>
@@ -665,7 +830,7 @@ const EmployeeManagement = () => {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan="8"
+                        colSpan="9"
                         className="py-8 text-center text-gray-500"
                       >
                         <div className="flex items-center justify-center">
@@ -677,7 +842,7 @@ const EmployeeManagement = () => {
                   ) : filteredEmployees.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="8"
+                        colSpan="9"
                         className="py-8 text-center text-gray-500"
                       >
                         {error
@@ -724,11 +889,13 @@ const EmployeeManagement = () => {
                             {employee.address}
                           </div>
                         </td>
-<td className="py-4 px-6">
-  <div className="text-gray-600">
-    {employee.salary ? `$${employee.salary.toFixed(2)}` : "$0.00"}
-  </div>
-</td>
+                        <td className="py-4 px-6">
+                          <div className="text-gray-600">
+                            {employee.salary
+                              ? `$${employee.salary.toFixed(2)}`
+                              : "$0.00"}
+                          </div>
+                        </td>
                         <td className="py-4 px-6">
                           <div className="text-gray-600">
                             {formatDate(employee.joinedDate)}
@@ -826,9 +993,9 @@ const EmployeeManagement = () => {
                 <button
                   onClick={handleEmployeeReport}
                   disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
-                  Employee Report
+                  <FileText className="w-4 h-4" /> Generate Report
                 </button>
               </div>
             </div>
@@ -838,7 +1005,7 @@ const EmployeeManagement = () => {
 
       {/* Add Employee Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-green-700">
@@ -936,27 +1103,30 @@ const EmployeeManagement = () => {
                     </p>
                   )}
                 </div>
-                 <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      Salary (Rs.)
-    </label>
-    <input
-      type="number"
-      name="salary"
-      value={formData.salary}
-      onChange={handleInputChange}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-      placeholder="Enter salary"
-      min="0"
-      step="0.01"
-    />
-    {formErrors.salary && (
-      <p className="text-red-500 text-xs mt-1">{formErrors.salary}</p>
-    )}
-  </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Salary (Rs.)
+                  </label>
+                  <input
+                    type="number"
+                    name="salary"
+                    value={formData.salary}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Enter salary"
+                    min="0"
+                    step="0.01"
+                  />
+                  {formErrors.salary && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formErrors.salary}
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Address
@@ -1098,7 +1268,27 @@ const EmployeeManagement = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Salary (Rs.)
+                  </label>
+                  <input
+                    type="number"
+                    name="salary"
+                    value={formData.salary}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    min="0"
+                    step="0.01"
+                  />
+                  {formErrors.salary && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formErrors.salary}
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Address
@@ -1133,6 +1323,90 @@ const EmployeeManagement = () => {
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
                   {loading ? "Updating..." : "Update Employee"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Analysis Modal */}
+      {showReportModal && reportData && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-green-700">
+                Employee Report Analysis
+              </h2>
+            </div>
+
+            <div className="p-6">
+              {/* Company Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Your Company Name
+                </h3>
+                <p className="text-sm text-gray-600">
+                  123 Business Street, City, Country
+                </p>
+                <p className="text-sm text-gray-600">
+                  Generated on: {reportData.generatedOn}
+                </p>
+              </div>
+
+              {/* Summary */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800">Summary</h3>
+                <p className="text-sm text-gray-600">
+                  Total Employees: {reportData.summary.totalEmployees}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Total Salary Expense: ${reportData.summary.totalSalary}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Average Salary: ${reportData.summary.averageSalary}
+                </p>
+              </div>
+
+              {/* Charts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* Salary Distribution Bar Chart */}
+                <div>
+                  <h3 className="text-md font-semibold text-gray-800 mb-2">
+                    Salary Distribution
+                  </h3>
+                  <div className="h-64">
+                    <Bar data={getSalaryChartData()} options={chartOptions} />
+                  </div>
+                </div>
+
+                {/* Position Distribution Pie Chart */}
+                <div>
+                  <h3 className="text-md font-semibold text-gray-800 mb-2">
+                    Position Distribution
+                  </h3>
+                  <div className="h-64">
+                    <Pie data={getPositionChartData()} options={chartOptions} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closeModals}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadReport}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  {loading ? "Downloading..." : "Download PDF"}
                 </button>
               </div>
             </div>
