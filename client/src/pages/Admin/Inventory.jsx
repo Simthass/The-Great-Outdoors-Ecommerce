@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Edit3,
   Package,
@@ -14,11 +14,13 @@ import {
   Save,
   ArrowUpDown,
   ChevronDown,
-  ChevronUp,
   Download,
   FileText,
   Bell,
+  ChevronUp,
 } from "lucide-react";
+import Sidebar from "../../components/Sidebar";
+import { useNavigate } from "react-router-dom";
 
 const InventoryDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,6 +40,12 @@ const InventoryDashboard = () => {
     key: "name",
     direction: "asc",
   });
+  const [currentSidebarPage, setSidebarPage] = useState("inventory");
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Ref for scrolling to top
+  const topRef = useRef(null);
+  const navigate = useNavigate();
 
   // Form state for Add/Edit modals
   const [formData, setFormData] = useState({
@@ -54,6 +62,25 @@ const InventoryDashboard = () => {
 
   // API configuration
   const API_BASE_URL = "http://localhost:5000/api/inventory";
+
+  // Fetch user profile for sidebar
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/users/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUserProfile(data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching user profile:", err);
+    }
+  };
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -370,6 +397,7 @@ const InventoryDashboard = () => {
   ];
 
   useEffect(() => {
+    fetchUserProfile();
     loadInventoryData();
   }, [searchTerm, filterStatus]);
 
@@ -513,6 +541,34 @@ const InventoryDashboard = () => {
     }
   };
 
+  // Handle sidebar navigation
+  const handleNavClick = (key) => {
+    if (key === "dashboard") {
+      navigate("/AdminDashboard");
+    } else if (key === "users") {
+      navigate("/Admin/User");
+    } else if (key === "employees") {
+      navigate("/Admin/Employee");
+    } else if (key === "inventory") {
+      navigate("/Admin/Inventory");
+    } else if (key === "orders") {
+      navigate("/Admin/Orders");
+    } else if (key === "reviews") {
+      navigate("/Admin/ReviewList");
+    } else if (key === "Products") {
+      navigate("/Admin/AdminProduct");
+    } else if (key === "reports") {
+      navigate("/Admin/ReportGeneration/productReport");
+    }
+  };
+
+  // Scroll to top button
+  const scrollToTop = () => {
+    if (topRef.current) {
+      topRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   const StatCard = ({ title, value, color, icon: Icon, trend }) => {
     const colorMap = {
       "#4f46e5": "bg-indigo-100 text-indigo-700",
@@ -561,341 +617,421 @@ const InventoryDashboard = () => {
     );
   };
 
+  if (loading && inventoryData.length === 0) {
+    return (
+      <div>
+        {/* Header */}
+        <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
+          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
+            Inventory
+          </p>
+        </div>
+
+        <div className="flex rounded-lg mt-6">
+          {/* Sidebar Loading */}
+          <aside className="bg-green-600 text-white h-screen sticky top-0 w-20 rounded-lg">
+            <div className="animate-pulse p-4">
+              <div className="w-12 h-12 bg-white rounded-lg mx-auto mb-8"></div>
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <div
+                  key={i}
+                  className="h-12 bg-green-500 rounded-lg mb-3"
+                ></div>
+              ))}
+            </div>
+          </aside>
+
+          {/* Main Content Loading */}
+          <div className="flex-1 p-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+              <div className="grid grid-cols-4 gap-6 mb-8">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-24 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-16 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gray-50 min-h-screen font-sans">
-      {/* Header with background image */}
-      <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center mb-10">
+    <div>
+      {/* Header */}
+      <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
         <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
           Inventory
         </p>
       </div>
 
-      <div className="px-10 pb-10">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-          <StatCard
-            title="Total Products"
-            value={stats.totalProducts}
-            color="#4f46e5"
-            icon={Package}
-            trend={5.2}
-          />
-          <StatCard
-            title="Low Stock"
-            value={stats.lowStockItems}
-            color="#e67c00"
-            icon={AlertTriangle}
-            trend={-12.5}
-          />
-          <StatCard
-            title="Out of Stock"
-            value={stats.outOfStockItems}
-            color="#d32f2f"
-            icon={XCircle}
-            trend={-8.3}
-          />
-          <StatCard
-            title="Total Value"
-            value={stats.totalValue}
-            color="#26a269"
-            icon={TrendingUp}
-            trend={15.7}
-          />
-        </div>
+      <div className="flex bg-gray-50 min-h-screen mt-6 rounded-2xl">
+        {/* Sidebar */}
+        <Sidebar
+          currentPage={currentSidebarPage}
+          onPageChange={handleNavClick}
+          userProfile={userProfile}
+        />
 
-        {/* Inventory Management Section */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Product Inventory
-              </h2>
-              <p className="text-gray-500 text-sm mt-1">
-                {filteredData.length} of {inventoryData.length} products shown
-              </p>
+        {/* Main Content */}
+        <div className="flex-1" ref={topRef}>
+          <div className="px-10 pb-10">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+              <StatCard
+                title="Total Products"
+                value={stats.totalProducts}
+                color="#4f46e5"
+                icon={Package}
+                trend={5.2}
+              />
+              <StatCard
+                title="Low Stock"
+                value={stats.lowStockItems}
+                color="#e67c00"
+                icon={AlertTriangle}
+                trend={-12.5}
+              />
+              <StatCard
+                title="Out of Stock"
+                value={stats.outOfStockItems}
+                color="#d32f2f"
+                icon={XCircle}
+                trend={-8.3}
+              />
+              <StatCard
+                title="Total Value"
+                value={stats.totalValue}
+                color="#26a269"
+                icon={TrendingUp}
+                trend={15.7}
+              />
             </div>
 
-            {/* Controls */}
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full sm:w-auto">
-              <div className="relative flex items-center">
-                <Search size={18} className="absolute left-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm w-full sm:min-w-[240px] bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
-                />
-              </div>
-
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer min-w-[160px]"
-              >
-                <option value="all">All Status</option>
-                <option value="normal">In Stock</option>
-                <option value="low">Low Stock</option>
-                <option value="out">Out of Stock</option>
-              </select>
-
-              <button
-                onClick={refreshData}
-                disabled={loading}
-                className="px-4 py-2.5 rounded-lg bg-gray-100 text-gray-700 font-medium text-sm flex items-center gap-2 transition-all hover:bg-gray-200 disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                <RefreshCw
-                  size={16}
-                  className={loading ? "animate-spin" : ""}
-                />
-                Refresh
-              </button>
-
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2.5 rounded-lg bg-[#7BC043] text-white font-medium text-sm flex items-center gap-2 transition-all hover:bg-[#6aab39]"
-              >
-                <Plus size={16} />
-                Add Product
-              </button>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="overflow-x-auto rounded-lg border border-gray-100">
-            <table className="w-full min-w-[800px] border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th
-                    className="px-4 py-4 text-left font-semibold text-gray-600 text-sm cursor-pointer select-none"
-                    onClick={() => requestSort("name")}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      Product Name
-                      {getSortIcon("name")}
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-4 text-center font-semibold text-gray-600 text-sm cursor-pointer select-none"
-                    onClick={() => requestSort("quantity")}
-                  >
-                    <div className="flex items-center gap-1.5 justify-center">
-                      Quantity
-                      {getSortIcon("quantity")}
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-4 text-center font-semibold text-gray-600 text-sm cursor-pointer select-none"
-                    onClick={() => requestSort("price")}
-                  >
-                    <div className="flex items-center gap-1.5 justify-center">
-                      Price
-                      {getSortIcon("price")}
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-4 text-center font-semibold text-gray-600 text-sm cursor-pointer select-none"
-                    onClick={() => requestSort("status")}
-                  >
-                    <div className="flex items-center gap-1.5 justify-center">
-                      Status
-                      {getSortIcon("status")}
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-4 text-center font-semibold text-gray-600 text-sm cursor-pointer select-none"
-                    onClick={() => requestSort("location")}
-                  >
-                    <div className="flex items-center gap-1.5 justify-center">
-                      Location
-                      {getSortIcon("location")}
-                    </div>
-                  </th>
-                  <th className="px-4 py-4 text-center font-semibold text-gray-600 text-sm">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="6" className="text-center py-14 text-gray-500">
-                      <RefreshCw
-                        size={24}
-                        className="animate-spin mx-auto mb-3"
-                      />
-                      <p>Loading inventory data...</p>
-                    </td>
-                  </tr>
-                ) : filteredData.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      className="text-center py-14 text-gray-500 text-base"
-                    >
-                      <Package size={48} className="mx-auto mb-4 opacity-30" />
-                      <p className="font-medium">
-                        No products found matching your criteria
-                      </p>
-                      <button
-                        onClick={() => {
-                          setSearchTerm("");
-                          setFilterStatus("all");
-                        }}
-                        className="mt-4 px-4 py-2 bg-[#7BC043] text-white rounded-md text-sm font-medium hover:bg-[#6aab39]"
-                      >
-                        Clear Filters
-                      </button>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredData.map((item) => (
-                    <tr
-                      key={item._id}
-                      className={`${getRowStyle(
-                        item.status
-                      )} border-b border-gray-100 transition-colors`}
-                    >
-                      <td className="px-4 py-4 font-medium text-gray-800">
-                        <div
-                          className="font-semibold truncate max-w-xs"
-                          title={item.name}
-                        >
-                          {item.name}
-                        </div>
-                        <div className="text-gray-500 text-xs mt-1">
-                          Last restocked:{" "}
-                          {new Date(item.lastRestocked).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td
-                        className="px-4 py-4 text-center font-semibold cursor-pointer"
-                        onClick={() => {
-                          const newQuantity = prompt(
-                            `Update quantity for ${item.name}:`,
-                            item.quantity
-                          );
-                          if (newQuantity !== null && !isNaN(newQuantity)) {
-                            handleStockUpdate(item._id, parseInt(newQuantity));
-                          }
-                        }}
-                      >
-                        <span
-                          className={
-                            item.quantity === 0
-                              ? "text-red-600"
-                              : item.quantity <= 4
-                              ? "text-amber-600"
-                              : "text-green-600"
-                          }
-                        >
-                          {item.quantity < 10
-                            ? `0${item.quantity}`
-                            : item.quantity}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-center font-semibold text-gray-800">
-                        Rs {item.price.toFixed(2)} LKR
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        {getStatusBadge(item.status)}
-                      </td>
-                      <td className="px-4 py-4 text-center text-sm text-gray-500">
-                        {item.location}
-                      </td>
-                      <td className="px-4 py-4 text-center flex justify-center gap-2">
-                        <button
-                          onClick={() => openEditModal(item)}
-                          className="px-3 py-2 bg-[#7BC043] text-white rounded text-xs font-medium flex items-center gap-1.5 transition-all hover:bg-[#6aab39]"
-                        >
-                          <Edit3 size={14} />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteInventory(item._id)}
-                          className="px-3 py-2 bg-red-100 text-red-600 rounded text-xs font-medium flex items-center gap-1.5 transition-all hover:bg-red-200"
-                        >
-                          <X size={14} />
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Quick Actions Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Quick Actions Card */}
-          <div className="bg-white rounded-xl shadow-sm p-5">
-            <h3 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <FileText size={18} />
-              Quick Actions
-            </h3>
-            <div className="flex flex-col gap-2.5">
-              <button
-                onClick={handleGenerateReport}
-                disabled={loading}
-                className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-left flex items-center gap-2.5 transition-all hover:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                <FileText size={16} />
-                Generate Inventory Report
-              </button>
-            </div>
-          </div>
-
-          {/* Alerts Card */}
-          <div className="bg-white rounded-xl shadow-sm p-5">
-            <h3 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Bell size={18} />
-              Alerts & Notifications
-            </h3>
-            <div className="flex flex-col gap-3">
-              {stats.outOfStockItems > 0 && (
-                <div className="px-4 py-3 bg-red-50 rounded-lg flex items-center gap-2.5">
-                  <XCircle size={16} className="text-red-600" />
-                  <div>
-                    <div className="text-sm font-medium text-red-600">
-                      {stats.outOfStockItems} items out of stock
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      Requires immediate attention
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {stats.lowStockItems > 0 && (
-                <div className="px-4 py-3 bg-amber-50 rounded-lg flex items-center gap-2.5">
-                  <AlertTriangle size={16} className="text-amber-600" />
-                  <div>
-                    <div className="text-sm font-medium text-amber-600">
-                      {stats.lowStockItems} items low on stock
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      Consider restocking soon
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="px-4 py-3 bg-green-50 rounded-lg flex items-center gap-2.5">
-                <Package size={16} className="text-green-600" />
+            {/* Inventory Management Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
-                  <div className="text-sm font-medium text-green-600">
-                    Inventory up to date
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Product Inventory
+                  </h2>
+                  <p className="text-gray-500 text-sm mt-1">
+                    {filteredData.length} of {inventoryData.length} products
+                    shown
+                  </p>
+                </div>
+
+                {/* Controls */}
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full sm:w-auto">
+                  <div className="relative flex items-center">
+                    <Search
+                      size={18}
+                      className="absolute left-3 text-gray-400"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm w-full sm:min-w-[240px] bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                    />
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    Last updated just now
+
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer min-w-[160px]"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="normal">In Stock</option>
+                    <option value="low">Low Stock</option>
+                    <option value="out">Out of Stock</option>
+                  </select>
+
+                  <button
+                    onClick={refreshData}
+                    disabled={loading}
+                    className="px-4 py-2.5 rounded-lg bg-gray-100 text-gray-700 font-medium text-sm flex items-center gap-2 transition-all hover:bg-gray-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw
+                      size={16}
+                      className={loading ? "animate-spin" : ""}
+                    />
+                    Refresh
+                  </button>
+
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="px-4 py-2.5 rounded-lg bg-[#7BC043] text-white font-medium text-sm flex items-center gap-2 transition-all hover:bg-[#6aab39]"
+                  >
+                    <Plus size={16} />
+                    Add Product
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto rounded-lg border border-gray-100">
+                <table className="w-full min-w-[800px] border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th
+                        className="px-4 py-4 text-left font-semibold text-gray-600 text-sm cursor-pointer select-none"
+                        onClick={() => requestSort("name")}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          Product Name
+                          {getSortIcon("name")}
+                        </div>
+                      </th>
+                      <th
+                        className="px-4 py-4 text-center font-semibold text-gray-600 text-sm cursor-pointer select-none"
+                        onClick={() => requestSort("quantity")}
+                      >
+                        <div className="flex items-center gap-1.5 justify-center">
+                          Quantity
+                          {getSortIcon("quantity")}
+                        </div>
+                      </th>
+                      <th
+                        className="px-4 py-4 text-center font-semibold text-gray-600 text-sm cursor-pointer select-none"
+                        onClick={() => requestSort("price")}
+                      >
+                        <div className="flex items-center gap-1.5 justify-center">
+                          Price
+                          {getSortIcon("price")}
+                        </div>
+                      </th>
+                      <th
+                        className="px-4 py-4 text-center font-semibold text-gray-600 text-sm cursor-pointer select-none"
+                        onClick={() => requestSort("status")}
+                      >
+                        <div className="flex items-center gap-1.5 justify-center">
+                          Status
+                          {getSortIcon("status")}
+                        </div>
+                      </th>
+                      <th
+                        className="px-4 py-4 text-center font-semibold text-gray-600 text-sm cursor-pointer select-none"
+                        onClick={() => requestSort("location")}
+                      >
+                        <div className="flex items-center gap-1.5 justify-center">
+                          Location
+                          {getSortIcon("location")}
+                        </div>
+                      </th>
+                      <th className="px-4 py-4 text-center font-semibold text-gray-600 text-sm">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="text-center py-14 text-gray-500"
+                        >
+                          <RefreshCw
+                            size={24}
+                            className="animate-spin mx-auto mb-3"
+                          />
+                          <p>Loading inventory data...</p>
+                        </td>
+                      </tr>
+                    ) : filteredData.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="text-center py-14 text-gray-500 text-base"
+                        >
+                          <Package
+                            size={48}
+                            className="mx-auto mb-4 opacity-30"
+                          />
+                          <p className="font-medium">
+                            No products found matching your criteria
+                          </p>
+                          <button
+                            onClick={() => {
+                              setSearchTerm("");
+                              setFilterStatus("all");
+                            }}
+                            className="mt-4 px-4 py-2 bg-[#7BC043] text-white rounded-md text-sm font-medium hover:bg-[#6aab39]"
+                          >
+                            Clear Filters
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredData.map((item) => (
+                        <tr
+                          key={item._id}
+                          className={`${getRowStyle(
+                            item.status
+                          )} border-b border-gray-100 transition-colors`}
+                        >
+                          <td className="px-4 py-4 font-medium text-gray-800">
+                            <div
+                              className="font-semibold truncate max-w-xs"
+                              title={item.name}
+                            >
+                              {item.name}
+                            </div>
+                            <div className="text-gray-500 text-xs mt-1">
+                              Last restocked:{" "}
+                              {new Date(
+                                item.lastRestocked
+                              ).toLocaleDateString()}
+                            </div>
+                          </td>
+                          <td
+                            className="px-4 py-4 text-center font-semibold cursor-pointer"
+                            onClick={() => {
+                              const newQuantity = prompt(
+                                `Update quantity for ${item.name}:`,
+                                item.quantity
+                              );
+                              if (newQuantity !== null && !isNaN(newQuantity)) {
+                                handleStockUpdate(
+                                  item._id,
+                                  parseInt(newQuantity)
+                                );
+                              }
+                            }}
+                          >
+                            <span
+                              className={
+                                item.quantity === 0
+                                  ? "text-red-600"
+                                  : item.quantity <= 4
+                                  ? "text-amber-600"
+                                  : "text-green-600"
+                              }
+                            >
+                              {item.quantity < 10
+                                ? `0${item.quantity}`
+                                : item.quantity}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-center font-semibold text-gray-800">
+                            Rs {item.price.toFixed(2)} LKR
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            {getStatusBadge(item.status)}
+                          </td>
+                          <td className="px-4 py-4 text-center text-sm text-gray-500">
+                            {item.location}
+                          </td>
+                          <td className="px-4 py-4 text-center flex justify-center gap-2">
+                            <button
+                              onClick={() => openEditModal(item)}
+                              className="px-3 py-2 bg-[#7BC043] text-white rounded text-xs font-medium flex items-center gap-1.5 transition-all hover:bg-[#6aab39]"
+                            >
+                              <Edit3 size={14} />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteInventory(item._id)}
+                              className="px-3 py-2 bg-red-100 text-red-600 rounded text-xs font-medium flex items-center gap-1.5 transition-all hover:bg-red-200"
+                            >
+                              <X size={14} />
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Quick Actions Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Quick Actions Card */}
+              <div className="bg-white rounded-xl shadow-sm p-5">
+                <h3 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <FileText size={18} />
+                  Quick Actions
+                </h3>
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={handleGenerateReport}
+                    disabled={loading}
+                    className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-left flex items-center gap-2.5 transition-all hover:bg-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    <FileText size={16} />
+                    Generate Inventory Report
+                  </button>
+                </div>
+              </div>
+
+              {/* Alerts Card */}
+              <div className="bg-white rounded-xl shadow-sm p-5">
+                <h3 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Bell size={18} />
+                  Alerts & Notifications
+                </h3>
+                <div className="flex flex-col gap-3">
+                  {stats.outOfStockItems > 0 && (
+                    <div className="px-4 py-3 bg-red-50 rounded-lg flex items-center gap-2.5">
+                      <XCircle size={16} className="text-red-600" />
+                      <div>
+                        <div className="text-sm font-medium text-red-600">
+                          {stats.outOfStockItems} items out of stock
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          Requires immediate attention
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {stats.lowStockItems > 0 && (
+                    <div className="px-4 py-3 bg-amber-50 rounded-lg flex items-center gap-2.5">
+                      <AlertTriangle size={16} className="text-amber-600" />
+                      <div>
+                        <div className="text-sm font-medium text-amber-600">
+                          {stats.lowStockItems} items low on stock
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          Consider restocking soon
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="px-4 py-3 bg-green-50 rounded-lg flex items-center gap-2.5">
+                    <Package size={16} className="text-green-600" />
+                    <div>
+                      <div className="text-sm font-medium text-green-600">
+                        Inventory up to date
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        Last updated just now
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Scroll to Top Button */}
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition duration-200"
+          >
+            <ChevronUp className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
