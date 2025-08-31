@@ -123,12 +123,6 @@ const orderSchema = new mongoose.Schema(
       min: 0,
       set: (v) => parseFloat(v.toFixed(2)), // Ensure 2 decimal places
     },
-    tax: {
-      type: Number,
-      required: true,
-      min: 0,
-      set: (v) => parseFloat(v.toFixed(2)), // Ensure 2 decimal places
-    },
     shippingCost: {
       type: Number,
       required: true,
@@ -252,9 +246,9 @@ orderSchema.virtual("formattedDate").get(function () {
   });
 });
 
-// Virtual for order total with tax and shipping
+// Virtual for order total with shipping
 orderSchema.virtual("grandTotal").get(function () {
-  return this.totalAmount + this.tax + this.shippingCost - this.discount;
+  return this.totalAmount + this.shippingCost - this.discount;
 });
 
 // Generate unique order ID
@@ -269,7 +263,7 @@ orderSchema.pre("save", function (next) {
 });
 
 orderSchema.methods.calculateGrandTotal = function () {
-  return this.totalAmount + this.tax + this.shippingCost - this.discount;
+  return this.totalAmount + this.shippingCost - this.discount;
 };
 orderSchema.methods.canBeCancelled = function () {
   return !["Shipped", "Delivered", "Cancelled", "Refunded"].includes(

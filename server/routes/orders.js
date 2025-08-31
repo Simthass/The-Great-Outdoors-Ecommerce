@@ -133,9 +133,9 @@ router.post("/checkout", protect, validateCheckoutInput, async (req, res) => {
       });
     }
 
-    // Calculate tax and shipping
+    // Calculate shipping
     const shippingCost = subtotal > 100 ? 0 : 15; // Free shipping over $100
-    const totalAmount = subtotal - discount + tax + shippingCost;
+    const totalAmount = subtotal - discount + shippingCost;
 
     // Validate total amount to prevent negative values
     if (totalAmount < 0) {
@@ -315,7 +315,6 @@ router.post("/checkout", protect, validateCheckoutInput, async (req, res) => {
           _id: order._id,
           orderId: order.orderId,
           totalAmount: order.totalAmount,
-          tax: order.tax,
           shippingCost: order.shippingCost,
           discount: order.discount,
           grandTotal: order.grandTotal,
