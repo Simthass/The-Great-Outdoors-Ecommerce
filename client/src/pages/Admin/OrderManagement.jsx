@@ -14,6 +14,12 @@ import {
   DollarSign,
   User,
   ChevronUp,
+  ChevronDown,
+  MapPin,
+  Phone,
+  CreditCard,
+  Clock,
+  Package2,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -23,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOrders, setExpandedOrders] = useState(new Set()); // Track expanded orders
   const [filters, setFilters] = useState({
     status: "",
     paymentStatus: "",
@@ -62,6 +69,7 @@ const OrderManagement = () => {
   const topRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -155,6 +163,17 @@ const OrderManagement = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
+  // Toggle order details expansion
+  const toggleOrderDetails = (orderId) => {
+    const newExpanded = new Set(expandedOrders);
+    if (newExpanded.has(orderId)) {
+      newExpanded.delete(orderId);
+    } else {
+      newExpanded.add(orderId);
+    }
+    setExpandedOrders(newExpanded);
+  };
+
   // Enhanced handleUpdateOrder function
   const handleUpdateOrder = async (e) => {
     e.preventDefault();
@@ -174,7 +193,7 @@ const OrderManagement = () => {
 
       if (response.data.success) {
         toast.success(`Order #${selectedOrder.orderId} updated successfully`, {
-          icon: <CheckCircle size={20} className="text-green-600" />, // fixed size
+          icon: <CheckCircle className="notification-icon text-green-500" />,
         });
         fetchOrders();
         setShowUpdateModal(false);
@@ -257,6 +276,17 @@ const OrderManagement = () => {
     });
   };
 
+  // Format date with time
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString("en-LK", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   // Handle report generation
   const handleGenerateReport = async (e) => {
     e.preventDefault();
@@ -280,10 +310,9 @@ const OrderManagement = () => {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        responseType: "blob", // Important for file downloads
+        responseType: "blob",
       });
 
-      // Create blob and download file
       const blob = new Blob([response.data], {
         type:
           reportConfig.format === "pdf"
@@ -323,7 +352,6 @@ const OrderManagement = () => {
   const handlePageChange = (page) => {
     setPagination((prev) => ({ ...prev, page }));
     fetchOrders();
-    // Scroll to top of the page content
     if (topRef.current) {
       topRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -355,6 +383,323 @@ const OrderManagement = () => {
     } else if (key === "reports") {
       navigate("/Admin/ReportGeneration/productReport");
     }
+  };
+
+  // Render order details row
+  const renderOrderDetails = (order) => {
+    if (!expandedOrders.has(order._id)) return null;
+
+    return (
+      <tr key={`${order._id}-details`} className="bg-gray-50">
+        <td colSpan="7" className="px-6 py-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              {/* Order Header */}
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Order Details - #{order.orderId}
+                  </h3>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      <span>Ordered: {formatDateTime(order.orderDate)}</span>
+                    </div>
+                    {order.trackingNumber && (
+                      <div className="flex items-center gap-1">
+                        <Truck className="h-4 w-4" />
+                        <span>Tracking: {order.trackingNumber}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(
+                      order.totalAmount + order.shippingCost - order.discount
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-600">Grand Total</div>
+                </div>
+              </div>
+
+              {/* Order Info Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                {/* Customer Information */}
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4 text-blue-600" />
+                    Customer Information
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium">Name:</span>{" "}
+                      {order.user?.firstName} {order.user?.lastName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Email:</span>{" "}
+                      {order.user?.email}
+                    </div>
+                    {order.user?.phone && (
+                      <div>
+                        <span className="font-medium">Phone:</span>{" "}
+                        {order.user?.phone}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Payment Information */}
+                <div className="bg-green-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-green-600" />
+                    Payment Information
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium">Method:</span>{" "}
+                      {order.paymentMethod}
+                    </div>
+                    <div>
+                      <span className="font-medium">Status:</span>{" "}
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusBadgeColor(
+                          order.paymentStatus
+                        )}`}
+                      >
+                        {order.paymentStatus}
+                      </span>
+                    </div>
+                    {order.paymentId && (
+                      <div>
+                        <span className="font-medium">Payment ID:</span>{" "}
+                        {order.paymentId}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Shipping Information */}
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-purple-600" />
+                    Shipping Information
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium">Status:</span>{" "}
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(
+                          order.orderStatus
+                        )}`}
+                      >
+                        {order.orderStatus}
+                      </span>
+                    </div>
+                    {order.carrier && (
+                      <div>
+                        <span className="font-medium">Carrier:</span>{" "}
+                        {order.carrier}
+                      </div>
+                    )}
+                    {order.estimatedDelivery && (
+                      <div>
+                        <span className="font-medium">Est. Delivery:</span>{" "}
+                        {formatDate(order.estimatedDelivery)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Shipping Address */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-gray-600" />
+                    Shipping Address
+                  </h4>
+                  <div className="text-sm text-gray-700">
+                    <div>{order.shippingAddress?.addressLine1}</div>
+                    {order.shippingAddress?.addressLine2 && (
+                      <div>{order.shippingAddress.addressLine2}</div>
+                    )}
+                    <div>
+                      {order.shippingAddress?.city},{" "}
+                      {order.shippingAddress?.province}{" "}
+                      {order.shippingAddress?.postalCode}
+                    </div>
+                    <div>{order.shippingAddress?.country || "Sri Lanka"}</div>
+                    {order.shippingAddress?.phoneNumber && (
+                      <div className="mt-2 flex items-center gap-1">
+                        <Phone className="h-3 w-3" />
+                        {order.shippingAddress.phoneNumber}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Order Summary */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-gray-600" />
+                    Order Summary
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span>{formatCurrency(order.totalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Shipping:</span>
+                      <span>{formatCurrency(order.shippingCost)}</span>
+                    </div>
+                    {order.discount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Discount:</span>
+                        <span>-{formatCurrency(order.discount)}</span>
+                      </div>
+                    )}
+                    <hr className="my-2" />
+                    <div className="flex justify-between font-semibold">
+                      <span>Total:</span>
+                      <span>
+                        {formatCurrency(
+                          order.totalAmount +
+                            order.shippingCost -
+                            order.discount
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div className="bg-white border rounded-lg overflow-hidden">
+                <div className="bg-gray-50 px-6 py-3 border-b">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <Package2 className="h-4 w-4" />
+                    Order Items ({order.items?.length || 0})
+                  </h4>
+                </div>
+                <div className="divide-y divide-gray-200">
+                  {order.items?.map((item, index) => (
+                    <div key={index} className="px-6 py-4 flex items-center">
+                      <div className="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
+                        {item.image ? (
+                          <img
+                            src={
+                              item.image.startsWith("http")
+                                ? item.image
+                                : `${BASE_URL}${item.image}`
+                            }
+                            alt={item.productName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = "/products/placeholder.jpg";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="ml-4 flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {item.productName}
+                        </div>
+                        {item.sku && (
+                          <div className="text-xs text-gray-500">
+                            SKU: {item.sku}
+                          </div>
+                        )}
+                        <div className="text-sm text-gray-600">
+                          Qty: {item.quantity} × {formatCurrency(item.price)}
+                        </div>
+                      </div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatCurrency(item.total)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notes */}
+              {order.notes && (
+                <div className="mt-6 bg-yellow-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">
+                    Order Notes
+                  </h4>
+                  <p className="text-sm text-gray-700">{order.notes}</p>
+                </div>
+              )}
+
+              {/* Coupon Information */}
+              {order.couponCode && (
+                <div className="mt-6 bg-green-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">
+                    Coupon Applied
+                  </h4>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">Code:</span>{" "}
+                    {order.couponCode}
+                    {order.couponDetails && (
+                      <span className="ml-4">
+                        <span className="font-medium">Discount:</span>{" "}
+                        {formatCurrency(order.couponDetails.discountAmount)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setSelectedOrder(order);
+                    setUpdateData({
+                      orderStatus: order.orderStatus,
+                      paymentStatus: order.paymentStatus,
+                      trackingNumber: order.trackingNumber || "",
+                      carrier: order.carrier || "",
+                      estimatedDelivery: order.estimatedDelivery
+                        ? new Date(order.estimatedDelivery)
+                            .toISOString()
+                            .split("T")[0]
+                        : "",
+                    });
+                    setShowUpdateModal(true);
+                  }}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                >
+                  <Edit3 className="h-4 w-4" />
+                  Update Order
+                </button>
+                {order.orderStatus !== "Cancelled" &&
+                  order.orderStatus !== "Delivered" && (
+                    <button
+                      onClick={() => {
+                        const reason = prompt("Enter cancellation reason:");
+                        if (reason) {
+                          handleCancelOrder(order._id, reason);
+                        }
+                      }}
+                      className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Cancel Order
+                    </button>
+                  )}
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    );
   };
 
   if (loading && orders.length === 0) {
@@ -478,7 +823,7 @@ const OrderManagement = () => {
               </div>
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                  <CheckCircle className="notification-icon text-green-500" />
                   <div className="ml-4">
                     <p className="text-sm text-gray-600">Completed</p>
                     <p className="text-2xl font-semibold text-gray-900">
@@ -647,104 +992,98 @@ const OrderManagement = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {orders.map((order) => (
-                      <tr key={order._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {order.orderId}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col">
-                            <div className="text-sm font-medium text-gray-900">
-                              {order.user?.firstName} {order.user?.lastName}
+                      <React.Fragment key={order._id}>
+                        <tr className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <button
+                                onClick={() => toggleOrderDetails(order._id)}
+                                className="mr-2 text-gray-500 hover:text-gray-700"
+                              >
+                                {expandedOrders.has(order._id) ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </button>
+                              <div className="text-sm font-medium text-gray-900">
+                                {order.orderId}
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {order.user?.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <div className="text-sm font-medium text-gray-900">
+                                {order.user?.firstName} {order.user?.lastName}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {order.user?.email}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {formatDate(order.orderDate)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(
-                              order.orderStatus
-                            )}`}
-                          >
-                            {order.orderStatus}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusBadgeColor(
-                              order.paymentStatus
-                            )}`}
-                          >
-                            {order.paymentStatus}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {formatDate(order.orderDate)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(
+                                order.orderStatus
+                              )}`}
+                            >
+                              {order.orderStatus}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusBadgeColor(
+                                order.paymentStatus
+                              )}`}
+                            >
+                              {order.paymentStatus}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {formatCurrency(
                               order.totalAmount +
                                 order.shippingCost -
                                 order.discount
                             )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                setUpdateData({
-                                  orderStatus: order.orderStatus,
-                                  paymentStatus: order.paymentStatus,
-                                  trackingNumber: order.trackingNumber || "",
-                                  carrier: order.carrier || "",
-                                  estimatedDelivery: order.estimatedDelivery
-                                    ? new Date(order.estimatedDelivery)
-                                        .toISOString()
-                                        .split("T")[0]
-                                    : "",
-                                });
-                                setShowUpdateModal(true);
-                              }}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <Edit3 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                // View order details - you can implement this
-                                console.log("View order:", order._id);
-                              }}
-                              className="text-green-600 hover:text-green-900"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            {order.orderStatus !== "Cancelled" &&
-                              order.orderStatus !== "Delivered" && (
-                                <button
-                                  onClick={() => {
-                                    const reason = prompt(
-                                      "Enter cancellation reason:"
-                                    );
-                                    if (reason) {
-                                      handleCancelOrder(order._id, reason);
-                                    }
-                                  }}
-                                  className="text-red-600 hover:text-red-900"
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                </button>
-                              )}
-                          </div>
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center space-x-3">
+                              <button
+                                onClick={() => toggleOrderDetails(order._id)}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setUpdateData({
+                                    orderStatus: order.orderStatus,
+                                    paymentStatus: order.paymentStatus,
+                                    trackingNumber: order.trackingNumber || "",
+                                    carrier: order.carrier || "",
+                                    estimatedDelivery: order.estimatedDelivery
+                                      ? new Date(order.estimatedDelivery)
+                                          .toISOString()
+                                          .split("T")[0]
+                                      : "",
+                                  });
+                                  setShowUpdateModal(true);
+                                }}
+                                className="text-indigo-600 hover:text-indigo-900"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {renderOrderDetails(order)}
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -873,7 +1212,7 @@ const OrderManagement = () => {
                             carrier: e.target.value,
                           }))
                         }
-                        placeholder="e.g. Canada Post, UPS"
+                        placeholder="e.g. DHL, FedEx"
                       />
                     </div>
 
