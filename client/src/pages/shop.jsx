@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import axios from "axios";
 import { getAuthToken, isLoggedIn } from "../utils/auth";
-import ScrollToTop from "../components/ScrollToTop";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -53,12 +52,17 @@ const Shop = () => {
 
   useEffect(() => {
     fetchProducts();
-    window.scrollTo(0, 0, { behavior: "smooth" }); // Scroll to top when component mounts
+    window.scrollTo(0, 0); // Scroll to top when component mounts
   }, []);
 
   useEffect(() => {
-    window.scrollTo(0, 0, { behavior: "smooth" }); // Scroll to top when search params change
+    window.scrollTo(0, 0); // Scroll to top when search params change
   }, [location.search]);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
 
   const fetchProducts = async () => {
     try {
@@ -166,7 +170,9 @@ const Shop = () => {
   );
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   const toggleCategory = (category) => {
     setSelectedCategories((prev) =>

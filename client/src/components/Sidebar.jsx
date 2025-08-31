@@ -64,8 +64,8 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
     },
     {
       icon: FileText,
-      label: "Reports",
-      key: "reports",
+      label: "Content Management",
+      key: "content",
       active: currentPage === "reports",
     },
   ];
@@ -121,13 +121,13 @@ const Sidebar = ({ currentPage, onPageChange, userProfile }) => {
     } else if (key === "inventory") {
       navigate("/Admin/Inventory");
     } else if (key === "orders") {
-      navigate("/Admin/Orders");
+      navigate("/Admin/OrderManagement");
     } else if (key === "reviews") {
       navigate("/Admin/ReviewList");
     } else if (key === "Products") {
       navigate("/Admin/AdminProduct");
-    } else if (key === "reports") {
-      navigate("/Admin/ReportGeneration/productReport");
+    } else if (key === "content") {
+      navigate("/Admin/ContentManagement");
     }
   };
 
