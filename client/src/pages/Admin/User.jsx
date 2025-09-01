@@ -32,16 +32,13 @@ const UserManagement = () => {
   const [currentSidebarPage, setSidebarPage] = useState("users");
   const [userProfile, setUserProfile] = useState(null);
 
-  // Ref for scrolling to top
   const topRef = useRef(null);
-
   const navigate = useNavigate();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  // Fetch user profile for sidebar
   const fetchUserProfile = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -52,15 +49,12 @@ const UserManagement = () => {
         },
       });
       const data = await response.json();
-      if (data.success) {
-        setUserProfile(data.data);
-      }
+      if (data.success) setUserProfile(data.data);
     } catch (err) {
       console.error("Error fetching user profile:", err);
     }
   };
 
-  // Fetch users from API with stats
   const fetchUsers = async (page = 1) => {
     try {
       setLoading(true);
@@ -92,8 +86,6 @@ const UserManagement = () => {
         setTotalPages(data.data.pagination.totalPages);
         setTotalUsers(data.data.pagination.totalUsers);
         setAvailableCities(data.data.filters.cities);
-
-        // Fetch complete stats from all users
         await fetchCompleteStats();
       } else {
         setError(data.message || "Failed to fetch users");
@@ -106,11 +98,9 @@ const UserManagement = () => {
     }
   };
 
-  // Fetch complete user statistics
   const fetchCompleteStats = async () => {
     try {
       const token = localStorage.getItem("token");
-
       const response = await fetch("/api/users/all?limit=9999", {
         method: "GET",
         headers: {
@@ -118,9 +108,7 @@ const UserManagement = () => {
           "Content-Type": "application/json",
         },
       });
-
       const data = await response.json();
-
       if (data.success) {
         const allUsers = data.data.users;
         setTotalUsers(allUsers.length);
@@ -133,33 +121,23 @@ const UserManagement = () => {
     }
   };
 
-  // Initial load
   useEffect(() => {
     fetchUserProfile();
     fetchUsers(1);
   }, []);
 
-  // Effect to fetch users when filters change
   useEffect(() => {
     fetchUsers(1);
   }, [searchTerm, selectedRole, selectedCity, sortBy, sortOrder]);
 
-  // Handle search
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
+  const handleSearch = (e) => setSearchTerm(e.target.value);
 
-  // Handle page change with scroll to top
   const handlePageChange = (page) => {
     setCurrentPage(page);
     fetchUsers(page);
-    // Scroll to top of the page content
-    if (topRef.current) {
-      topRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    if (topRef.current) topRef.current.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Clear filters
   const clearFilters = () => {
     setSearchTerm("");
     setSelectedRole("all");
@@ -168,16 +146,13 @@ const UserManagement = () => {
     setSortOrder("desc");
   };
 
-  // Format date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-GB", {
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     });
-  };
 
-  // Get role badge color
   const getRoleBadgeColor = (role) => {
     switch (role) {
       case "Admin":
@@ -191,34 +166,28 @@ const UserManagement = () => {
     }
   };
 
-  // Handle sidebar navigation
   const handleNavClick = (key) => {};
 
-  // Get user profile image
   const getUserProfileImage = (user) => {
     if (user.profileImage && user.profileImage !== "/default-profile.jpg") {
-      // Use the same logic as Header component
-      if (user.profileImage.startsWith("http")) {
-        return user.profileImage;
-      }
-      // Construct full URL with localhost:5000
+      if (user.profileImage.startsWith("http")) return user.profileImage;
       return `http://localhost:5000${user.profileImage}`;
     }
     return "/default-profile.jpg";
   };
 
-  // Scroll to top button
   const scrollToTop = () => {
-    if (topRef.current) {
-      topRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    if (topRef.current) topRef.current.scrollIntoView({ behavior: "smooth" });
   };
 
   if (loading && users.length === 0) {
     return (
-      <div>
+      <div data-testid="admin-user-management-loading">
         {/* Header */}
-        <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
+        <div
+          className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center"
+          data-testid="page-hero"
+        >
           <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
             Admin - User Management
           </p>
@@ -230,10 +199,7 @@ const UserManagement = () => {
             <div className="animate-pulse p-4">
               <div className="w-12 h-12 bg-white rounded-lg mx-auto mb-8"></div>
               {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                <div
-                  key={i}
-                  className="h-12 bg-green-500 rounded-lg mb-3"
-                ></div>
+                <div key={i} className="h-12 bg-green-500 rounded-lg mb-3"></div>
               ))}
             </div>
           </aside>
@@ -260,9 +226,12 @@ const UserManagement = () => {
   }
 
   return (
-    <div>
+    <div data-testid="admin-user-management">
       {/* Header */}
-      <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
+      <div
+        className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center"
+        data-testid="page-hero"
+      >
         <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
           Admin - User Management
         </p>
@@ -277,7 +246,7 @@ const UserManagement = () => {
         />
 
         {/* Main Content */}
-        <div className="flex-1" ref={topRef}>
+        <div className="flex-1" ref={topRef} data-testid="content">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 p-6">
             <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -325,8 +294,12 @@ const UserManagement = () => {
               </div>
             </div>
           </div>
+
           {/* Filters and Search */}
-          <div className="bg-white rounded-lg shadow-sm border p-6 m-6">
+          <div
+            className="bg-white rounded-lg shadow-sm border p-6 m-6"
+            data-testid="filters"
+          >
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
               {/* Search */}
               <div className="relative">
@@ -341,6 +314,7 @@ const UserManagement = () => {
                     value={searchTerm}
                     onChange={handleSearch}
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-10"
+                    data-testid="search-input"
                   />
                 </div>
               </div>
@@ -354,6 +328,7 @@ const UserManagement = () => {
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-10"
+                  data-testid="role-select"
                 >
                   <option value="all">All Roles</option>
                   <option value="Customer">Customer</option>
@@ -371,6 +346,7 @@ const UserManagement = () => {
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-10"
+                  data-testid="sortby-select"
                 >
                   <option value="createdAt">Date Joined</option>
                   <option value="firstName">First Name</option>
@@ -389,6 +365,7 @@ const UserManagement = () => {
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-10"
+                  data-testid="sortorder-select"
                 >
                   <option value="desc">Newest First</option>
                   <option value="asc">Oldest First</option>
@@ -400,6 +377,7 @@ const UserManagement = () => {
                 <button
                   onClick={clearFilters}
                   className="bg-gray-100 text-gray-700 px-3 py-2.5 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center gap-1 h-10 text-sm"
+                  data-testid="btn-clear-filters"
                 >
                   <Filter className="h-4 w-4" />
                   Clear Filters
@@ -409,6 +387,7 @@ const UserManagement = () => {
                   onClick={() =>
                     navigate("../Admin/ReportGeneration/userReport")
                   }
+                  data-testid="btn-generate-report"
                 >
                   <FileText className="h-4 w-4" />
                   Generate Report
@@ -416,9 +395,13 @@ const UserManagement = () => {
               </div>
             </div>
           </div>
+
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 mx-6">
+            <div
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 mx-6"
+              data-testid="error-banner"
+            >
               {error}
             </div>
           )}
@@ -426,7 +409,7 @@ const UserManagement = () => {
           {/* Users Table */}
           <div className="bg-white rounded-lg shadow-sm border overflow-hidden m-6">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full" data-testid="users-table">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -446,7 +429,10 @@ const UserManagement = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody
+                  className="bg-white divide-y divide-gray-200"
+                  data-testid="users-tbody"
+                >
                   {users.map((user, index) => (
                     <tr
                       key={user._id}
@@ -511,7 +497,10 @@ const UserManagement = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+              <div
+                className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6"
+                data-testid="pagination"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 flex justify-between sm:hidden">
                     <button
@@ -563,6 +552,7 @@ const UserManagement = () => {
                                 ? "z-10 bg-green-50 border-green-500 text-green-600"
                                 : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
                             }`}
+                            data-testid={`btn-page-${i + 1}`}
                           >
                             {i + 1}
                           </button>
@@ -584,8 +574,11 @@ const UserManagement = () => {
           </div>
 
           {/* Empty State */}
-          {users.length === 0 && !loading && (
-            <div className="bg-white rounded-lg shadow-sm border p-12 text-center m-6">
+          {users.length === 0 && !loading && !error && (
+            <div
+              className="bg-white rounded-lg shadow-sm border p-12 text-center m-6"
+              data-testid="empty-state"
+            >
               <User className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">
                 No users found
@@ -604,6 +597,7 @@ const UserManagement = () => {
           onClick={scrollToTop}
           className="fixed bottom-8 right-8 bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors duration-200 z-50"
           title="Scroll to top"
+          data-testid="scroll-top-btn"
         >
           <ChevronUp className="h-6 w-6" />
         </button>
@@ -613,3 +607,5 @@ const UserManagement = () => {
 };
 
 export default UserManagement;
+
+
