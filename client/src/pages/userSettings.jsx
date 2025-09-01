@@ -73,46 +73,37 @@ const UserSettings = () => {
   // Custom notification function
   const showNotification = (type, message) => {
     setNotification({ type, message });
-    // Auto-hide after 4 seconds
-    setTimeout(() => {
-      setNotification(null);
-    }, 4000);
+    setTimeout(() => setNotification(null), 4000);
   };
 
   // Professional Notification Component
   const Notification = ({ type, message, onClose }) => {
-    const getStyles = () => {
-      const baseStyles =
-        "flex items-center p-4 mb-4 text-sm rounded-lg border shadow-md transition-all duration-300";
+    const baseStyles =
+      "flex items-center p-4 mb-4 text-sm rounded-lg border shadow-md transition-all duration-300";
+    const styles =
+      type === "success"
+        ? `${baseStyles} bg-green-50 text-black border-green-200`
+        : type === "error"
+        ? `${baseStyles} bg-red-50 text-red-800 border-red-200`
+        : `${baseStyles} bg-blue-50 text-blue-800 border-blue-200`;
 
-      switch (type) {
-        case "success":
-          return `${baseStyles} bg-green-50 text-black border-green-200`;
-        case "error":
-          return `${baseStyles} bg-red-50 text-red-800 border-red-200`;
-        default:
-          return `${baseStyles} bg-blue-50 text-blue-800 border-blue-200`;
-      }
-    };
-
-    const getIcon = () => {
-      switch (type) {
-        case "success":
-          return <CheckCircle size={18} className="mr-3 text-green-600" />;
-        case "error":
-          return <XCircle size={18} className="mr-3 text-red-600" />;
-        default:
-          return null;
-      }
-    };
+    const icon =
+      type === "success" ? (
+        <CheckCircle size={18} className="mr-3 text-green-600" />
+      ) : type === "error" ? (
+        <XCircle size={18} className="mr-3 text-red-600" />
+      ) : null;
 
     return (
-      <div className={getStyles()}>
-        {getIcon()}
-        <span className="flex-1 font-medium">{message}</span>
+      <div className={styles} data-testid={`notification-${type}`}>
+        {icon}
+        <span className="flex-1 font-medium" data-testid="notification-message">
+          {message}
+        </span>
         <button
           onClick={onClose}
           className="ml-3 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          data-testid="notification-close-btn"
         >
           <X size={16} />
         </button>
@@ -126,36 +117,27 @@ const UserSettings = () => {
     withCredentials: true,
   });
 
-  // Add request interceptor to include token
   api.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem("token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+      if (token) config.headers.Authorization = `Bearer ${token}`;
       return config;
     },
-    (error) => {
-      return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
   );
 
-  // Add response interceptor to handle 401 errors
   api.interceptors.response.use(
     (response) => response,
     (error) => {
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
         setErrors({ auth: "Session expired. Please login again." });
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
+        setTimeout(() => navigate("/login"), 2000);
       }
       return Promise.reject(error);
     }
   );
 
-  // Check if user is authenticated
   const isAuthenticated = () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -166,58 +148,43 @@ const UserSettings = () => {
     return true;
   };
 
-  // Get user orders - moved outside of render function
   const getUserOrders = async () => {
     if (!isAuthenticated()) return;
-
     try {
       setOrdersLoading(true);
       const response = await api.get("/settings/orders");
-
       setSettings((prev) => ({
         ...prev,
         orders: response.data.data || response.data || [],
       }));
     } catch (error) {
-      console.error("Error fetching orders:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to load orders";
-      setErrors({ orders: errorMessage });
-      showNotification("error", errorMessage);
+      const msg = error.response?.data?.message || "Failed to load orders";
+      setErrors({ orders: msg });
+      showNotification("error", msg);
     } finally {
       setOrdersLoading(false);
     }
   };
 
-  // Delete Account Function
   const handleDeleteAccount = async () => {
     if (!deleteConfirm) {
       showNotification("error", "Please confirm account deletion");
       return;
     }
-
     try {
       setDeleteLoading(true);
       setErrors({});
-
-      await api.delete("/users/account", {
-        data: { confirmDelete: true },
-      });
-
+      await api.delete("/users/account", { data: { confirmDelete: true } });
       showNotification("success", "Account deleted successfully");
-
-      // Clear local storage and redirect
       localStorage.removeItem("token");
       setTimeout(() => {
         navigate("/", { replace: true });
         window.location.reload();
       }, 2000);
     } catch (error) {
-      console.error("Error deleting account:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to delete account";
-      setErrors({ delete: errorMessage });
-      showNotification("error", errorMessage);
+      const msg = error.response?.data?.message || "Failed to delete account";
+      setErrors({ delete: msg });
+      showNotification("error", msg);
     } finally {
       setDeleteLoading(false);
       setShowDeleteModal(false);
@@ -225,22 +192,17 @@ const UserSettings = () => {
     }
   };
 
-  // Fetch settings on component mount
   useEffect(() => {
     const fetchSettings = async () => {
       if (!isAuthenticated()) {
         setLoading(false);
         return;
       }
-
       try {
         setLoading(true);
         setErrors({});
-
         const response = await api.get("/settings");
         setSettings(response.data);
-
-        // Fetch user profile for image
         const profileResponse = await api.get("/users/profile");
         if (profileResponse.data.success) {
           setProfileImage(
@@ -248,131 +210,92 @@ const UserSettings = () => {
           );
         }
       } catch (error) {
-        console.error("Error fetching settings:", error);
-
-        if (error.response?.data?.message) {
-          setErrors({ fetch: error.response.data.message });
-        } else {
-          setErrors({ fetch: "Failed to load settings. Please try again." });
-        }
+        setErrors({
+          fetch:
+            error.response?.data?.message ||
+            "Failed to load settings. Please try again.",
+        });
       } finally {
         setLoading(false);
       }
     };
-
     fetchSettings();
   }, []);
 
-  // Fetch orders when My Orders tab is selected
   useEffect(() => {
-    if (activeTab === "My Orders") {
-      getUserOrders();
-    }
+    if (activeTab === "My Orders") getUserOrders();
   }, [activeTab]);
 
-  // Handle notification change
   const handleNotificationChange = (e) => {
     const { name, checked } = e.target;
     setSettings((prev) => ({
       ...prev,
-      notifications: {
-        ...prev.notifications,
-        [name]: checked,
-      },
+      notifications: { ...prev.notifications, [name]: checked },
     }));
   };
 
-  // Save notification settings
   const saveNotificationSettings = async () => {
     if (!isAuthenticated()) return;
-
     try {
       setSaveLoading(true);
       setErrors({});
-
       await api.put("/settings/notifications", settings.notifications);
-
       showNotification("success", "Notification settings saved successfully");
     } catch (error) {
-      console.error("Error saving notification settings:", error);
-
-      const errorMessage =
+      const msg =
         error.response?.data?.message || "Failed to save notification settings";
-      setErrors({ save: errorMessage });
-      showNotification("error", errorMessage);
+      setErrors({ save: msg });
+      showNotification("error", msg);
     } finally {
       setSaveLoading(false);
     }
   };
 
-  // Save password
   const savePassword = async (e) => {
     e.preventDefault();
     if (!isAuthenticated()) return;
-
     setErrors({});
-
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setErrors({ confirmPassword: "Passwords do not match" });
       return;
     }
-
     if (passwordForm.newPassword.length < 6) {
       setErrors({ newPassword: "Password must be at least 6 characters" });
       return;
     }
-
     try {
       setSaveLoading(true);
-
       await api.put("/settings/password", {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
       });
-
       showNotification("success", "Password updated successfully");
-      setPasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error) {
-      console.error("Error updating password:", error);
-
-      const errorMessage =
-        error.response?.data?.message || "Failed to update password";
-      setErrors({ save: errorMessage });
-      showNotification("error", errorMessage);
+      const msg = error.response?.data?.message || "Failed to update password";
+      setErrors({ save: msg });
+      showNotification("error", msg);
     } finally {
       setSaveLoading(false);
     }
   };
 
-  // Handle address form change
   const handleAddressFormChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setAddressForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setAddressForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
-  // Submit new address
   const submitAddress = async (e) => {
     e.preventDefault();
     if (!isAuthenticated()) return;
-
     try {
       setSaveLoading(true);
       setErrors({});
-
       const response = await api.post("/settings/addresses", addressForm);
-
       setSettings((prev) => ({
         ...prev,
         addresses: [...prev.addresses, response.data.address],
       }));
-
       showNotification("success", "Address added successfully");
       setShowAddressForm(false);
       setAddressForm({
@@ -386,50 +309,40 @@ const UserSettings = () => {
         isDefault: false,
       });
     } catch (error) {
-      console.error("Error adding address:", error);
-
-      const errorMessage =
-        error.response?.data?.message || "Failed to add address";
-      setErrors({ save: errorMessage });
-      showNotification("error", errorMessage);
+      const msg = error.response?.data?.message || "Failed to add address";
+      setErrors({ save: msg });
+      showNotification("error", msg);
     } finally {
       setSaveLoading(false);
     }
   };
 
-  // Delete address
   const deleteAddress = async (addressId) => {
     if (!isAuthenticated()) return;
-
-    if (!window.confirm("Are you sure you want to delete this address?")) {
-      return;
-    }
-
+    if (!window.confirm("Are you sure you want to delete this address?")) return;
     try {
       setSaveLoading(true);
       await api.delete(`/settings/addresses/${addressId}`);
-
       setSettings((prev) => ({
         ...prev,
-        addresses: prev.addresses.filter((addr) => addr._id !== addressId),
+        addresses: prev.addresses.filter((a) => a._id !== addressId),
       }));
-
       showNotification("success", "Address deleted successfully");
     } catch (error) {
-      console.error("Error deleting address:", error);
-
-      const errorMessage =
-        error.response?.data?.message || "Failed to delete address";
-      setErrors({ save: errorMessage });
-      showNotification("error", errorMessage);
+      const msg = error.response?.data?.message || "Failed to delete address";
+      setErrors({ save: msg });
+      showNotification("error", msg);
     } finally {
       setSaveLoading(false);
     }
   };
 
-  // Render Delete Account Modal
+  // Delete Account Modal
   const renderDeleteModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50"
+      data-testid="delete-account-modal"
+    >
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -444,13 +357,14 @@ const UserSettings = () => {
               setDeleteConfirm(false);
             }}
             className="text-gray-500 hover:text-gray-700"
+            data-testid="delete-modal-close"
           >
             <X size={24} />
           </button>
         </div>
 
         <div className="space-y-4">
-          <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+          <div className="bg-red-50 border border-red-200 p-4 rounded-lg" data-testid="delete-warning">
             <p className="text-red-800 text-sm">
               <strong>Warning:</strong> This action cannot be undone. This will
               permanently delete your account and remove all your data from our
@@ -478,6 +392,7 @@ const UserSettings = () => {
               checked={deleteConfirm}
               onChange={(e) => setDeleteConfirm(e.target.checked)}
               className="w-4 h-4 text-red-600 rounded focus:ring-red-500 mt-1"
+              data-testid="delete-confirm-checkbox"
             />
             <label htmlFor="deleteConfirm" className="text-sm text-gray-700">
               I understand that this action cannot be undone and I want to
@@ -486,7 +401,10 @@ const UserSettings = () => {
           </div>
 
           {errors.delete && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+              data-testid="delete-error"
+            >
               {errors.delete}
             </div>
           )}
@@ -499,6 +417,7 @@ const UserSettings = () => {
                 setDeleteConfirm(false);
               }}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              data-testid="delete-cancel-btn"
             >
               Cancel
             </button>
@@ -506,6 +425,7 @@ const UserSettings = () => {
               onClick={handleDeleteAccount}
               disabled={!deleteConfirm || deleteLoading}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              data-testid="delete-account-btn"
             >
               {deleteLoading ? "Deleting..." : "Delete Account"}
             </button>
@@ -515,22 +435,16 @@ const UserSettings = () => {
     </div>
   );
 
-  // Render Account Tab
+  // Account Tab
   const renderAccountTab = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">
-        Account Settings
-      </h2>
-
+    <div className="space-y-6" data-testid="tab-account">
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">Account Settings</h2>
       <div className="space-y-6">
-        {/* Danger Zone */}
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6" data-testid="danger-zone">
           <div className="flex items-start space-x-3">
             <UserX className="h-6 w-6 text-red-600 mt-1" />
             <div className="flex-1">
-              <h3 className="text-lg font-medium text-red-900 mb-2">
-                Delete Account
-              </h3>
+              <h3 className="text-lg font-medium text-red-900 mb-2">Delete Account</h3>
               <p className="text-red-700 text-sm mb-4">
                 Once you delete your account, there is no going back. Please be
                 certain.
@@ -538,6 +452,7 @@ const UserSettings = () => {
               <button
                 onClick={() => setShowDeleteModal(true)}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                data-testid="open-delete-modal-btn"
               >
                 Delete Account
               </button>
@@ -548,22 +463,18 @@ const UserSettings = () => {
     </div>
   );
 
-  // Render Notification Tab
+  // Notification Tab
   const renderNotificationTab = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">
-        Notification Preferences
-      </h2>
+    <div className="space-y-6" data-testid="tab-notifications">
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">Notification Preferences</h2>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg" data-testid="toggle-email">
           <div className="flex items-center space-x-3">
             <Mail className="text-gray-500" size={20} />
             <div>
               <h3 className="font-medium text-gray-900">Email Notifications</h3>
-              <p className="text-sm text-gray-500">
-                Receive notifications via email
-              </p>
+              <p className="text-sm text-gray-500">Receive notifications via email</p>
             </div>
           </div>
           <input
@@ -572,17 +483,16 @@ const UserSettings = () => {
             checked={settings.notifications.emailNotifications}
             onChange={handleNotificationChange}
             className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+            data-testid="email-notifications-checkbox"
           />
         </div>
 
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg" data-testid="toggle-push">
           <div className="flex items-center space-x-3">
             <Bell className="text-gray-500" size={20} />
             <div>
               <h3 className="font-medium text-gray-900">Push Notifications</h3>
-              <p className="text-sm text-gray-500">
-                Receive push notifications on your device
-              </p>
+              <p className="text-sm text-gray-500">Receive push notifications on your device</p>
             </div>
           </div>
           <input
@@ -591,17 +501,16 @@ const UserSettings = () => {
             checked={settings.notifications.pushNotifications}
             onChange={handleNotificationChange}
             className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+            data-testid="push-notifications-checkbox"
           />
         </div>
 
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg" data-testid="toggle-sms">
           <div className="flex items-center space-x-3">
             <Smartphone className="text-gray-500" size={20} />
             <div>
               <h3 className="font-medium text-gray-900">SMS Notifications</h3>
-              <p className="text-sm text-gray-500">
-                Receive notifications via SMS
-              </p>
+              <p className="text-sm text-gray-500">Receive notifications via SMS</p>
             </div>
           </div>
           <input
@@ -610,17 +519,16 @@ const UserSettings = () => {
             checked={settings.notifications.smsNotifications}
             onChange={handleNotificationChange}
             className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+            data-testid="sms-notifications-checkbox"
           />
         </div>
 
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg" data-testid="toggle-order-updates">
           <div className="flex items-center space-x-3">
             <Package className="text-gray-500" size={20} />
             <div>
               <h3 className="font-medium text-gray-900">Order Updates</h3>
-              <p className="text-sm text-gray-500">
-                Get notified about order status changes
-              </p>
+              <p className="text-sm text-gray-500">Get notified about order status changes</p>
             </div>
           </div>
           <input
@@ -629,17 +537,16 @@ const UserSettings = () => {
             checked={settings.notifications.orderUpdates}
             onChange={handleNotificationChange}
             className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+            data-testid="order-updates-checkbox"
           />
         </div>
 
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg" data-testid="toggle-promotions">
           <div className="flex items-center space-x-3">
             <Mail className="text-gray-500" size={20} />
             <div>
               <h3 className="font-medium text-gray-900">Promotions</h3>
-              <p className="text-sm text-gray-500">
-                Receive promotional emails and offers
-              </p>
+              <p className="text-sm text-gray-500">Receive promotional emails and offers</p>
             </div>
           </div>
           <input
@@ -648,6 +555,7 @@ const UserSettings = () => {
             checked={settings.notifications.promotions}
             onChange={handleNotificationChange}
             className="w-5 h-5 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+            data-testid="promotions-checkbox"
           />
         </div>
 
@@ -656,6 +564,7 @@ const UserSettings = () => {
             onClick={saveNotificationSettings}
             disabled={saveLoading}
             className="px-8 py-3 bg-[#8DC53E] text-white rounded-lg hover:bg-[#97D243] transition-all duration-200 font-medium w-48 cursor-pointer disabled:opacity-50"
+            data-testid="notifications-save-btn"
           >
             {saveLoading ? "Saving..." : "Save Changes"}
           </button>
@@ -664,17 +573,15 @@ const UserSettings = () => {
     </div>
   );
 
-  // Render Security Tab (Password Only)
+  // Security Tab
   const renderSecurityTab = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">
-        Security Settings
-      </h2>
+    <div className="space-y-6" data-testid="tab-security">
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">Security Settings</h2>
 
       <div className="space-y-6">
         <div>
           <h3 className="font-medium text-gray-900 mb-4">Change Password</h3>
-          <form onSubmit={savePassword}>
+          <form onSubmit={savePassword} data-testid="password-form">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -684,14 +591,12 @@ const UserSettings = () => {
                   type="password"
                   value={passwordForm.currentPassword}
                   onChange={(e) =>
-                    setPasswordForm((prev) => ({
-                      ...prev,
-                      currentPassword: e.target.value,
-                    }))
+                    setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))
                   }
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
                   placeholder="Enter current password"
+                  data-testid="current-password-input"
                 />
               </div>
               <div>
@@ -702,18 +607,16 @@ const UserSettings = () => {
                   type="password"
                   value={passwordForm.newPassword}
                   onChange={(e) =>
-                    setPasswordForm((prev) => ({
-                      ...prev,
-                      newPassword: e.target.value,
-                    }))
+                    setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
                   }
                   required
                   minLength="6"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
                   placeholder="Enter new password"
+                  data-testid="new-password-input"
                 />
                 {errors.newPassword && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p className="text-red-500 text-sm mt-1" data-testid="new-password-error">
                     {errors.newPassword}
                   </p>
                 )}
@@ -726,18 +629,16 @@ const UserSettings = () => {
                   type="password"
                   value={passwordForm.confirmPassword}
                   onChange={(e) =>
-                    setPasswordForm((prev) => ({
-                      ...prev,
-                      confirmPassword: e.target.value,
-                    }))
+                    setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
                   }
                   required
                   minLength="6"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
                   placeholder="Confirm new password"
+                  data-testid="confirm-password-input"
                 />
                 {errors.confirmPassword && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p className="text-red-500 text-sm mt-1" data-testid="confirm-password-error">
                     {errors.confirmPassword}
                   </p>
                 )}
@@ -748,6 +649,7 @@ const UserSettings = () => {
                 type="submit"
                 disabled={saveLoading}
                 className="px-8 py-3 bg-[#8DC53E] text-white rounded-lg hover:bg-[#97D243] transition-all duration-200 font-medium w-48 cursor-pointer disabled:opacity-50"
+                data-testid="change-password-btn"
               >
                 {saveLoading ? "Saving..." : "Change Password"}
               </button>
@@ -758,13 +660,13 @@ const UserSettings = () => {
     </div>
   );
 
-  // Render My Orders Tab - Fixed version
+  // Orders Tab
   const renderMyOrdersTab = () => (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="tab-orders">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">My Orders</h2>
         {ordersLoading && (
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2" data-testid="orders-loading">
             <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-[#8DC53E]"></div>
             <span className="text-sm text-gray-500">Loading orders...</span>
           </div>
@@ -772,106 +674,109 @@ const UserSettings = () => {
       </div>
 
       {errors.orders && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div
+          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+          data-testid="orders-error"
+        >
           {errors.orders}
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-4" data-testid="orders-list">
         {!ordersLoading && settings.orders && settings.orders.length > 0 ? (
-          settings.orders.map((order) => (
-            <div
-              key={order._id}
-              className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-medium text-gray-900">
-                    Order #{order.orderId}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {new Date(order.orderDate).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-gray-900 text-lg">
-                    ${parseFloat(order.totalAmount).toFixed(2)}
-                  </p>
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                      order.orderStatus === "Delivered"
-                        ? "bg-green-100 text-green-800"
-                        : order.orderStatus === "Processing"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : order.orderStatus === "Shipped"
-                        ? "bg-blue-100 text-blue-800"
-                        : order.orderStatus === "Cancelled"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {order.orderStatus}
-                  </span>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Package className="h-4 w-4 text-gray-400" />
-                    <p className="text-sm text-gray-600">
-                      {order.items?.length || 0} item(s)
+          settings.orders.map((order) => {
+            const cardId =
+              order._id || order.orderId || String(Math.random()).slice(2);
+            return (
+              <div
+                key={cardId}
+                className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200"
+                data-testid={`order-card-${cardId}`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-medium text-gray-900">
+                      Order #{order.orderId}
+                    </h3>
+                    <p className="text-sm text-gray-500" data-testid="order-date">
+                      {new Date(order.orderDate).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                     </p>
                   </div>
-
-                  {order.orderStatus === "Shipped" && (
-                    <div className="flex items-center space-x-2 text-blue-600">
-                      <Truck className="h-4 w-4" />
-                      <span className="text-sm font-medium">Track Order</span>
-                    </div>
-                  )}
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900 text-lg" data-testid="order-total">
+                      ${parseFloat(order.totalAmount).toFixed(2)}
+                    </p>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                        order.orderStatus === "Delivered"
+                          ? "bg-green-100 text-green-800"
+                          : order.orderStatus === "Processing"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : order.orderStatus === "Shipped"
+                          ? "bg-blue-100 text-blue-800"
+                          : order.orderStatus === "Cancelled"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                      data-testid="order-status"
+                    >
+                      {order.orderStatus}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Show order items if available */}
-                {order.items && order.items.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {order.items.slice(0, 3).map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center space-x-3 text-sm"
-                      >
-                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <span className="text-gray-600">
-                          {item.product?.name || `Item ${index + 1}`}
-                          {item.quantity && ` (Qty: ${item.quantity})`}
-                        </span>
-                      </div>
-                    ))}
-                    {order.items.length > 3 && (
-                      <div className="flex items-center space-x-3 text-sm">
-                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <span className="text-gray-500">
-                          +{order.items.length - 3} more items
-                        </span>
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Package className="h-4 w-4 text-gray-400" />
+                      <p className="text-sm text-gray-600" data-testid="order-items-count">
+                        {order.items?.length || 0} item(s)
+                      </p>
+                    </div>
+
+                    {order.orderStatus === "Shipped" && (
+                      <div className="flex items-center space-x-2 text-blue-600" data-testid="order-trackable">
+                        <Truck className="h-4 w-4" />
+                        <span className="text-sm font-medium">Track Order</span>
                       </div>
                     )}
                   </div>
-                )}
+
+                  {order.items && order.items.length > 0 && (
+                    <div className="mt-3 space-y-2" data-testid="order-items">
+                      {order.items.slice(0, 3).map((item, index) => (
+                        <div key={index} className="flex items-center space-x-3 text-sm">
+                          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                          <span className="text-gray-600">
+                            {item.product?.name || `Item ${index + 1}`}
+                            {item.quantity && ` (Qty: ${item.quantity})`}
+                          </span>
+                        </div>
+                      ))}
+                      {order.items.length > 3 && (
+                        <div className="flex items-center space-x-3 text-sm">
+                          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                          <span className="text-gray-500">
+                            +{order.items.length - 3} more items
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : !ordersLoading ? (
-          <div className="text-center py-16">
+          <div className="text-center py-16" data-testid="orders-empty-state">
             <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Package className="h-12 w-12 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No orders yet
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
             <p className="text-gray-500 mb-6 max-w-sm mx-auto">
               Start shopping to see your orders here. Your order history will
               appear once you make your first purchase.
@@ -879,6 +784,7 @@ const UserSettings = () => {
             <button
               onClick={() => navigate("/products")}
               className="bg-[#8DC53E] text-white px-6 py-3 rounded-lg hover:bg-[#97D243] transition-colors font-medium"
+              data-testid="start-shopping-btn"
             >
               Start Shopping
             </button>
@@ -888,12 +794,15 @@ const UserSettings = () => {
     </div>
   );
 
-  // Render Address Form
+  // Address Form Modal
   const renderAddressForm = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      data-testid="address-form-modal"
+    >
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">
+          <h3 className="text-lg font-semibold" data-testid="address-form-title">
             {editingAddress ? "Edit Address" : "Add New Address"}
           </h3>
           <button
@@ -912,21 +821,21 @@ const UserSettings = () => {
               });
             }}
             className="text-gray-500 hover:text-gray-700"
+            data-testid="address-form-close"
           >
             <X size={24} />
           </button>
         </div>
 
-        <form onSubmit={submitAddress} className="space-y-4">
+        <form onSubmit={submitAddress} className="space-y-4" data-testid="address-form">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Address Type
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Address Type</label>
             <select
               name="addressType"
               value={addressForm.addressType}
               onChange={handleAddressFormChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+              data-testid="address-type"
             >
               <option value="Home">Home</option>
               <option value="Work">Work</option>
@@ -946,13 +855,12 @@ const UserSettings = () => {
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
               placeholder="Street address"
+              data-testid="address-line1"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Address Line 2
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Address Line 2</label>
             <input
               type="text"
               name="addressLine2"
@@ -960,14 +868,13 @@ const UserSettings = () => {
               onChange={handleAddressFormChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
               placeholder="Apartment, suite, etc."
+              data-testid="address-line2"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                City *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
               <input
                 type="text"
                 name="city"
@@ -975,13 +882,12 @@ const UserSettings = () => {
                 onChange={handleAddressFormChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+                data-testid="address-city"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Province *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Province *</label>
               <input
                 type="text"
                 name="province"
@@ -989,15 +895,14 @@ const UserSettings = () => {
                 onChange={handleAddressFormChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+                data-testid="address-province"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Postal Code *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code *</label>
               <input
                 type="text"
                 name="postalCode"
@@ -1005,19 +910,19 @@ const UserSettings = () => {
                 onChange={handleAddressFormChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+                data-testid="address-postal"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Country
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
               <input
                 type="text"
                 name="country"
                 value={addressForm.country}
                 onChange={handleAddressFormChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent"
+                data-testid="address-country"
               />
             </div>
           </div>
@@ -1029,10 +934,9 @@ const UserSettings = () => {
               checked={addressForm.isDefault}
               onChange={handleAddressFormChange}
               className="w-4 h-4 text-[#8DC53E] rounded focus:ring-[#8DC53E]"
+              data-testid="address-default-checkbox"
             />
-            <label className="text-sm text-gray-700">
-              Set as default address
-            </label>
+            <label className="text-sm text-gray-700">Set as default address</label>
           </div>
 
           <div className="flex justify-end space-x-4 pt-4">
@@ -1043,6 +947,7 @@ const UserSettings = () => {
                 setEditingAddress(null);
               }}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              data-testid="address-cancel-btn"
             >
               Cancel
             </button>
@@ -1050,6 +955,7 @@ const UserSettings = () => {
               type="submit"
               disabled={saveLoading}
               className="px-4 py-2 bg-[#8DC53E] text-white rounded-lg hover:bg-[#97D243] disabled:opacity-50"
+              data-testid="address-save-btn"
             >
               {saveLoading ? "Saving..." : "Save Address"}
             </button>
@@ -1059,26 +965,28 @@ const UserSettings = () => {
     </div>
   );
 
-  // Render Addresses Tab
+  // Addresses Tab
   const renderAddressesTab = () => (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="tab-addresses">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">Saved Addresses</h2>
         <button
           onClick={() => setShowAddressForm(true)}
           className="bg-[#8DC53E] text-white px-4 py-2 rounded-lg hover:bg-[#97D243] transition-colors flex items-center space-x-2"
+          data-testid="add-address-btn"
         >
           <Plus size={16} />
           <span>Add New Address</span>
         </button>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4" data-testid="addresses-list">
         {settings.addresses && settings.addresses.length > 0 ? (
           settings.addresses.map((address) => (
             <div
               key={address._id}
               className="border border-gray-200 rounded-lg p-4"
+              data-testid={`address-card-${address._id}`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-3">
@@ -1091,23 +999,29 @@ const UserSettings = () => {
                   )}
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-medium text-gray-900">
+                      <h3 className="font-medium text-gray-900" data-testid="address-type-label">
                         {address.addressType}
                       </h3>
                       {address.isDefault && (
-                        <span className="bg-[#8DC53E] text-white text-xs px-2 py-1 rounded-full">
+                        <span className="bg-[#8DC53E] text-white text-xs px-2 py-1 rounded-full" data-testid="address-default-badge">
                           Default
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-600 mt-1">{address.addressLine1}</p>
+                    <p className="text-gray-600 mt-1" data-testid="address-line1-value">
+                      {address.addressLine1}
+                    </p>
                     {address.addressLine2 && (
-                      <p className="text-gray-600">{address.addressLine2}</p>
+                      <p className="text-gray-600" data-testid="address-line2-value">
+                        {address.addressLine2}
+                      </p>
                     )}
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-500 text-sm" data-testid="address-city-province">
                       {address.city}, {address.province} {address.postalCode}
                     </p>
-                    <p className="text-gray-500 text-sm">{address.country}</p>
+                    <p className="text-gray-500 text-sm" data-testid="address-country-value">
+                      {address.country}
+                    </p>
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -1118,6 +1032,7 @@ const UserSettings = () => {
                       setAddressForm(address);
                       setShowAddressForm(true);
                     }}
+                    data-testid={`address-edit-btn-${address._id}`}
                   >
                     <Edit size={16} />
                     <span>Edit</span>
@@ -1126,6 +1041,7 @@ const UserSettings = () => {
                     className="text-red-600 hover:text-red-700 text-sm flex items-center space-x-1"
                     onClick={() => deleteAddress(address._id)}
                     disabled={saveLoading}
+                    data-testid={`address-delete-btn-${address._id}`}
                   >
                     <Trash2 size={16} />
                     <span>Delete</span>
@@ -1135,14 +1051,10 @@ const UserSettings = () => {
             </div>
           ))
         ) : (
-          <div className="text-center py-12">
+          <div className="text-center py-12" data-testid="addresses-empty-state">
             <MapPin className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No addresses saved
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Add an address to get started.
-            </p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No addresses saved</h3>
+            <p className="mt-1 text-sm text-gray-500">Add an address to get started.</p>
           </div>
         )}
       </div>
@@ -1152,15 +1064,16 @@ const UserSettings = () => {
   // Main component loading state
   if (loading) {
     return (
-      <div>
+      <div data-testid="settings-loading">
         <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-            Settings
-          </p>
+          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">Settings</p>
         </div>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8DC53E] mx-auto mb-4"></div>
+            <div
+              className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8DC53E] mx-auto mb-4"
+              data-testid="settings-loading-spinner"
+            ></div>
             <p>Loading settings...</p>
           </div>
         </div>
@@ -1171,11 +1084,9 @@ const UserSettings = () => {
   // Show auth errors
   if (errors.auth) {
     return (
-      <div>
+      <div data-testid="auth-error">
         <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-            Settings
-          </p>
+          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">Settings</p>
         </div>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
@@ -1198,16 +1109,16 @@ const UserSettings = () => {
   ];
 
   return (
-    <div>
+    <div data-testid="user-settings">
       <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
         <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">Settings</p>
       </div>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          {/* Professional Notification */}
+          {/* Notification */}
           {notification && (
-            <div className="mb-6">
+            <div className="mb-6" data-testid="notification-area">
               <Notification
                 type={notification.type}
                 message={notification.message}
@@ -1230,6 +1141,7 @@ const UserSettings = () => {
                         e.target.onerror = null;
                         e.target.src = "/default-user.png";
                       }}
+                      data-testid="profile-image"
                     />
                   </div>
                 </div>
@@ -1238,11 +1150,12 @@ const UserSettings = () => {
 
             <div className="pt-20 pb-8">
               <div className="flex flex-col lg:flex-row">
-                {/* Sidebar */}
-                <div className="lg:w-1/4 px-8 pb-8 lg:pb-0 border-b lg:border-b-0 lg:border-r border-gray-200">
+                {/* Sidebar Tabs */}
+                <div className="lg:w-1/4 px-8 pb-8 lg:pb-0 border-b lg:border-b-0 lg:border-r border-gray-200" data-testid="settings-tabs-nav">
                   <nav className="space-y-2">
                     {tabs.map((tab) => {
                       const IconComponent = tab.icon;
+                      const tid = `tab-btn-${tab.id.toLowerCase().replace(/\s+/g, "-")}`;
                       return (
                         <button
                           key={tab.id}
@@ -1252,6 +1165,8 @@ const UserSettings = () => {
                               ? "bg-[#8DC53E] text-white"
                               : "text-gray-700 hover:bg-gray-100"
                           }`}
+                          aria-pressed={activeTab === tab.id}
+                          data-testid={tid}
                         >
                           <IconComponent size={20} />
                           <span>{tab.label}</span>
@@ -1262,46 +1177,43 @@ const UserSettings = () => {
                 </div>
 
                 {/* Main Content */}
-                <div className="lg:w-3/4 px-8 pt-8 lg:pt-0">
+                <div className="lg:w-3/4 px-8 pt-8 lg:pt-0" data-testid="settings-content">
                   {activeTab === "Notification" && renderNotificationTab()}
                   {activeTab === "Security" && renderSecurityTab()}
                   {activeTab === "My Orders" && renderMyOrdersTab()}
                   {activeTab === "Addresses" && renderAddressesTab()}
                   {activeTab === "Account" && renderAccountTab()}
                   {activeTab === "Help" && (
-                    <div className="space-y-6">
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        Help & Support
-                      </h2>
+                    <div className="space-y-6" data-testid="tab-help">
+                      <h2 className="text-xl font-semibold text-gray-900">Help & Support</h2>
                       <div className="space-y-4">
                         <div className="p-4 border border-gray-200 rounded-lg">
-                          <h3 className="font-medium text-gray-900 mb-2">
-                            Contact Support
-                          </h3>
+                          <h3 className="font-medium text-gray-900 mb-2">Contact Support</h3>
                           <p className="text-gray-600 mb-3">
                             Need help? Our support team is here for you.
                           </p>
                           <div className="space-y-2">
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500" data-testid="help-email">
                               Email: Simthass@outlook.com
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500" data-testid="help-phone">
                               Phone: +94764078448
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500" data-testid="help-hours">
                               Hours: Monday - Friday, 9AM - 6PM
                             </p>
                           </div>
                         </div>
 
                         <div className="p-4 border border-gray-200 rounded-lg">
-                          <h3 className="font-medium text-gray-900 mb-2">
-                            Frequently Asked Questions
-                          </h3>
+                          <h3 className="font-medium text-gray-900 mb-2">Frequently Asked Questions</h3>
                           <p className="text-gray-600 mb-3">
                             Find answers to common questions.
                           </p>
-                          <button className="text-[#8DC53E] hover:text-[#97D243] font-medium">
+                          <button
+                            className="text-[#8DC53E] hover:text-[#97D243] font-medium"
+                            data-testid="view-faq-btn"
+                          >
                             View FAQ →
                           </button>
                         </div>
@@ -1315,13 +1227,12 @@ const UserSettings = () => {
         </div>
       </div>
 
-      {/* Address Form Modal */}
+      {/* Modals */}
       {showAddressForm && renderAddressForm()}
-
-      {/* Delete Account Modal */}
       {showDeleteModal && renderDeleteModal()}
     </div>
   );
 };
 
 export default UserSettings;
+
