@@ -169,7 +169,7 @@ const Cart = () => {
     setShowAddressModal(true);
   };
 
-  const handleAddAddress = () => navigate("/settings/addresses");
+  const handleAddAddress = () => navigate("/userSettings");
   const handleAddressSelect = (address) => {
     setSelectedAddress(address);
     setShowAddressModal(false);
@@ -179,7 +179,10 @@ const Cart = () => {
   // ---------- UI STATES ----------
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64" data-testid="cart-loading">
+      <div
+        className="flex justify-center items-center h-64"
+        data-testid="cart-loading"
+      >
         <div className="text-lg">Loading your cart...</div>
       </div>
     );
@@ -187,8 +190,13 @@ const Cart = () => {
 
   if (!isAuthenticated || !getAuthToken()) {
     return (
-      <div className="flex flex-col items-center justify-center h-64" data-testid="cart-requires-login">
-        <p className="text-xl mb-4 text-red-500">Please log in to view your cart</p>
+      <div
+        className="flex flex-col items-center justify-center h-64"
+        data-testid="cart-requires-login"
+      >
+        <p className="text-xl mb-4 text-red-500">
+          Please log in to view your cart
+        </p>
         <button
           onClick={() => navigate("/login", { state: { from: "/cart" } })}
           className="bg-[#8DC53E] text-white px-6 py-2 rounded-lg hover:bg-[#7AB32E] transition-colors"
@@ -202,7 +210,10 @@ const Cart = () => {
 
   if (!cart.items || cart.items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64" data-testid="cart-empty">
+      <div
+        className="flex flex-col items-center justify-center h-64"
+        data-testid="cart-empty"
+      >
         <p className="text-xl mb-4">Your cart is empty</p>
         <button
           onClick={() => navigate("/shop")}
@@ -215,7 +226,10 @@ const Cart = () => {
     );
   }
 
-  const itemPrice = cart.items.reduce((t, item) => t + item.product.price * item.quantity, 0);
+  const itemPrice = cart.items.reduce(
+    (t, item) => t + item.product.price * item.quantity,
+    0
+  );
   const shipping = 500.0;
   const totalCost = itemPrice + shipping;
 
@@ -235,7 +249,8 @@ const Cart = () => {
             <h1 className="text-4xl font-bold mb-6">
               Shopping Cart{" "}
               <span className="text-xl font-light">
-                ({cart.items.length} {cart.items.length === 1 ? "Product" : "Products"})
+                ({cart.items.length}{" "}
+                {cart.items.length === 1 ? "Product" : "Products"})
               </span>
             </h1>
 
@@ -256,36 +271,57 @@ const Cart = () => {
                   <div className="flex items-center flex-1">
                     <div className="w-24 h-20 mr-6 flex-shrink-0">
                       <img
-                        src={item.product.imageUrl ? `${BASE_URL}${item.product.imageUrl}` : "/products/placeholder.jpg"}
+                        src={
+                          item.product.imageUrl
+                            ? `${BASE_URL}${item.product.imageUrl}`
+                            : "/products/placeholder.jpg"
+                        }
                         alt={item.product.productName}
                         className="w-full h-full object-contain rounded-lg"
-                        onError={(e) => { e.target.src = "/products/placeholder.jpg"; }}
+                        onError={(e) => {
+                          e.target.src = "/products/placeholder.jpg";
+                        }}
                         data-testid={`cart-row-image-${item._id}`}
                       />
                     </div>
-                    <p className="text-base font-medium max-w-md overflow-hidden text-ellipsis whitespace-nowrap" data-testid={`cart-row-name-${item._id}`}>
+                    <p
+                      className="text-base font-medium max-w-md overflow-hidden text-ellipsis whitespace-nowrap"
+                      data-testid={`cart-row-name-${item._id}`}
+                    >
                       {item.product.productName}
                     </p>
                   </div>
 
                   {/* Quantity */}
-                  <div className="flex items-center justify-center w-24" data-testid={`cart-row-qty-${item._id}`}>
+                  <div
+                    className="flex items-center justify-center w-24"
+                    data-testid={`cart-row-qty-${item._id}`}
+                  >
                     <button
                       className={`w-7 h-7 border border-gray-300 rounded-full flex items-center justify-center transition-colors ${
-                        item.quantity <= 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-100"
+                        item.quantity <= 1
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:bg-gray-100"
                       }`}
-                      onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
+                      onClick={() =>
+                        handleQuantityChange(item._id, item.quantity - 1)
+                      }
                       disabled={item.quantity <= 1}
                       data-testid={`qty-dec-${item._id}`}
                     >
                       <span className="text-sm font-medium">-</span>
                     </button>
-                    <span className="mx-4 text-lg font-medium" data-testid={`qty-val-${item._id}`}>
+                    <span
+                      className="mx-4 text-lg font-medium"
+                      data-testid={`qty-val-${item._id}`}
+                    >
                       {item.quantity}
                     </span>
                     <button
                       className="w-7 h-7 border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
-                      onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
+                      onClick={() =>
+                        handleQuantityChange(item._id, item.quantity + 1)
+                      }
                       data-testid={`qty-inc-${item._id}`}
                     >
                       <span className="text-sm font-medium">+</span>
@@ -293,7 +329,10 @@ const Cart = () => {
                   </div>
 
                   {/* Price */}
-                  <div className="w-32 text-center" data-testid={`cart-row-price-${item._id}`}>
+                  <div
+                    className="w-32 text-center"
+                    data-testid={`cart-row-price-${item._id}`}
+                  >
                     <span className="text-lg font-medium">
                       Rs. {(item.product.price * item.quantity).toFixed(2)}
                     </span>
@@ -310,32 +349,55 @@ const Cart = () => {
                     </button>
                   </div>
                 </div>
-                {index < cart.items.length - 1 && <hr className="border-gray-200" />}
+                {index < cart.items.length - 1 && (
+                  <hr className="border-gray-200" />
+                )}
               </div>
             ))}
           </div>
         </div>
 
         {/* RIGHT: Summary */}
-        <div className="w-[440px] h-[640px] border border-gray-300 rounded-xl p-8 sticky top-4" data-testid="cart-summary">
+        <div
+          className="w-[440px] h-[640px] border border-gray-300 rounded-xl p-8 sticky top-4"
+          data-testid="cart-summary"
+        >
           <h2 className="text-2xl font-medium mb-8">Summary</h2>
 
           <div className="space-y-6">
-            <div className="flex justify-between items-center" data-testid="summary-item-price">
-              <span className="text-lg">Item Price ({cart.items.length} {cart.items.length === 1 ? "Item" : "Items"})</span>
-              <span className="text-lg font-medium">Rs. {itemPrice.toFixed(2)}</span>
+            <div
+              className="flex justify-between items-center"
+              data-testid="summary-item-price"
+            >
+              <span className="text-lg">
+                Item Price ({cart.items.length}{" "}
+                {cart.items.length === 1 ? "Item" : "Items"})
+              </span>
+              <span className="text-lg font-medium">
+                Rs. {itemPrice.toFixed(2)}
+              </span>
             </div>
 
-            <div className="flex justify-between items-center" data-testid="summary-shipping">
+            <div
+              className="flex justify-between items-center"
+              data-testid="summary-shipping"
+            >
               <span className="text-lg">Shipping</span>
-              <span className="text-lg font-medium">Rs. {shipping.toFixed(2)}</span>
+              <span className="text-lg font-medium">
+                Rs. {shipping.toFixed(2)}
+              </span>
             </div>
 
             <hr className="border-gray-300" />
 
-            <div className="flex justify-between items-center" data-testid="summary-total">
+            <div
+              className="flex justify-between items-center"
+              data-testid="summary-total"
+            >
               <span className="text-xl font-semibold">Total Cost</span>
-              <span className="text-xl font-bold">Rs. {totalCost.toFixed(2)}</span>
+              <span className="text-xl font-bold">
+                Rs. {totalCost.toFixed(2)}
+              </span>
             </div>
 
             <hr className="border-gray-300 my-8" />
@@ -344,46 +406,84 @@ const Cart = () => {
             <div className="mb-8" data-testid="shipping-address">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-lg font-medium">Shipping Address</span>
-                <button className="text-[#8DC53E] hover:underline font-medium text-sm" onClick={handleChangeAddressClick} data-testid="change-address-btn">
+                <button
+                  className="text-[#8DC53E] hover:underline font-medium text-sm"
+                  onClick={handleChangeAddressClick}
+                  data-testid="change-address-btn"
+                >
                   Change Address
                 </button>
               </div>
 
               {addressLoading && (
-                <div className="flex items-center space-x-2 text-gray-500" data-testid="addresses-loading">
+                <div
+                  className="flex items-center space-x-2 text-gray-500"
+                  data-testid="addresses-loading"
+                >
                   <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-[#8DC53E]"></div>
                   <span className="text-sm">Loading addresses...</span>
                 </div>
               )}
 
               {selectedAddress && !addressLoading && (
-                <div className="bg-gray-50 p-4 rounded-lg border" data-testid="selected-address">
+                <div
+                  className="bg-gray-50 p-4 rounded-lg border"
+                  data-testid="selected-address"
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <span className="font-medium text-gray-800">{selectedAddress.addressType}</span>
+                        <span className="font-medium text-gray-800">
+                          {selectedAddress.addressType}
+                        </span>
                         {selectedAddress.isDefault && (
-                          <span className="bg-[#8DC53E] text-white text-xs px-2 py-1 rounded-full">Default</span>
+                          <span className="bg-[#8DC53E] text-white text-xs px-2 py-1 rounded-full">
+                            Default
+                          </span>
                         )}
                       </div>
-                      <p className="text-gray-700 text-sm">{selectedAddress.addressLine1}</p>
-                      {selectedAddress.addressLine2 && <p className="text-gray-700 text-sm">{selectedAddress.addressLine2}</p>}
-                      <p className="text-gray-600 text-sm">
-                        {selectedAddress.city}, {selectedAddress.province} {selectedAddress.postalCode}
+                      <p className="text-gray-700 text-sm">
+                        {selectedAddress.addressLine1}
                       </p>
-                      <p className="text-gray-600 text-sm">{selectedAddress.country}</p>
-                      {selectedAddress.phoneNumber && <p className="text-gray-600 text-sm">Phone: {selectedAddress.phoneNumber}</p>}
-                      {selectedAddress.instructions && <p className="text-gray-500 text-sm mt-1">Instructions: {selectedAddress.instructions}</p>}
+                      {selectedAddress.addressLine2 && (
+                        <p className="text-gray-700 text-sm">
+                          {selectedAddress.addressLine2}
+                        </p>
+                      )}
+                      <p className="text-gray-600 text-sm">
+                        {selectedAddress.city}, {selectedAddress.province}{" "}
+                        {selectedAddress.postalCode}
+                      </p>
+                      <p className="text-gray-600 text-sm">
+                        {selectedAddress.country}
+                      </p>
+                      {selectedAddress.phoneNumber && (
+                        <p className="text-gray-600 text-sm">
+                          Phone: {selectedAddress.phoneNumber}
+                        </p>
+                      )}
+                      {selectedAddress.instructions && (
+                        <p className="text-gray-500 text-sm mt-1">
+                          Instructions: {selectedAddress.instructions}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
 
               {!selectedAddress && !addressLoading && (
-                <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300" data-testid="no-address">
+                <div
+                  className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300"
+                  data-testid="no-address"
+                >
                   <div className="text-gray-500">
                     <p className="mt-2 text-sm">No address selected</p>
-                    <button onClick={handleAddAddress} className="text-[#8DC53E] hover:underline mt-2 text-sm font-medium" data-testid="add-address-link">
+                    <button
+                      onClick={handleAddAddress}
+                      className="text-[#8DC53E] hover:underline mt-2 text-sm font-medium"
+                      data-testid="add-address-link"
+                    >
                       + Add Address
                     </button>
                   </div>
@@ -394,12 +494,16 @@ const Cart = () => {
             <button
               onClick={handleCheckout}
               className={`w-full text-xl font-semibold py-4 rounded-lg transition-colors duration-200 ${
-                selectedAddress ? "bg-[#8DC53E] text-white hover:bg-[#7AB32E] cursor-pointer" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                selectedAddress
+                  ? "bg-[#8DC53E] text-white hover:bg-[#7AB32E] cursor-pointer"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
               disabled={!selectedAddress}
               data-testid="checkout-btn"
             >
-              {!selectedAddress ? "Please Select an Address" : "Proceed to Checkout"}
+              {!selectedAddress
+                ? "Please Select an Address"
+                : "Proceed to Checkout"}
             </button>
           </div>
         </div>
@@ -407,11 +511,18 @@ const Cart = () => {
 
       {/* Address Modal */}
       {showAddressModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4" data-testid="address-modal">
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          data-testid="address-modal"
+        >
           <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold">Select Delivery Address</h3>
-              <button onClick={() => setShowAddressModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl font-bold" data-testid="close-address-modal">
+              <button
+                onClick={() => setShowAddressModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                data-testid="close-address-modal"
+              >
                 ×
               </button>
             </div>
@@ -436,13 +547,18 @@ const Cart = () => {
               </button>
             </div>
 
-            <div className="space-y-3 max-h-96 overflow-y-auto" data-testid="addresses-list">
+            <div
+              className="space-y-3 max-h-96 overflow-y-auto"
+              data-testid="addresses-list"
+            >
               {addresses.length > 0 ? (
                 addresses.map((address) => (
                   <div
                     key={address._id}
                     className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                      selectedAddress && selectedAddress._id === address._id ? "border-[#8DC53E] bg-green-50" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                      selectedAddress && selectedAddress._id === address._id
+                        ? "border-[#8DC53E] bg-green-50"
+                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                     }`}
                     onClick={() => handleAddressSelect(address)}
                     data-testid={`address-card-${address._id}`}
@@ -451,25 +567,51 @@ const Cart = () => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <span className="font-medium text-gray-800">{address.addressType}</span>
-                          {address.isDefault && <span className="bg-[#8DC53E] text-white text-xs px-2 py-1 rounded-full">Default</span>}
+                          <span className="font-medium text-gray-800">
+                            {address.addressType}
+                          </span>
+                          {address.isDefault && (
+                            <span className="bg-[#8DC53E] text-white text-xs px-2 py-1 rounded-full">
+                              Default
+                            </span>
+                          )}
                         </div>
-                        <p className="text-gray-700 text-sm">{address.addressLine1}</p>
-                        {address.addressLine2 && <p className="text-gray-700 text-sm">{address.addressLine2}</p>}
-                        <p className="text-gray-600 text-sm">
-                          {address.city}, {address.province} {address.postalCode}
+                        <p className="text-gray-700 text-sm">
+                          {address.addressLine1}
                         </p>
-                        <p className="text-gray-600 text-sm">{address.country}</p>
+                        {address.addressLine2 && (
+                          <p className="text-gray-700 text-sm">
+                            {address.addressLine2}
+                          </p>
+                        )}
+                        <p className="text-gray-600 text-sm">
+                          {address.city}, {address.province}{" "}
+                          {address.postalCode}
+                        </p>
+                        <p className="text-gray-600 text-sm">
+                          {address.country}
+                        </p>
                       </div>
-                      {selectedAddress && selectedAddress._id === address._id && <div className="ml-2"><span className="text-[#8DC53E] text-xl">✓</span></div>}
+                      {selectedAddress &&
+                        selectedAddress._id === address._id && (
+                          <div className="ml-2">
+                            <span className="text-[#8DC53E] text-xl">✓</span>
+                          </div>
+                        )}
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-8" data-testid="addresses-empty">
                   <p className="text-gray-500 text-lg">No addresses found</p>
-                  <p className="text-gray-400 text-sm mb-4">Add your first address to continue with checkout</p>
-                  <button onClick={handleAddAddress} className="bg-[#8DC53E] text-white px-6 py-2 rounded-lg hover:bg-[#7AB32E] transition-colors font-medium" data-testid="add-first-address">
+                  <p className="text-gray-400 text-sm mb-4">
+                    Add your first address to continue with checkout
+                  </p>
+                  <button
+                    onClick={handleAddAddress}
+                    className="bg-[#8DC53E] text-white px-6 py-2 rounded-lg hover:bg-[#7AB32E] transition-colors font-medium"
+                    data-testid="add-first-address"
+                  >
                     Add Your First Address
                   </button>
                 </div>
@@ -477,7 +619,11 @@ const Cart = () => {
             </div>
 
             <div className="flex justify-end pt-4 border-t border-gray-200 mt-6">
-              <button onClick={() => setShowAddressModal(false)} className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors" data-testid="address-modal-cancel">
+              <button
+                onClick={() => setShowAddressModal(false)}
+                className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                data-testid="address-modal-cancel"
+              >
                 Cancel
               </button>
             </div>
@@ -489,4 +635,3 @@ const Cart = () => {
 };
 
 export default Cart;
-
