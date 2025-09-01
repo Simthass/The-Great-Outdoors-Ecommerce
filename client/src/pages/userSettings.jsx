@@ -37,8 +37,7 @@ const UserSettings = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
-  const [profileImage, setProfileImage] = useState("/default-user.png");
-
+  const [profileImage, setProfileImage] = useState("/default-profile.jpg");
   const [settings, setSettings] = useState({
     notifications: {
       emailNotifications: true,
@@ -429,7 +428,7 @@ const UserSettings = () => {
 
   // Render Delete Account Modal
   const renderDeleteModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -890,7 +889,7 @@ const UserSettings = () => {
 
   // Render Address Form
   const renderAddressForm = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">
@@ -1228,7 +1227,7 @@ const UserSettings = () => {
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "/default-user.png";
+                        e.target.src = "/default-profile.jpg";
                       }}
                     />
                   </div>
