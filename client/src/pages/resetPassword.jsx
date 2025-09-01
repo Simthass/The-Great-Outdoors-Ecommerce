@@ -3,7 +3,10 @@ import React, { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 const ResetPassword = () => {
-  const [formData, setFormData] = useState({ password: "", confirmPassword: "" });
+  const [formData, setFormData] = useState({
+    password: "",
+    confirmPassword: "",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -23,28 +26,47 @@ const ResetPassword = () => {
     setError("");
     setSuccess("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+    const { password, confirmPassword } = formData;
+
+    // Basic validation
+    if (!password || !confirmPassword) {
+      setError("Both password fields are required");
       setLoading(false);
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       setError("Password must be at least 6 characters long");
       setLoading(false);
       return;
     }
 
+    // Strong password: at least 1 uppercase, 1 number, 1 special char
+    const strongPasswordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
+    if (!strongPasswordRegex.test(password)) {
+      setError(
+        "Password must contain at least one uppercase letter, one number, and one special character"
+      );
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/users/resetPassword/${resettoken}`, {
+      const response = await fetch(`/api/users/reset-password/${resettoken}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ password, confirmPassword }),
       });
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setSuccess("Password reset successfully! Redirecting to login...");
         setFormData({ password: "", confirmPassword: "" });
         setTimeout(() => navigate("/login"), 2000);
@@ -144,7 +166,10 @@ const ResetPassword = () => {
                   {loading ? "Resetting..." : "Reset Password"}
                 </button>
 
-                <div className="text-center pt-[20px]" data-testid="back-to-login">
+                <div
+                  className="text-center pt-[20px]"
+                  data-testid="back-to-login"
+                >
                   <p className="text-[15px]" style={{ color: "#4f4f4f" }}>
                     Remember your password?{" "}
                     <Link
@@ -177,4 +202,3 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
-

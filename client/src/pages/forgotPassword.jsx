@@ -14,8 +14,23 @@ const ForgotPassword = () => {
     setError("");
     setSuccess("");
 
-    if (!email) {
-      setError("Please enter your email address");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const injectionRegex =
+      /(<script.*?>.*?<\/script>|select\s+|insert\s+|update\s+|delete\s+|drop\s+|;|--)/i;
+
+    // Validate input
+    if (!email.trim()) {
+      setError("Email is required");
+      setLoading(false);
+      return;
+    }
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+    if (injectionRegex.test(email)) {
+      setError("Invalid characters detected in email");
       setLoading(false);
       return;
     }
@@ -29,24 +44,26 @@ const ForgotPassword = () => {
 
       const data = await response.json();
 
-      if (data.success) {
-        setSuccess("Password reset email sent successfully! Check your inbox.");
+      if (response.ok && data.success) {
+        setSuccess(
+          "Password reset email sent successfully! Please check your inbox."
+        );
         setEmail("");
       } else {
-        setError(data.message || "Failed to send reset email");
+        setError(
+          data.message || "Unable to send reset email. Please try again."
+        );
       }
     } catch (error) {
-      setError("Network error. Please try again.");
+      console.error("Forgot password error:", error);
+      setError("Network error. Please try again later.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="min-h-screen bg-gray-50 py-12"
-      data-testid="forgot-page"
-    >
+    <div className="min-h-screen bg-gray-50 py-12" data-testid="forgot-page">
       <div className="m-[100px] bg-[#ECEAEA] rounded-[20px] overflow-hidden shadow-xl">
         <div className="flex md:flex-row">
           {/* Left Side - Form */}
@@ -154,4 +171,3 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
-
