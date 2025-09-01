@@ -8,6 +8,7 @@ import fs from "fs";
 import { promisify } from "util";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import axios from "axios";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -59,7 +60,7 @@ const handleFileUpload = (file) => {
 // @access  Public
 router.post("/register", async (req, res) => {
   try {
-    console.log("Register request received:", req.body);
+    console.log("Register request for:", req.body.email);
 
     const {
       firstName,
@@ -76,14 +77,15 @@ router.post("/register", async (req, res) => {
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required fields",
+        message:
+          "Please provide all required fields: First name, Last name, Email, and Password.",
       });
     }
 
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 6 characters",
+        message: "Password must be at least 6 characters long.",
       });
     }
 
@@ -92,7 +94,8 @@ router.post("/register", async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists with this email",
+        message:
+          "An account with this email already exists. Please try logging in or use a different email.",
       });
     }
 
@@ -143,7 +146,8 @@ router.post("/register", async (req, res) => {
     console.error("Registration error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error during registration",
+      message:
+        "We encountered a problem creating your account. Please try again later.",
     });
   }
 });
@@ -592,4 +596,92 @@ router.put("/reset-password/:resettoken", async (req, res) => {
   }
 });
 
+// @desc    Google OAuth
+// @route   POST /api/auth/google
+// @access  Public
+// Simple Google OAuth implementation
+// Updated Google OAuth route in auth.js
+router.post("/google", async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Google token is required",
+      });
+    }
+
+    // Verify the Google token
+    const response = await axios.get(
+      `https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${token}`
+    );
+
+    const { sub, email, given_name, family_name, picture } = response.data;
+
+    // Check if user already exists
+    let user = await User.findOne({
+      $or: [{ googleId: sub }, { email }],
+    });
+
+    if (user) {
+      // Update Google ID if missing
+      if (!user.googleId) {
+        user.googleId = sub;
+      }
+
+      // Update profile image if Google has one and user doesn't have a custom one
+      // Only update if current image is default or if it's already a Google image
+      if (
+        picture &&
+        (!user.profileImage ||
+          user.profileImage === "/default-profile.jpg" ||
+          user.profileImage.includes("googleusercontent.com"))
+      ) {
+        user.profileImage = picture;
+      }
+
+      await user.save();
+    } else {
+      // Create new user
+      user = await User.create({
+        googleId: sub,
+        firstName: given_name,
+        lastName: family_name || "",
+        email: email,
+        // Set Google profile image if available, otherwise use default
+        profileImage: picture || "/default-profile.jpg",
+        password: crypto.randomBytes(20).toString("hex"),
+        isEmailVerified: true,
+      });
+    }
+
+    // Generate JWT token
+    const jwtToken = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: "Authentication successful",
+      data: {
+        token: jwtToken,
+        user: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          profileImage: user.profileImage,
+          role: user.role,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Google authentication error:", error);
+    res.status(401).json({
+      success: false,
+      message: "Invalid Google token",
+    });
+  }
+});
 export default router;

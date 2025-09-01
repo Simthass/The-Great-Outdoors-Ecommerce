@@ -1,5 +1,5 @@
 // src/pages/login.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -15,6 +15,206 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const { loading, error: reduxError } = useSelector((state) => state.auth);
   const [error, setError] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
+
+  // Load Google Identity Services script
+  useEffect(() => {
+    const loadGoogleScript = () => {
+      if (window.google) {
+        console.log("Google SDK already loaded");
+        initializeGoogleAuth();
+        return;
+      }
+
+      console.log("Loading Google SDK...");
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        console.log("Google SDK script loaded successfully");
+        // Add a small delay to ensure the SDK is fully initialized
+        setTimeout(() => {
+          initializeGoogleAuth();
+        }, 100);
+      };
+      script.onerror = (error) => {
+        console.error("Failed to load Google SDK script:", error);
+        setError(
+          "Failed to load Google authentication. Please check your internet connection."
+        );
+      };
+      document.head.appendChild(script);
+    };
+
+    loadGoogleScript();
+  }, []);
+
+  // Initialize Google OAuth
+  const initializeGoogleAuth = () => {
+    console.log("Initializing Google Auth...");
+
+    if (!window.google?.accounts?.id) {
+      console.error("Google SDK not fully available");
+      setTimeout(() => initializeGoogleAuth(), 500); // Retry after 500ms
+      return;
+    }
+
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    console.log("Using Client ID:", clientId);
+
+    if (!clientId) {
+      console.error("Google Client ID not found in environment variables");
+      setError(
+        "Google Client ID not configured. Please check your environment variables."
+      );
+      return;
+    }
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        // Additional configuration for better popup behavior
+        use_fedcm_for_prompt: false,
+        itp_support: true,
+      });
+
+      console.log("Google OAuth initialized successfully");
+      setGoogleReady(true);
+    } catch (error) {
+      console.error("Google OAuth initialization error:", error);
+      setError("Failed to initialize Google authentication: " + error.message);
+    }
+  };
+
+  // Handle Google OAuth response
+  const handleGoogleResponse = async (response) => {
+    console.log("Google response received:", response);
+    setGoogleLoading(true);
+    setError("");
+
+    try {
+      if (!response.credential) {
+        throw new Error("No credential received from Google");
+      }
+
+      console.log("Sending credential to backend...");
+
+      // Send credential token to backend
+      const backendResponse = await fetch(
+        "http://localhost:5000/api/auth/google",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token: response.credential }),
+        }
+      );
+
+      const data = await backendResponse.json();
+      console.log("Backend response:", data);
+
+      if (!backendResponse.ok) {
+        throw new Error(
+          data.message || `HTTP error! status: ${backendResponse.status}`
+        );
+      }
+
+      if (data.success) {
+        dispatch(
+          loginSuccess({ user: data.data.user, token: data.data.token })
+        );
+        navigate("/");
+        window.location.reload();
+      } else {
+        setError(data.message || "Google authentication failed");
+      }
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+      setError(error.message || "Google authentication failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // Google sign-in method using renderButton instead of prompt
+  const handleGoogleSignIn = () => {
+    console.log("Google sign-in button clicked");
+    console.log("Google ready state:", googleReady);
+    console.log("Window.google available:", !!window.google);
+
+    if (!window.google?.accounts?.id) {
+      setError("Google SDK not loaded properly");
+      return;
+    }
+
+    if (!googleReady) {
+      setError("Google OAuth not initialized");
+      return;
+    }
+
+    setGoogleLoading(true);
+    setError("");
+
+    try {
+      // Create a temporary container for the Google button
+      const tempContainer = document.createElement("div");
+      tempContainer.style.position = "absolute";
+      tempContainer.style.top = "-9999px";
+      tempContainer.style.left = "-9999px";
+      document.body.appendChild(tempContainer);
+
+      // Render Google button and trigger it programmatically
+      window.google.accounts.id.renderButton(tempContainer, {
+        theme: "outline",
+        size: "large",
+        type: "standard",
+        shape: "rectangular",
+        text: "continue_with",
+        logo_alignment: "left",
+        width: 250,
+      });
+
+      // Trigger the button click
+      setTimeout(() => {
+        const googleButton = tempContainer.querySelector('[role="button"]');
+        if (googleButton) {
+          googleButton.click();
+        } else {
+          console.log("Falling back to prompt method");
+          // Fallback to prompt method
+          window.google.accounts.id.prompt((notification) => {
+            console.log("Google prompt notification:", notification);
+            setGoogleLoading(false);
+
+            if (notification.isNotDisplayed()) {
+              setError("Please allow popups for this site or try again");
+            } else if (notification.isSkipped()) {
+              setError("Google sign-in was cancelled");
+            } else if (notification.isDismissedMoment()) {
+              setError("Google sign-in was dismissed");
+            }
+          });
+        }
+
+        // Clean up the temporary container
+        setTimeout(() => {
+          if (document.body.contains(tempContainer)) {
+            document.body.removeChild(tempContainer);
+          }
+        }, 1000);
+      }, 100);
+    } catch (error) {
+      console.error("Google sign-in trigger error:", error);
+      setError("Failed to start Google authentication: " + error.message);
+      setGoogleLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -26,8 +226,28 @@ const Login = () => {
     setError("");
     dispatch(loginStart());
 
-    if (!formData.email || !formData.password) {
-      dispatch(loginFailure("Please provide both email and password"));
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const injectionRegex =
+      /(<script.*?>.*?<\/script>|select\s+|insert\s+|update\s+|delete\s+|drop\s+|;|--)/i;
+
+    // Validation
+    if (!formData.email.trim()) {
+      dispatch(loginFailure("Email is required"));
+      return;
+    }
+    if (!emailRegex.test(formData.email)) {
+      dispatch(loginFailure("Please enter a valid email address"));
+      return;
+    }
+    if (!formData.password.trim()) {
+      dispatch(loginFailure("Password is required"));
+      return;
+    }
+    if (
+      injectionRegex.test(formData.email) ||
+      injectionRegex.test(formData.password)
+    ) {
+      dispatch(loginFailure("Invalid characters detected in input"));
       return;
     }
 
@@ -50,25 +270,39 @@ const Login = () => {
         setFormData({ email: "", password: "" });
         navigate("/");
       } else {
-        dispatch(loginFailure(data.message || "Login failed"));
+        // Show backend error message nicely
+        dispatch(
+          loginFailure(
+            data.message ||
+              "Unable to log in. Please check your email and password."
+          )
+        );
       }
     } catch (err) {
       console.error("Login error:", err);
       if (err.message?.includes("Failed to fetch")) {
         dispatch(
           loginFailure(
-            "Cannot connect to server. Please make sure the backend server is running on port 5000."
+            "Cannot connect to server. Please make sure the backend is running."
           )
         );
       } else {
-        dispatch(loginFailure("Login failed. Please try again."));
+        dispatch(loginFailure("Something went wrong. Please try again."));
       }
     }
   };
 
   const handleForgotPassword = async () => {
-    if (!formData.email) {
-      setError("Please enter your email address first");
+    setError("");
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formData.email.trim()) {
+      setError("Please enter your email address");
+      return;
+    }
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address");
       return;
     }
 
@@ -89,16 +323,14 @@ const Login = () => {
           "Password reset instructions have been sent to your email (if the account exists)."
         );
       } else {
-        setError(data.message || "Failed to send reset email");
+        setError(
+          data.message || "Could not send reset email. Please try again."
+        );
       }
     } catch (err) {
       console.error("Forgot password error:", err);
-      setError("Failed to send reset email. Please try again.");
+      setError("Failed to send reset email. Please try again later.");
     }
-  };
-
-  const handleGoogleLogin = () => {
-    alert("Google login will be implemented in the future");
   };
 
   return (
@@ -254,8 +486,8 @@ const Login = () => {
 
                   <button
                     type="button"
-                    onClick={handleGoogleLogin}
-                    disabled={loading}
+                    onClick={handleGoogleSignIn}
+                    disabled={loading || googleLoading || !googleReady}
                     data-testid="google-btn"
                     className="w-full h-[50px] text-[16px] font-semibold rounded-[8px] outline-none border-2 border-[#79a730ff] flex items-center justify-center gap-[12px] disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 relative overflow-hidden"
                     style={{
@@ -269,7 +501,13 @@ const Login = () => {
                       className="w-[25px] h-[25px] object-contain"
                       data-testid="google-icon"
                     />
-                    <span>Sign in with Google</span>
+                    <span>
+                      {googleLoading
+                        ? "Connecting..."
+                        : googleReady
+                        ? "Continue with Google"
+                        : "Loading Google..."}
+                    </span>
                   </button>
                 </div>
 
