@@ -205,18 +205,13 @@ export default function ReviewsList() {
               {/* Action buttons */}
               <div className="flex flex-wrap gap-3">
                 <button
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
-                  onClick={() => navigate("/Admin/ReviewEdit/new")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  onClick={() =>
+                    navigate("/Admin/ReportGeneration/reviewReport")
+                  }
                 >
-                  <Plus className="h-4 w-4" />
-                  Add Review
-                </button>
-                <button
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
-                      onClick={() => navigate("/Admin/ReportGeneration/reviewReport")}
-                    >
-                    <FileText className="h-4 w-4" />
-                    Review Report
+                  <FileText className="h-4 w-4" />
+                  Review Report
                 </button>
               </div>
             </div>
