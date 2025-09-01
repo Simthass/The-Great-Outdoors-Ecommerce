@@ -13,14 +13,15 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../store/slices/authSlice";
-import SearchModal from "./SearchModal"; // Import the SearchModal
+import SearchModal from "./SearchModal";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false); // Add search modal state
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [profileImage, setProfileImage] = useState("/default-profile.jpg");
   const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const profileMenuRef = useRef(null);
   const location = useLocation();
   const dispatch = useDispatch();
@@ -49,26 +50,48 @@ const Header = () => {
     "Knives & Multitools",
   ];
 
+  // Function to determine the correct image URL
+  const getProfileImageUrl = (imageUrl) => {
+    if (!imageUrl || imageUrl === "/default-profile.jpg") {
+      return "/default-profile.jpg";
+    }
+
+    // If it's a Google image (starts with https://), use it directly
+    if (imageUrl.startsWith("https://")) {
+      return imageUrl;
+    }
+
+    // If it's a local image path, construct full URL
+    if (imageUrl.startsWith("/uploads/")) {
+      return `http://localhost:5000${imageUrl}`;
+    }
+
+    // Default fallback
+    return "/default-profile.jpg";
+  };
+
   // Fetch user profile image when component mounts or user changes
   useEffect(() => {
     const fetchProfileImage = async () => {
       if (isAuthenticated && user) {
         try {
           setImageLoading(true);
+          setImageError(false);
+
           const token = localStorage.getItem("token");
-          const response = await fetch("/api/users/profile", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          const response = await fetch(
+            "http://localhost:5000/api/auth/profile",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.data.profileImage) {
-              // Construct the full image URL
-              const imageUrl = data.data.profileImage.startsWith("http")
-                ? data.data.profileImage
-                : `http://localhost:5000${data.data.profileImage}`;
+              const imageUrl = getProfileImageUrl(data.data.profileImage);
               setProfileImage(imageUrl);
             } else {
               setProfileImage("/default-profile.jpg");
@@ -79,11 +102,13 @@ const Header = () => {
         } catch (error) {
           console.error("Error fetching profile image:", error);
           setProfileImage("/default-profile.jpg");
+          setImageError(true);
         } finally {
           setImageLoading(false);
         }
       } else {
         setProfileImage("/default-profile.jpg");
+        setImageError(false);
       }
     };
 
@@ -160,7 +185,8 @@ const Header = () => {
     dispatch(logout());
     setIsProfileMenuOpen(false);
     setIsMenuOpen(false);
-    setProfileImage("/default-profile.jpg"); // Reset to default on logout
+    setProfileImage("/default-profile.jpg");
+    setImageError(false);
     navigate("/");
   };
 
@@ -177,9 +203,54 @@ const Header = () => {
   // Handle image error by falling back to initials
   const handleImageError = (e) => {
     console.log("Profile image failed to load, falling back to initials");
+    setImageError(true);
     e.target.style.display = "none";
-    e.target.nextElementSibling.style.display = "flex";
+    if (e.target.nextElementSibling) {
+      e.target.nextElementSibling.style.display = "flex";
+    }
   };
+
+  // Handle successful image load
+  const handleImageLoad = (e) => {
+    setImageError(false);
+    e.target.style.display = "block";
+    if (e.target.nextElementSibling) {
+      e.target.nextElementSibling.style.display = "none";
+    }
+  };
+
+  const ProfileAvatar = ({
+    size = "w-[50px] h-[50px]",
+    textSize = "text-sm",
+  }) => (
+    <div className={`relative ${size} rounded-full overflow-hidden`}>
+      {imageLoading ? (
+        <div className="bg-gray-300 animate-pulse rounded-full w-full h-full flex items-center justify-center">
+          <User
+            size={size.includes("12") ? 16 : 24}
+            className="text-gray-500"
+          />
+        </div>
+      ) : (
+        <>
+          <img
+            src={profileImage}
+            alt="Profile"
+            className="w-full h-full object-cover cursor-pointer rounded-full border-2 border-white"
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            style={{ display: imageError ? "none" : "block" }}
+          />
+          <div
+            className={`bg-[#8DC53E] rounded-full w-full h-full flex items-center justify-center text-white font-semibold ${textSize} cursor-pointer absolute top-0 left-0`}
+            style={{ display: imageError ? "flex" : "none" }}
+          >
+            {getUserInitials()}
+          </div>
+        </>
+      )}
+    </div>
+  );
 
   const ProfileMenu = () => (
     <div className="relative" ref={profileMenuRef}>
@@ -187,33 +258,8 @@ const Header = () => {
         onClick={toggleProfileMenu}
         className={`${linkColor} hover:text-[#8DC53E] transition-colors duration-200 p-2 rounded-full`}
       >
-        {isAuthenticated && (user?.firstName || user?.lastName) ? (
-          <div className="relative w-[50px] h-[50px] rounded-full overflow-hidden">
-            {imageLoading ? (
-              <div className="bg-gray-300 animate-pulse rounded-full w-full h-full flex items-center justify-center">
-                <User size={24} className="text-gray-500" />
-              </div>
-            ) : (
-              <>
-                <img
-                  src={profileImage}
-                  alt="Profile"
-                  className="w-full h-full object-cover cursor-pointer rounded-full border-2 border-white"
-                  onError={handleImageError}
-                  style={{ display: "block" }}
-                />
-                <div
-                  className="bg-[#8DC53E] rounded-full w-full h-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer absolute top-0 left-0"
-                  style={{ display: "none" }}
-                >
-                  {getUserInitials()}
-                </div>
-              </>
-            )}
-          </div>
-        ) : (
-          <User size={24} />
-        )}
+        {/* Updated logic here */}
+        {isAuthenticated ? <ProfileAvatar /> : <User size={24} />}
       </button>
 
       {isProfileMenuOpen && (
@@ -280,7 +326,6 @@ const Header = () => {
         </Link>
       )}
 
-      {/* Updated Search Button */}
       <button
         onClick={() => setIsSearchModalOpen(true)}
         className="bg-[#8DC53E] text-[#ffffff] flex items-center justify-center hover:bg-[#7AB32E] transition-colors duration-200 border-none relative group cursor-pointer"
@@ -293,7 +338,6 @@ const Header = () => {
         title="Search (Ctrl+K)"
       >
         <Search size={20} />
-        {/* Search tooltip */}
         <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
           Search (Ctrl+K)
         </div>
@@ -462,7 +506,7 @@ const Header = () => {
           <AuthButtons className="mr-[75px] mt-[40px]" />
         </div>
 
-        {/* Mobile Menu Overlay */}
+        {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="xl:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
             <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
@@ -479,33 +523,7 @@ const Header = () => {
               <div className="flex flex-col p-6 space-y-6">
                 {isAuthenticated && (
                   <div className="pb-4 border-b border-gray-200 flex items-center space-x-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden">
-                      {imageLoading ? (
-                        <div className="bg-gray-300 animate-pulse rounded-full w-full h-full flex items-center justify-center">
-                          <User size={16} className="text-gray-500" />
-                        </div>
-                      ) : (
-                        <>
-                          <img
-                            src={profileImage}
-                            alt="Profile"
-                            className="w-full h-full object-cover rounded-full"
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.nextElementSibling.style.display =
-                                "flex";
-                            }}
-                            style={{ display: "block" }}
-                          />
-                          <div
-                            className="bg-[#8DC53E] rounded-full w-full h-full flex items-center justify-center text-white font-semibold text-xs"
-                            style={{ display: "none" }}
-                          >
-                            {getUserInitials()}
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    <ProfileAvatar size="w-12 h-12" textSize="text-xs" />
                     <div>
                       <p className="text-gray-800 font-medium">
                         {user?.firstName} {user?.lastName}
