@@ -251,10 +251,10 @@ const Home = () => {
       {/* Hot This Week */}
       <div
         id="hot-this-week"
-        className="text-center ml-[75px] mr-[75px]"
+        className="text-center ml-[75px] mr-[75px] "
         data-testid="hot-section"
       >
-        <p className="text-[30px] font-bold mb-[50px]" data-testid="hot-title">
+        <p className="text-[30px] font-bold mb-[50px] " data-testid="hot-title">
           Hot This Week
         </p>
         <div

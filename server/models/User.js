@@ -62,6 +62,16 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Fixed: Moved googleId and isEmailVerified out of appearance object
+    googleId: {
+      type: String,
+      sparse: true,
+      unique: true,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
     notifications: {
       emailNotifications: { type: Boolean, default: true },
       pushNotifications: { type: Boolean, default: false },

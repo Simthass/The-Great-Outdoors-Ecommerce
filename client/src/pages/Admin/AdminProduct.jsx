@@ -447,19 +447,6 @@ const AdminProduct = () => {
     setDraggedItem(null);
   };
 
-  // REMOVED the conditional return statement that was causing the hook error
-  // This was the problematic code:
-  // if (loading) {
-  //   return (
-  //     <div
-  //       className="flex justify-center items-center h-64"
-  //       data-testid="home-loading"
-  //     >
-  //       <div className="text-lg">Loading products...</div>
-  //     </div>
-  //   );
-  // }
-
   return (
     <div className="flex bg-gray-50 min-h-screen">
       <Sidebar
