@@ -141,5 +141,74 @@ couponSchema.methods.incrementUsage = async function (userId) {
   await this.save();
 };
 
+// Place this code after the schema definition and pre-save hook
+couponSchema.statics.validateCoupon = async function (
+  code,
+  orderAmount,
+  userId
+) {
+  const coupon = await this.findOne({
+    code,
+    isActive: true,
+    startDate: { $lte: new Date() },
+    endDate: { $gte: new Date() },
+  });
+
+  if (!coupon) {
+    return { valid: false, message: "Coupon is invalid or expired" };
+  }
+
+  if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+    return { valid: false, message: "Coupon has reached its usage limit" };
+  }
+
+  if (coupon.minOrderAmount && orderAmount < coupon.minOrderAmount) {
+    return {
+      valid: false,
+      message: `Minimum order amount of Rs. ${coupon.minOrderAmount.toFixed(
+        2
+      )} not met`,
+    };
+  }
+
+  if (coupon.allowedUsers.length > 0 && !coupon.allowedUsers.includes(userId)) {
+    return {
+      valid: false,
+      message: "This coupon is not valid for your account",
+    };
+  }
+
+  if (
+    coupon.singleUsePerUser &&
+    coupon.usedBy.some((use) => use.user.equals(userId))
+  ) {
+    return {
+      valid: false,
+      message: "This coupon has already been used by this user",
+    };
+  }
+
+  // Calculate the discount amount
+  let discountAmount;
+  if (coupon.discountType === "percentage") {
+    let calculatedDiscount = orderAmount * (coupon.discountValue / 100);
+    discountAmount =
+      coupon.maxDiscountAmount && calculatedDiscount > coupon.maxDiscountAmount
+        ? coupon.maxDiscountAmount
+        : calculatedDiscount;
+  } else {
+    discountAmount = coupon.discountValue;
+  }
+
+  // Return a valid result with the calculated discount amount
+  return {
+    valid: true,
+    message: "Coupon applied successfully!",
+    coupon: {
+      ...coupon.toObject(),
+      discountAmount,
+    },
+  };
+};
 const Coupon = mongoose.model("Coupon", couponSchema);
 export default Coupon;
