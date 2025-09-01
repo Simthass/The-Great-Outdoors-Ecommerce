@@ -1,13 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Camera,
-  MapPin,
-  Mail,
-  Phone,
-  CheckCircle,
-  XCircle,
-  X,
-} from "lucide-react";
+import { Camera, MapPin, Mail, Phone, CheckCircle, XCircle, X } from "lucide-react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 
@@ -29,26 +21,18 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Custom notification function
   const showNotification = (type, message) => {
     setNotification({ type, message });
-    // Auto-hide after 4 seconds
-    setTimeout(() => {
-      setNotification(null);
-    }, 4000);
+    setTimeout(() => setNotification(null), 4000);
   };
 
-  // Load user data on component mount
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
         const response = await fetch("/api/users/profile", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-
         const data = await response.json();
 
         if (response.ok) {
@@ -66,8 +50,8 @@ const Profile = () => {
         } else {
           showNotification("error", data.message || "Failed to load profile");
         }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
+      } catch (err) {
+        console.error("Error fetching profile:", err);
         showNotification("error", "Error loading profile data");
       } finally {
         setLoading(false);
@@ -79,26 +63,17 @@ const Profile = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
-      showNotification(
-        "error",
-        "Please select a valid image file (JPEG, JPG, PNG, GIF)"
-      );
+      showNotification("error", "Please select a valid image file (JPEG, JPG, PNG, GIF)");
       return;
     }
-
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       showNotification("error", "Image size should be less than 5MB");
       return;
@@ -109,38 +84,23 @@ const Profile = () => {
 
     try {
       setLoading(true);
-      const response = await axios.put(
-        "/api/users/profile/image",
-        uploadFormData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await axios.put("/api/users/profile/image", uploadFormData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       const data = response.data;
-
       if (response.status === 200) {
         setProfileImage(`${data.data.profileImage}?t=${Date.now()}`);
         showNotification("success", "Profile image updated successfully");
       } else {
-        showNotification(
-          "error",
-          data.message || "Failed to update profile image"
-        );
+        showNotification("error", data.message || "Failed to update profile image");
       }
     } catch (error) {
       console.error("Error updating profile image:", error);
-      if (error.response) {
-        showNotification(
-          "error",
-          error.response.data.message || "Failed to update profile image"
-        );
-      } else {
-        showNotification("error", "Error updating profile image");
-      }
+      showNotification("error", error.response?.data?.message || "Failed to update profile image");
     } finally {
       setLoading(false);
     }
@@ -157,7 +117,6 @@ const Profile = () => {
         },
         body: JSON.stringify(formData),
       });
-
       const data = await response.json();
 
       if (response.ok) {
@@ -166,8 +125,8 @@ const Profile = () => {
       } else {
         showNotification("error", data.message || "Failed to update profile");
       }
-    } catch (error) {
-      console.error("Error updating profile:", error);
+    } catch (err) {
+      console.error("Error updating profile:", err);
       showNotification("error", "Error updating profile");
     } finally {
       setLoading(false);
@@ -176,11 +135,8 @@ const Profile = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reload original data
     fetch("/api/users/profile", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     })
       .then((res) => res.json())
       .then((data) => {
@@ -199,40 +155,24 @@ const Profile = () => {
       });
   };
 
-  // Professional Notification Component
   const Notification = ({ type, message, onClose }) => {
-    const getStyles = () => {
-      const baseStyles =
-        "flex items-center p-4 mb-4 text-sm rounded-lg border shadow-md transition-all duration-300";
-
-      switch (type) {
-        case "success":
-          return `${baseStyles} bg-green-50 text-black border-green-200`;
-        case "error":
-          return `${baseStyles} bg-red-50 text-red-800 border-red-200`;
-        default:
-          return `${baseStyles} bg-blue-50 text-blue-800 border-blue-200`;
-      }
-    };
-
-    const getIcon = () => {
-      switch (type) {
-        case "success":
-          return <CheckCircle size={18} className="mr-3 text-green-600" />;
-        case "error":
-          return <XCircle size={18} className="mr-3 text-red-600" />;
-        default:
-          return null;
-      }
-    };
+    const base = "flex items-center p-4 mb-4 text-sm rounded-lg border shadow-md transition-all duration-300";
+    const cls =
+      type === "success"
+        ? `${base} bg-green-50 text-black border-green-200`
+        : type === "error"
+        ? `${base} bg-red-50 text-red-800 border-red-200`
+        : `${base} bg-blue-50 text-blue-800 border-blue-200`;
 
     return (
-      <div className={getStyles()}>
-        {getIcon()}
-        <span className="flex-1 font-medium">{message}</span>
+      <div className={cls} data-testid="profile-notification">
+        {type === "success" && <CheckCircle size={18} className="mr-3 text-green-600" />}
+        {type === "error" && <XCircle size={18} className="mr-3 text-red-600" />}
+        <span className="flex-1 font-medium" data-testid="notification-message">{message}</span>
         <button
           onClick={onClose}
           className="ml-3 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          data-testid="notification-close"
         >
           <X size={16} />
         </button>
@@ -242,7 +182,7 @@ const Profile = () => {
 
   if (loading && !formData.firstName) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" data-testid="profile-loading">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8DC53E] mx-auto mb-4"></div>
           <p>Loading profile...</p>
@@ -252,14 +192,16 @@ const Profile = () => {
   }
 
   return (
-    <div>
-      <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
+    <div data-testid="profile-page">
+      <div
+        className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center"
+        data-testid="profile-hero"
+      >
         <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">Profile</p>
       </div>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 max-w-screen">
         <div className="max-w-7xl mx-auto">
-          {/* Professional Notification */}
           {notification && (
             <div className="mb-6">
               <Notification
@@ -270,16 +212,17 @@ const Profile = () => {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden" data-testid="profile-card">
             <div className="h-32 bg-gradient-to-r from-[#8DC53E] to-[#97D243] relative">
               <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
-                <div className="relative">
+                <div className="relative" data-testid="profile-image-wrapper">
                   <div className="w-32 h-32 rounded-full bg-white p-2 shadow-lg">
                     <div className="w-full h-full rounded-full overflow-hidden">
                       <img
                         src={`http://localhost:5000${profileImage}`}
                         alt="Profile"
                         className="w-full h-full object-cover"
+                        data-testid="profile-image"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = "/default-profile.jpg";
@@ -291,6 +234,7 @@ const Profile = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute bottom-2 right-2 bg-[#8DC53E] text-white p-2 rounded-full shadow-lg hover:bg-[#97D243] transition-all duration-200 cursor-pointer"
                     disabled={loading}
+                    data-testid="btn-upload-image"
                   >
                     <Camera size={16} />
                   </button>
@@ -301,17 +245,18 @@ const Profile = () => {
                     onChange={handleImageUpload}
                     className="hidden"
                     disabled={loading}
+                    data-testid="file-input"
                   />
                 </div>
               </div>
             </div>
 
             <div className="pt-20 pb-8 px-8">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <div className="text-center mb-8" data-testid="profile-header">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2" data-testid="profile-fullname">
                   {formData.firstName} {formData.lastName}
                 </h2>
-                <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed" data-testid="profile-bio">
                   {formData.bio || "No bio yet"}
                 </p>
               </div>
@@ -322,23 +267,20 @@ const Profile = () => {
                     onClick={() => setIsEditing(true)}
                     className="bg-[#8DC53E] text-white px-8 py-3 rounded-[5px] font-medium hover:bg-[#97D243] transition-all duration-200 shadow-lg w-48 cursor-pointer"
                     disabled={loading}
+                    data-testid="btn-edit-profile"
                   >
                     Edit Profile
                   </button>
                 ) : null}
               </div>
 
-              <div className="max-w-3xl mx-auto">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">
-                  Personal Information
-                </h3>
+              <div className="max-w-3xl mx-auto" data-testid="profile-content">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h3>
 
                 {isEditing ? (
-                  <div className="space-y-6">
+                  <div className="space-y-6" data-testid="profile-edit-form">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Bio
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
                       <textarea
                         name="bio"
                         value={formData.bio}
@@ -347,14 +289,13 @@ const Profile = () => {
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200 resize-none"
                         placeholder="Tell us about yourself..."
                         disabled={loading}
+                        data-testid="input-bio"
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          First Name
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
                         <input
                           type="text"
                           name="firstName"
@@ -363,12 +304,11 @@ const Profile = () => {
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
                           placeholder="Enter first name"
                           disabled={loading}
+                          data-testid="input-firstName"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Last Name
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
                         <input
                           type="text"
                           name="lastName"
@@ -377,27 +317,25 @@ const Profile = () => {
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
                           placeholder="Enter last name"
                           disabled={loading}
+                          data-testid="input-lastName"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                       <input
                         type="email"
                         name="email"
                         value={formData.email}
                         disabled
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 cursor-not-allowed outline-none transition-all duration-200"
+                        data-testid="input-email"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Contact Number
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
                       <input
                         type="tel"
                         name="phoneNumber"
@@ -406,13 +344,12 @@ const Profile = () => {
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
                         placeholder="Enter contact number"
                         disabled={loading}
+                        data-testid="input-phoneNumber"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
                       <input
                         type="text"
                         name="address"
@@ -421,14 +358,13 @@ const Profile = () => {
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
                         placeholder="Enter address"
                         disabled={loading}
+                        data-testid="input-address"
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          City
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
                         <input
                           type="text"
                           name="city"
@@ -437,12 +373,11 @@ const Profile = () => {
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
                           placeholder="Enter city"
                           disabled={loading}
+                          data-testid="input-city"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          State
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
                         <input
                           type="text"
                           name="state"
@@ -451,6 +386,7 @@ const Profile = () => {
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent outline-none transition-all duration-200"
                           placeholder="Enter state"
                           disabled={loading}
+                          data-testid="input-state"
                         />
                       </div>
                     </div>
@@ -460,6 +396,7 @@ const Profile = () => {
                         onClick={handleCancel}
                         className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-[5px] hover:bg-gray-50 transition-all duration-200 font-medium w-48 cursor-pointer"
                         disabled={loading}
+                        data-testid="btn-cancel"
                       >
                         Cancel
                       </button>
@@ -467,21 +404,20 @@ const Profile = () => {
                         onClick={handleSave}
                         className="px-8 py-3 bg-[#8DC53E] text-white rounded-[5px] hover:bg-[#97D243] transition-all duration-200 font-medium shadow-lg w-48 cursor-pointer"
                         disabled={loading}
+                        data-testid="btn-save"
                       >
                         {loading ? "Saving..." : "Save Changes"}
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8" data-testid="profile-view-mode">
                     <div className="space-y-6">
                       <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
                         <Mail className="text-[#8DC53E]" size={24} />
                         <div>
                           <p className="text-sm text-gray-600">Email</p>
-                          <p className="font-medium text-gray-900">
-                            {formData.email}
-                          </p>
+                          <p className="font-medium text-gray-900" data-testid="view-email">{formData.email}</p>
                         </div>
                       </div>
 
@@ -489,7 +425,7 @@ const Profile = () => {
                         <Phone className="text-[#8DC53E]" size={24} />
                         <div>
                           <p className="text-sm text-gray-600">Phone</p>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900" data-testid="view-phone">
                             {formData.phoneNumber || "Not provided"}
                           </p>
                         </div>
@@ -501,11 +437,11 @@ const Profile = () => {
                         <MapPin className="text-[#8DC53E] mt-1" size={24} />
                         <div>
                           <p className="text-sm text-gray-600">Address</p>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900" data-testid="view-address">
                             {formData.address || "Not provided"}
                           </p>
                           {(formData.city || formData.state) && (
-                            <p className="text-gray-600">
+                            <p className="text-gray-600" data-testid="view-citystate">
                               {formData.city}
                               {formData.city && formData.state ? ", " : ""}
                               {formData.state}
@@ -519,6 +455,7 @@ const Profile = () => {
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -526,3 +463,4 @@ const Profile = () => {
 };
 
 export default Profile;
+

@@ -1,0 +1,3 @@
+test_home_page.py
+    hunting sports category click doesnt work
+    addTocartTest fails
