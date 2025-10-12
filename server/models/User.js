@@ -8,24 +8,32 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      maxlength: 50,
     },
     lastName: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 50,
     },
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
-      immutable: true, // Makes email field unmodifiable
+      immutable: true,
+      validate: {
+        validator: function (email) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        },
+        message: "Please provide a valid email",
+      },
     },
     password: {
       type: String,
       required: true,
       minlength: 6,
-      select: false, // Don't include password by default in queries
+      select: false,
     },
     phoneNumber: {
       type: String,
@@ -62,7 +70,6 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    // Fixed: Moved googleId and isEmailVerified out of appearance object
     googleId: {
       type: String,
       sparse: true,
@@ -72,6 +79,28 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Security fields
+    lastLogin: {
+      type: Date,
+    },
+    loginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: {
+      type: Date,
+    },
+    securityLog: [
+      {
+        action: String,
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+        ipAddress: String,
+        userAgent: String,
+      },
+    ],
     notifications: {
       emailNotifications: { type: Boolean, default: true },
       pushNotifications: { type: Boolean, default: false },
@@ -105,17 +134,61 @@ const userSchema = mongoose.Schema(
   }
 );
 
+// Virtual for checking if account is locked
+userSchema.virtual("isLocked").get(function () {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+});
+
+// Increment login attempts
+userSchema.methods.incrementLoginAttempts = function () {
+  if (this.lockUntil && this.lockUntil < Date.now()) {
+    return this.updateOne({
+      $set: { loginAttempts: 1 },
+      $unset: { lockUntil: 1 },
+    });
+  }
+
+  const updates = { $inc: { loginAttempts: 1 } };
+
+  if (this.loginAttempts + 1 >= 5 && !this.isLocked) {
+    updates.$set = { lockUntil: Date.now() + 60 * 60 * 1000 }; // 1 hour lock
+  }
+
+  return this.updateOne(updates);
+};
+
+// Add security log entry
+userSchema.methods.addSecurityLog = function (action, ipAddress, userAgent) {
+  this.securityLog.push({
+    action,
+    ipAddress,
+    userAgent,
+  });
+
+  if (this.securityLog.length > 100) {
+    this.securityLog = this.securityLog.slice(-100);
+  }
+
+  return this.save();
+};
+
 // Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     next();
   }
-  const salt = await bcrypt.genSalt(10);
+  const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
 // Compare password method
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  if (this.isLocked) {
+    throw new Error(
+      "Account is temporarily locked due to too many failed login attempts"
+    );
+  }
+
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
@@ -130,7 +203,6 @@ userSchema.methods.getResetPasswordToken = function () {
   return resetToken;
 };
 
-// Check if model already exists before compiling
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 export default User;

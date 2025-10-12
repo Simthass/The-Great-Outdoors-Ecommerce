@@ -1,11 +1,10 @@
-// src/pages/login.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  loginStart,
-  loginSuccess,
-  loginFailure,
+  loginUser,
+  clearError,
+  loginSuccess, // Only import what's actually used
 } from "../store/slices/authSlice";
 
 const Login = () => {
@@ -13,10 +12,29 @@ const Login = () => {
   const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const { loading, error: reduxError } = useSelector((state) => state.auth);
+  const {
+    loading,
+    error: reduxError,
+    isAuthenticated,
+  } = useSelector((state) => state.auth);
   const [error, setError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Clear errors when component unmounts or form changes
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+      setError("");
+    };
+  }, [dispatch]);
 
   // Load Google Identity Services script
   useEffect(() => {
@@ -34,7 +52,6 @@ const Login = () => {
       script.defer = true;
       script.onload = () => {
         console.log("Google SDK script loaded successfully");
-        // Add a small delay to ensure the SDK is fully initialized
         setTimeout(() => {
           initializeGoogleAuth();
         }, 100);
@@ -57,7 +74,7 @@ const Login = () => {
 
     if (!window.google?.accounts?.id) {
       console.error("Google SDK not fully available");
-      setTimeout(() => initializeGoogleAuth(), 500); // Retry after 500ms
+      setTimeout(() => initializeGoogleAuth(), 500);
       return;
     }
 
@@ -78,7 +95,6 @@ const Login = () => {
         callback: handleGoogleResponse,
         auto_select: false,
         cancel_on_tap_outside: true,
-        // Additional configuration for better popup behavior
         use_fedcm_for_prompt: false,
         itp_support: true,
       });
@@ -104,7 +120,6 @@ const Login = () => {
 
       console.log("Sending credential to backend...");
 
-      // Send credential token to backend
       const backendResponse = await fetch(
         "http://localhost:5000/api/auth/google",
         {
@@ -126,11 +141,14 @@ const Login = () => {
       }
 
       if (data.success) {
+        // Use the loginSuccess action to update Redux state
         dispatch(
-          loginSuccess({ user: data.data.user, token: data.data.token })
+          loginSuccess({
+            user: data.data.user,
+            token: data.data.token,
+          })
         );
         navigate("/");
-        window.location.reload();
       } else {
         setError(data.message || "Google authentication failed");
       }
@@ -142,7 +160,7 @@ const Login = () => {
     }
   };
 
-  // Google sign-in method using renderButton instead of prompt
+  // Google sign-in method
   const handleGoogleSignIn = () => {
     console.log("Google sign-in button clicked");
     console.log("Google ready state:", googleReady);
@@ -162,14 +180,12 @@ const Login = () => {
     setError("");
 
     try {
-      // Create a temporary container for the Google button
       const tempContainer = document.createElement("div");
       tempContainer.style.position = "absolute";
       tempContainer.style.top = "-9999px";
       tempContainer.style.left = "-9999px";
       document.body.appendChild(tempContainer);
 
-      // Render Google button and trigger it programmatically
       window.google.accounts.id.renderButton(tempContainer, {
         theme: "outline",
         size: "large",
@@ -180,14 +196,12 @@ const Login = () => {
         width: 250,
       });
 
-      // Trigger the button click
       setTimeout(() => {
         const googleButton = tempContainer.querySelector('[role="button"]');
         if (googleButton) {
           googleButton.click();
         } else {
           console.log("Falling back to prompt method");
-          // Fallback to prompt method
           window.google.accounts.id.prompt((notification) => {
             console.log("Google prompt notification:", notification);
             setGoogleLoading(false);
@@ -202,7 +216,6 @@ const Login = () => {
           });
         }
 
-        // Clean up the temporary container
         setTimeout(() => {
           if (document.body.contains(tempContainer)) {
             document.body.removeChild(tempContainer);
@@ -219,12 +232,17 @@ const Login = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear errors when user starts typing
+    if (error || reduxError) {
+      setError("");
+      dispatch(clearError());
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    dispatch(loginStart());
+    dispatch(clearError());
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const injectionRegex =
@@ -232,68 +250,50 @@ const Login = () => {
 
     // Validation
     if (!formData.email.trim()) {
-      dispatch(loginFailure("Email is required"));
+      setError("Email is required");
       return;
     }
     if (!emailRegex.test(formData.email)) {
-      dispatch(loginFailure("Please enter a valid email address"));
+      setError("Please enter a valid email address");
       return;
     }
     if (!formData.password.trim()) {
-      dispatch(loginFailure("Password is required"));
+      setError("Password is required");
       return;
     }
     if (
       injectionRegex.test(formData.email) ||
       injectionRegex.test(formData.password)
     ) {
-      dispatch(loginFailure("Invalid characters detected in input"));
+      setError("Invalid characters detected in input");
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Use the async thunk for login
+      const result = await dispatch(
+        loginUser({
           email: formData.email,
           password: formData.password,
-        }),
-      });
+        })
+      );
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        dispatch(
-          loginSuccess({ user: data.data.user, token: data.data.token })
-        );
+      if (loginUser.fulfilled.match(result)) {
+        // Login successful - navigation will happen automatically due to useEffect
         setFormData({ email: "", password: "" });
-        navigate("/");
       } else {
-        // Show backend error message nicely
-        dispatch(
-          loginFailure(
-            data.message ||
-              "Unable to log in. Please check your email and password."
-          )
-        );
+        // Error is already handled by the async thunk rejection
+        console.log("Login failed:", result.error);
       }
     } catch (err) {
       console.error("Login error:", err);
-      if (err.message?.includes("Failed to fetch")) {
-        dispatch(
-          loginFailure(
-            "Cannot connect to server. Please make sure the backend is running."
-          )
-        );
-      } else {
-        dispatch(loginFailure("Something went wrong. Please try again."));
-      }
+      setError("Something went wrong. Please try again.");
     }
   };
 
   const handleForgotPassword = async () => {
     setError("");
+    dispatch(clearError());
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -333,6 +333,9 @@ const Login = () => {
     }
   };
 
+  // Combine errors from both local state and Redux
+  const displayError = error || reduxError;
+
   return (
     <div
       className="m-[100px] bg-[#ECEAEA] rounded-[20px] overflow-hidden shadow-xl"
@@ -358,7 +361,7 @@ const Login = () => {
               Sign in To Embark On An Unforgettable Outdoor Experience
             </p>
 
-            {(error || reduxError) && (
+            {displayError && (
               <div
                 className="w-full mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm"
                 data-testid="error-alert"
@@ -376,7 +379,7 @@ const Login = () => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  {error || reduxError}
+                  {displayError}
                 </div>
               </div>
             )}
@@ -423,14 +426,15 @@ const Login = () => {
                     />
                   </div>
                   <div className="text-right">
-                    <Link
-                      to="/forgotPassword"
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
                       className="text-[14px] font-semibold hover:underline transition-all duration-200 cursor-pointer"
                       style={{ color: "#4e7f00ff" }}
                       data-testid="forgot-link"
                     >
                       Forgot Password?
-                    </Link>
+                    </button>
                   </div>
                 </div>
 

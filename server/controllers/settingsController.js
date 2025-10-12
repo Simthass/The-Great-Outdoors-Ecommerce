@@ -1,6 +1,6 @@
 // controllers/settingsController.js
 import User from "../models/User.js";
-import Address from "../models/address.js";
+import Address from "../models/Address.js";
 import Order from "../models/Order.js";
 import jwt from "jsonwebtoken";
 

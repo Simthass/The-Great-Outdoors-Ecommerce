@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -17,7 +16,8 @@ import Header from "./components/header";
 import HomeHero from "./components/homeHero";
 import Footer from "./components/footer";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Sidebar from "./components/Sidebar";
+import AdminRoute from "./components/AdminRoute";
+import AuthInitializer from "./components/AuthInitializer";
 import { HelmetProvider } from "react-helmet-async";
 
 // Pages
@@ -118,7 +118,6 @@ const BackgroundSlider = ({ children }) => {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Add smooth-zoom keyframes */}
       <style>
         {`
           @keyframes smooth-zoom {
@@ -142,7 +141,7 @@ const BackgroundSlider = ({ children }) => {
         />
       ))}
 
-      <div className="absolute inset-0 bg-black/20 z-30" />
+      <div className="absolute inset-0 bg-black/50 z-30" />
       <div className="relative z-40">{children}</div>
     </div>
   );
@@ -161,7 +160,10 @@ const Layout = ({ children }) => {
           <HomeHero />
         </BackgroundSlider>
       ) : (
-        <Header />
+        <>
+          {/* Only Header on non-home pages - TopBar removed */}
+          <Header />
+        </>
       )}
       <div className="bg-white">{children}</div>
       <Footer />
@@ -173,10 +175,12 @@ const App = () => {
   return (
     <HelmetProvider>
       <Provider store={store}>
+        <AuthInitializer />
         <Router>
           <Layout>
-            <ScrollToTop /> {/* 👈 Moved inside Layout */}
+            <ScrollToTop />
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/aboutUs" element={<About />} />
@@ -189,49 +193,184 @@ const App = () => {
                 path="/resetPassword/:resettoken"
                 element={<ResetPassword />}
               />
-              <Route path="/userProfile" element={<Profile />} />
-              <Route path="/userSettings" element={<Settings />} />
+              <Route path="/product/:id" element={<ProductDetails />} />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/events/:id" element={<EventDetail />} />
+
+              {/* Protected User Routes */}
+              <Route
+                path="/userProfile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <Checkout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <Orders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders/:id"
+                element={
+                  <ProtectedRoute>
+                    <OrderDetails />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin Only Routes */}
+              <Route
+                path="/admin/*"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/AdminDashboard"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
               <Route
                 path="/Admin/OrderManagement"
-                element={<OrderManagement />}
+                element={
+                  <AdminRoute>
+                    <OrderManagement />
+                  </AdminRoute>
+                }
               />
-              <Route path="/AdminDashboard" element={<AdminDashboard />} />
-              <Route path="/Admin/Inventory" element={<Inventory />} />
-              <Route path="/Admin/User" element={<UserManagement />} />
+              <Route
+                path="/Admin/Inventory"
+                element={
+                  <AdminRoute>
+                    <Inventory />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/Admin/User"
+                element={
+                  <AdminRoute>
+                    <UserManagement />
+                  </AdminRoute>
+                }
+              />
               <Route
                 path="/Admin/ReportGeneration/userReport"
-                element={<UserReportGenerator />}
+                element={
+                  <AdminRoute>
+                    <UserReportGenerator />
+                  </AdminRoute>
+                }
               />
-              <Route path="/Admin/Employee" element={<EmployeeManagement />} />
-              <Route path="/Admin/ReviewList" element={<ReviewsList />} />
-              <Route path="/Admin/ReviewEdit/:id" element={<ReviewEdit />} />
-              <Route path="/Admin/AdminProduct" element={<AdminProduct />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/orders/:id" element={<OrderDetails />} />
-              <Route path="/product/:id" element={<ProductDetails />} />
-              <Route path="/Admin/AdminOthers" element={<OthersManagement />} />
+              <Route
+                path="/Admin/Employee"
+                element={
+                  <AdminRoute>
+                    <EmployeeManagement />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/Admin/ReviewList"
+                element={
+                  <AdminRoute>
+                    <ReviewsList />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/Admin/ReviewEdit/:id"
+                element={
+                  <AdminRoute>
+                    <ReviewEdit />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/Admin/AdminProduct"
+                element={
+                  <AdminRoute>
+                    <AdminProduct />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/Admin/AdminOthers"
+                element={
+                  <AdminRoute>
+                    <OthersManagement />
+                  </AdminRoute>
+                }
+              />
               <Route
                 path="/Admin/EventManagement"
-                element={<EventManagement />}
+                element={
+                  <AdminRoute>
+                    <EventManagement />
+                  </AdminRoute>
+                }
               />
-              <Route path="/events/:id" element={<EventDetail />} />
               <Route
                 path="/Admin/ReportGeneration/ProductReports"
-                element={<ProductReports />}
+                element={
+                  <AdminRoute>
+                    <ProductReports />
+                  </AdminRoute>
+                }
               />
               <Route
                 path="/Admin/ReportGeneration/reviewReport"
-                element={<ReviewReport />}
+                element={
+                  <AdminRoute>
+                    <ReviewReport />
+                  </AdminRoute>
+                }
               />
-
-              <Route path="/events" element={<Events />} />
               <Route
                 path="/Admin/ContentManagement"
-                element={<ContentManagement />}
+                element={
+                  <AdminRoute>
+                    <ContentManagement />
+                  </AdminRoute>
+                }
               />
-              <Route path="/Admin/AdminCoupons" element={<AdminCoupons />} />
+              <Route
+                path="/Admin/AdminCoupons"
+                element={
+                  <AdminRoute>
+                    <AdminCoupons />
+                  </AdminRoute>
+                }
+              />
+
+              {/* Catch all route */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <ToastContainer position="top-right" autoClose={3000} />

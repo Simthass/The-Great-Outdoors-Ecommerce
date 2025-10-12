@@ -127,7 +127,7 @@ const AdminProduct = () => {
   const handleEdit = (product) => {
     setEditingProduct(product);
     setFormData({
-      category: product.category._id,
+      category: product.category?._id || "",
       productName: product.productName,
       description: product.description,
       price: product.price,
@@ -398,7 +398,8 @@ const AdminProduct = () => {
       product.description.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory =
-      selectedCategory === "" || product.category._id === selectedCategory;
+      selectedCategory === "" ||
+      (product.category && product.category._id === selectedCategory);
 
     return matchesSearch && matchesCategory;
   });
@@ -671,9 +672,15 @@ const AdminProduct = () => {
                           </svg>
                         </div>
                         <div className="absolute top-2 left-2 flex flex-col gap-1">
-                          <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
-                            {product.category.categoryName}
-                          </span>
+                          {product.category ? (
+                            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                              {product.category.categoryName}
+                            </span>
+                          ) : (
+                            <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">
+                              No Category
+                            </span>
+                          )}
                           {product.isHotThisWeek && (
                             <span className="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
                               Hot This Week

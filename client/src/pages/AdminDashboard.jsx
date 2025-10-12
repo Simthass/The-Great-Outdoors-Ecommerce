@@ -20,7 +20,7 @@ const AdminDashboard = () => {
         {/* User Management */}
         <Link to="/Admin/User" data-testid="link-user-management">
           <div
-            className="relative rounded-xl shadow-lg h-44 bg-cover bg-center hover:scale-105 transition-transform duration-300"
+            className="relative rounded-xl shadow-lg h-44 bg-cover bg-center transform hover:scale-105 transition-transform duration-300 ease-in-out will-change-transform"
             style={{ backgroundImage: "url('/User-Mana.png')" }}
           >
             <div className="absolute inset-0 bg-black/50 bg-opacity-40 flex items-center justify-center rounded-xl">

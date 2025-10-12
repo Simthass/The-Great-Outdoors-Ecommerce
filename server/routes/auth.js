@@ -684,4 +684,31 @@ router.post("/google", async (req, res) => {
     });
   }
 });
+
+// Add to your existing auth routes
+router.get("/verify", protect, (req, res) => {
+  try {
+    // Just return the user info - don't check roles here
+    res.json({
+      success: true,
+      data: {
+        user: {
+          _id: req.user._id,
+          firstName: req.user.firstName,
+          lastName: req.user.lastName,
+          email: req.user.email,
+          role: req.user.role,
+          isActive: req.user.isActive,
+          profileImage: req.user.profileImage,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Verify endpoint error:", error);
+    res.status(401).json({
+      success: false,
+      message: "Token verification failed",
+    });
+  }
+});
 export default router;
