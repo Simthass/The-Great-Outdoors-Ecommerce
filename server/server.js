@@ -33,6 +33,7 @@ import orderReportRoutes from "./routes/reports.js";
 import { syncAllInventoryStatus } from "./middleware/inventorySync.js";
 import reviewRoutes from "./routes/review.js";
 import couponRoutes from "./routes/coupons.js";
+import adminDashboardRoutes from "./routes/adminDashboard.js";
 
 // Import the fixed verifyToken function
 import { verifyToken } from "./middleware/auth.js";
@@ -283,6 +284,7 @@ if (dbConnected) {
   app.use("/api/product-reviews", productReviewRoutes);
 
   // Admin routes (require admin role)
+  app.use("/api/admin", adminDashboardRoutes);
   app.use("/api/admin/orders", adminOrderRoutes);
   app.use("/api/admin/reviews", adminReviewsRoutes);
   app.use("/api/employee", employeeRoutes);
