@@ -154,9 +154,7 @@ const Header = () => {
     const handleKeyDown = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === "k") {
         event.preventDefault();
-        window.innerWidth >= 768
-          ? setIsSearchModalOpen(true)
-          : setIsMobileSearchOpen(true);
+        setIsSearchModalOpen(true);
       }
       if (event.key === "Escape") {
         setIsSearchModalOpen(false);
@@ -183,10 +181,15 @@ const Header = () => {
   const handleMobileSearchSubmit = (e) => {
     e.preventDefault();
     if (mobileSearchQuery.trim()) {
-      navigate(`/shop?search=${encodeURIComponent(mobileSearchQuery.trim())}`);
+      navigate(`/search?q=${encodeURIComponent(mobileSearchQuery.trim())}`);
       setIsMobileSearchOpen(false);
       setMobileSearchQuery("");
     }
+  };
+
+  // Handle mobile search button click - open SearchModal instead
+  const handleMobileSearchClick = () => {
+    setIsSearchModalOpen(true);
   };
 
   const getUserInitials = () => {
@@ -484,7 +487,7 @@ const Header = () => {
               {/* Mobile Actions */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                  onClick={handleMobileSearchClick}
                   className={`p-2 rounded-xl transition-all duration-300 ${
                     isHome && !isScrolled
                       ? "text-white bg-white/10 backdrop-blur-sm"
@@ -523,26 +526,6 @@ const Header = () => {
                 </button>
               </div>
             </div>
-
-            {/* Mobile Search */}
-            {isMobileSearchOpen && (
-              <div ref={mobileSearchRef} className="mt-3 animate-fadeIn">
-                <form onSubmit={handleMobileSearchSubmit} className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search adventure gear..."
-                    value={mobileSearchQuery}
-                    onChange={(e) => setMobileSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white/95 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#8DC53E] focus:border-transparent text-sm"
-                    autoFocus
-                  />
-                  <Search
-                    size={18}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  />
-                </form>
-              </div>
-            )}
           </div>
         </div>
       </header>
@@ -556,7 +539,7 @@ const Header = () => {
           />
           <div className="absolute top-0 right-0 h-full w-80 bg-white/95 backdrop-blur-xl shadow-2xl transform transition-transform duration-300 ease-out overflow-y-auto">
             {/* Mobile menu content */}
-            <div className="sticky top-0 bg-gradient-to-r from-[#8DC53E] to-[#7db434] p-6">
+            <div className="sticky top-0 bg-gradient-to-r from-[#8DC53E] to-[#7db434] p-6 z-10">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">Menu</h2>
                 <button
@@ -625,11 +608,41 @@ const Header = () => {
                   <span className="font-medium">{item.label}</span>
                 </Link>
               ))}
+
+              {/* User Menu Items for Mobile */}
+              {isAuthenticated && (
+                <>
+                  <hr className="my-2 border-gray-200" />
+                  {[
+                    { icon: User, label: "Profile", path: "/userProfile" },
+                    { icon: Package, label: "My Orders", path: "/orders" },
+                    { icon: Settings, label: "Settings", path: "/settings" },
+                  ].map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={toggleMenu}
+                      className="flex items-center gap-4 px-4 py-3 rounded-xl text-gray-700 hover:bg-[#8DC53E]/10 hover:text-[#8DC53E] transition-all duration-200 group"
+                    >
+                      <item.icon size={20} className="text-[#8DC53E]" />
+                      <span className="font-medium">{item.label}</span>
+                    </Link>
+                  ))}
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-4 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-all duration-200 w-full"
+                  >
+                    <LogOut size={20} className="text-red-600" />
+                    <span className="font-medium">Sign Out</span>
+                  </button>
+                </>
+              )}
             </nav>
           </div>
         </div>
       )}
 
+      {/* SearchModal - works for both desktop and mobile */}
       <SearchModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
