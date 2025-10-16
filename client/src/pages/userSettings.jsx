@@ -1502,10 +1502,22 @@ const UserSettings = () => {
   if (loading) {
     return (
       <div data-testid="settings-loading">
-        <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-            Settings
-          </p>
+        <div
+          className="w-full h-48 md:h-64 bg-gradient-to-r from-gray-900 to-gray-700 flex items-center justify-center relative overflow-hidden"
+          data-testid="shop-hero"
+        >
+          <div className="absolute inset-0 bg-[url(/page-name.png)] bg-cover bg-center opacity-30"></div>
+          <div className="relative z-10 text-center px-4">
+            <h1
+              className="text-4xl md:text-6xl font-bold text-white mb-2"
+              data-testid="shop-title"
+            >
+              Settings
+            </h1>
+            <p className="text-gray-200 text-sm md:text-base">
+              Customize Your all Settings Here
+            </p>
+          </div>
         </div>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
@@ -1524,10 +1536,22 @@ const UserSettings = () => {
   if (errors.auth) {
     return (
       <div data-testid="auth-error">
-        <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-            Settings
-          </p>
+        <div
+          className="w-full h-48 md:h-64 bg-gradient-to-r from-gray-900 to-gray-700 flex items-center justify-center relative overflow-hidden"
+          data-testid="shop-hero"
+        >
+          <div className="absolute inset-0 bg-[url(/page-name.png)] bg-cover bg-center opacity-30"></div>
+          <div className="relative z-10 text-center px-4">
+            <h1
+              className="text-4xl md:text-6xl font-bold text-white mb-2"
+              data-testid="shop-title"
+            >
+              Settings
+            </h1>
+            <p className="text-gray-200 text-sm md:text-base">
+              Customize Your all Settings Here
+            </p>
+          </div>
         </div>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
@@ -1551,8 +1575,22 @@ const UserSettings = () => {
 
   return (
     <div data-testid="user-settings">
-      <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-        <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">Settings</p>
+      <div
+        className="w-full h-48 md:h-64 bg-gradient-to-r from-gray-900 to-gray-700 flex items-center justify-center relative overflow-hidden"
+        data-testid="shop-hero"
+      >
+        <div className="absolute inset-0 bg-[url(/page-name.png)] bg-cover bg-center opacity-30"></div>
+        <div className="relative z-10 text-center px-4">
+          <h1
+            className="text-4xl md:text-6xl font-bold text-white mb-2"
+            data-testid="shop-title"
+          >
+            Settings
+          </h1>
+          <p className="text-gray-200 text-sm md:text-base">
+            Customize Your all Settings Here
+          </p>
+        </div>
       </div>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">

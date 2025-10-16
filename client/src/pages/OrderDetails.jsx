@@ -176,13 +176,21 @@ const OrderDetails = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Section */}
-      <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat">
-        <div className="h-full bg-black/40 flex items-center">
-          <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-            <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-              Order Details
-            </p>
-          </div>
+      <div
+        className="w-full h-48 md:h-64 bg-gradient-to-r from-gray-900 to-gray-700 flex items-center justify-center relative overflow-hidden"
+        data-testid="shop-hero"
+      >
+        <div className="absolute inset-0 bg-[url(/page-name.png)] bg-cover bg-center opacity-30"></div>
+        <div className="relative z-10 text-center px-4">
+          <h1
+            className="text-4xl md:text-6xl font-bold text-white mb-2"
+            data-testid="shop-title"
+          >
+            Order Details
+          </h1>
+          <p className="text-gray-200 text-sm md:text-base">
+            View Your Complete Order Details
+          </p>
         </div>
       </div>
 

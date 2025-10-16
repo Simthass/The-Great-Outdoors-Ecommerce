@@ -1,5 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Camera, MapPin, Mail, Phone, CheckCircle, XCircle, X } from "lucide-react";
+import {
+  Camera,
+  MapPin,
+  Mail,
+  Phone,
+  CheckCircle,
+  XCircle,
+  X,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 
@@ -71,7 +79,10 @@ const Profile = () => {
     if (!file) return;
 
     if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
-      showNotification("error", "Please select a valid image file (JPEG, JPG, PNG, GIF)");
+      showNotification(
+        "error",
+        "Please select a valid image file (JPEG, JPG, PNG, GIF)"
+      );
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -84,23 +95,33 @@ const Profile = () => {
 
     try {
       setLoading(true);
-      const response = await axios.put("/api/users/profile/image", uploadFormData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await axios.put(
+        "/api/users/profile/image",
+        uploadFormData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       const data = response.data;
       if (response.status === 200) {
         setProfileImage(`${data.data.profileImage}?t=${Date.now()}`);
         showNotification("success", "Profile image updated successfully");
       } else {
-        showNotification("error", data.message || "Failed to update profile image");
+        showNotification(
+          "error",
+          data.message || "Failed to update profile image"
+        );
       }
     } catch (error) {
       console.error("Error updating profile image:", error);
-      showNotification("error", error.response?.data?.message || "Failed to update profile image");
+      showNotification(
+        "error",
+        error.response?.data?.message || "Failed to update profile image"
+      );
     } finally {
       setLoading(false);
     }
@@ -156,7 +177,8 @@ const Profile = () => {
   };
 
   const Notification = ({ type, message, onClose }) => {
-    const base = "flex items-center p-4 mb-4 text-sm rounded-lg border shadow-md transition-all duration-300";
+    const base =
+      "flex items-center p-4 mb-4 text-sm rounded-lg border shadow-md transition-all duration-300";
     const cls =
       type === "success"
         ? `${base} bg-green-50 text-black border-green-200`
@@ -166,9 +188,15 @@ const Profile = () => {
 
     return (
       <div className={cls} data-testid="profile-notification">
-        {type === "success" && <CheckCircle size={18} className="mr-3 text-green-600" />}
-        {type === "error" && <XCircle size={18} className="mr-3 text-red-600" />}
-        <span className="flex-1 font-medium" data-testid="notification-message">{message}</span>
+        {type === "success" && (
+          <CheckCircle size={18} className="mr-3 text-green-600" />
+        )}
+        {type === "error" && (
+          <XCircle size={18} className="mr-3 text-red-600" />
+        )}
+        <span className="flex-1 font-medium" data-testid="notification-message">
+          {message}
+        </span>
         <button
           onClick={onClose}
           className="ml-3 text-gray-400 hover:text-gray-600 transition-colors duration-200"
@@ -182,7 +210,10 @@ const Profile = () => {
 
   if (loading && !formData.firstName) {
     return (
-      <div className="min-h-screen flex items-center justify-center" data-testid="profile-loading">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        data-testid="profile-loading"
+      >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8DC53E] mx-auto mb-4"></div>
           <p>Loading profile...</p>
@@ -194,10 +225,21 @@ const Profile = () => {
   return (
     <div data-testid="profile-page">
       <div
-        className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center"
-        data-testid="profile-hero"
+        className="w-full h-48 md:h-64 bg-gradient-to-r from-gray-900 to-gray-700 flex items-center justify-center relative overflow-hidden"
+        data-testid="shop-hero"
       >
-        <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">Profile</p>
+        <div className="absolute inset-0 bg-[url(/page-name.png)] bg-cover bg-center opacity-30"></div>
+        <div className="relative z-10 text-center px-4">
+          <h1
+            className="text-4xl md:text-6xl font-bold text-white mb-2"
+            data-testid="shop-title"
+          >
+            Profile
+          </h1>
+          <p className="text-gray-200 text-sm md:text-base">
+            Craft Your profile Here
+          </p>
+        </div>
       </div>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 max-w-screen">
@@ -212,7 +254,10 @@ const Profile = () => {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden" data-testid="profile-card">
+          <div
+            className="bg-white rounded-2xl shadow-xl overflow-hidden"
+            data-testid="profile-card"
+          >
             <div className="h-32 bg-gradient-to-r from-[#8DC53E] to-[#97D243] relative">
               <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
                 <div className="relative" data-testid="profile-image-wrapper">
@@ -253,10 +298,16 @@ const Profile = () => {
 
             <div className="pt-20 pb-8 px-8">
               <div className="text-center mb-8" data-testid="profile-header">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2" data-testid="profile-fullname">
+                <h2
+                  className="text-2xl font-bold text-gray-900 mb-2"
+                  data-testid="profile-fullname"
+                >
                   {formData.firstName} {formData.lastName}
                 </h2>
-                <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed" data-testid="profile-bio">
+                <p
+                  className="text-gray-600 max-w-2xl mx-auto leading-relaxed"
+                  data-testid="profile-bio"
+                >
                   {formData.bio || "No bio yet"}
                 </p>
               </div>
@@ -275,12 +326,16 @@ const Profile = () => {
               </div>
 
               <div className="max-w-3xl mx-auto" data-testid="profile-content">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-6">
+                  Personal Information
+                </h3>
 
                 {isEditing ? (
                   <div className="space-y-6" data-testid="profile-edit-form">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Bio
+                      </label>
                       <textarea
                         name="bio"
                         value={formData.bio}
@@ -295,7 +350,9 @@ const Profile = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          First Name
+                        </label>
                         <input
                           type="text"
                           name="firstName"
@@ -308,7 +365,9 @@ const Profile = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Last Name
+                        </label>
                         <input
                           type="text"
                           name="lastName"
@@ -323,7 +382,9 @@ const Profile = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address
+                      </label>
                       <input
                         type="email"
                         name="email"
@@ -335,7 +396,9 @@ const Profile = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Contact Number
+                      </label>
                       <input
                         type="tel"
                         name="phoneNumber"
@@ -349,7 +412,9 @@ const Profile = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Address
+                      </label>
                       <input
                         type="text"
                         name="address"
@@ -364,7 +429,9 @@ const Profile = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          City
+                        </label>
                         <input
                           type="text"
                           name="city"
@@ -377,7 +444,9 @@ const Profile = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          State
+                        </label>
                         <input
                           type="text"
                           name="state"
@@ -411,13 +480,21 @@ const Profile = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8" data-testid="profile-view-mode">
+                  <div
+                    className="grid grid-cols-1 md:grid-cols-2 gap-8"
+                    data-testid="profile-view-mode"
+                  >
                     <div className="space-y-6">
                       <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
                         <Mail className="text-[#8DC53E]" size={24} />
                         <div>
                           <p className="text-sm text-gray-600">Email</p>
-                          <p className="font-medium text-gray-900" data-testid="view-email">{formData.email}</p>
+                          <p
+                            className="font-medium text-gray-900"
+                            data-testid="view-email"
+                          >
+                            {formData.email}
+                          </p>
                         </div>
                       </div>
 
@@ -425,7 +502,10 @@ const Profile = () => {
                         <Phone className="text-[#8DC53E]" size={24} />
                         <div>
                           <p className="text-sm text-gray-600">Phone</p>
-                          <p className="font-medium text-gray-900" data-testid="view-phone">
+                          <p
+                            className="font-medium text-gray-900"
+                            data-testid="view-phone"
+                          >
                             {formData.phoneNumber || "Not provided"}
                           </p>
                         </div>
@@ -437,11 +517,17 @@ const Profile = () => {
                         <MapPin className="text-[#8DC53E] mt-1" size={24} />
                         <div>
                           <p className="text-sm text-gray-600">Address</p>
-                          <p className="font-medium text-gray-900" data-testid="view-address">
+                          <p
+                            className="font-medium text-gray-900"
+                            data-testid="view-address"
+                          >
                             {formData.address || "Not provided"}
                           </p>
                           {(formData.city || formData.state) && (
-                            <p className="text-gray-600" data-testid="view-citystate">
+                            <p
+                              className="text-gray-600"
+                              data-testid="view-citystate"
+                            >
                               {formData.city}
                               {formData.city && formData.state ? ", " : ""}
                               {formData.state}
@@ -455,7 +541,6 @@ const Profile = () => {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -463,4 +548,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
