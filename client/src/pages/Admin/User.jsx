@@ -183,26 +183,13 @@ const UserManagement = () => {
   if (loading && users.length === 0) {
     return (
       <div data-testid="admin-user-management-loading">
-        {/* Header */}
-        <div
-          className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center"
-          data-testid="page-hero"
-        >
-          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-            Admin - User Management
-          </p>
-        </div>
-
-        <div className="flex rounded-lg mt-6">
-          {/* Sidebar Loading */}
-          <aside className="bg-green-600 text-white h-screen sticky top-0 w-20 rounded-lg">
-            <div className="animate-pulse p-4">
-              <div className="w-12 h-12 bg-white rounded-lg mx-auto mb-8"></div>
-              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                <div key={i} className="h-12 bg-green-500 rounded-lg mb-3"></div>
-              ))}
-            </div>
-          </aside>
+        <div className="flex bg-gray-50 min-h-screen mt-6 rounded-2xl">
+          {/* Sidebar - Use the actual Sidebar component */}
+          <Sidebar
+            currentPage={currentSidebarPage}
+            onPageChange={handleNavClick}
+            userProfile={userProfile}
+          />
 
           {/* Main Content Loading */}
           <div className="flex-1 p-6">
@@ -227,16 +214,6 @@ const UserManagement = () => {
 
   return (
     <div data-testid="admin-user-management">
-      {/* Header */}
-      <div
-        className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center"
-        data-testid="page-hero"
-      >
-        <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-          Admin - User Management
-        </p>
-      </div>
-
       <div className="flex bg-gray-50 min-h-screen mt-6 rounded-2xl">
         {/* Sidebar */}
         <Sidebar
@@ -607,5 +584,3 @@ const UserManagement = () => {
 };
 
 export default UserManagement;
-
-

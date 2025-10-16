@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../../components/Sidebar";
-import InventoryLink from "../../components/InventoryLink";
 import { FileText } from "lucide-react";
 
 const AdminProduct = () => {
@@ -142,14 +141,14 @@ const AdminProduct = () => {
       inventory: product.inventory?._id || "",
     });
 
-    // Set existing images and previews
+    // Set existing images and previews - FIXED: Only set existing images, don't duplicate to previews
     if (product.images && product.images.length > 0) {
       setExistingImages(product.images);
-      setImagePreviews(product.images.map((img) => `${BASE_URL}${img}`));
+      setImagePreviews([]); // Clear new image previews when editing
     } else if (product.imageUrl) {
       // For backward compatibility with single image
       setExistingImages([product.imageUrl]);
-      setImagePreviews([`${BASE_URL}${product.imageUrl}`]);
+      setImagePreviews([]); // Clear new image previews when editing
     } else {
       setExistingImages([]);
       setImagePreviews([]);
@@ -456,8 +455,8 @@ const AdminProduct = () => {
         userProfile={userProfile}
       />
 
-      <div className="flex-1 bg-gray-50 min-h-screen transition-all duration-300 ease-in-out">
-        <div className="px-10 py-6 min-h-screen">
+      <div className="flex-1 min-w-0">
+        <div className="p-4 lg:p-6 min-h-screen">
           {/* Show loading state */}
           {loading && (
             <div
@@ -471,22 +470,22 @@ const AdminProduct = () => {
           {/* Header */}
           {!loading && (
             <>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                     Product Management
                   </h1>
-                  <p className="text-gray-600 mt-1">
+                  <p className="text-gray-600 text-sm lg:text-base">
                     Manage your outdoor sports equipment inventory
                   </p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                   <button
                     onClick={refreshInventoryStatus}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl flex items-center"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl flex items-center justify-center text-sm"
                   >
                     <svg
-                      className="w-5 h-5 mr-2"
+                      className="w-4 h-4 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -505,7 +504,7 @@ const AdminProduct = () => {
                       resetForm();
                       setIsModalOpen(true);
                     }}
-                    className="bg-[#8DC53E] hover:bg-[#76A337] text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl"
+                    className="bg-[#8DC53E] hover:bg-[#76A337] text-white px-4 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl text-sm"
                   >
                     + Add New Product
                   </button>
@@ -513,19 +512,20 @@ const AdminProduct = () => {
                     onClick={() =>
                       navigate("../Admin/ReportGeneration/ProductReports")
                     }
-                    className="bg-[#8DC53E] hover:bg-[#76A337] text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl flex items-center justify-center gap-1 cursor-pointer"
+                    className="bg-[#8DC53E] hover:bg-[#76A337] text-white px-4 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl flex items-center justify-center gap-1 cursor-pointer text-sm"
                   >
                     <FileText className="h-4 w-4" />
-                    Generate Report
+                    <span className="hidden sm:inline">Generate Report</span>
+                    <span className="sm:hidden">Report</span>
                   </button>
                 </div>
               </div>
 
               {/* Success/Error Messages */}
               {success && (
-                <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center">
+                <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center text-sm">
                   <svg
-                    className="w-5 h-5 mr-2"
+                    className="w-4 h-4 mr-2 flex-shrink-0"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -539,9 +539,9 @@ const AdminProduct = () => {
                 </div>
               )}
               {error && !isModalOpen && (
-                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
+                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center text-sm">
                   <svg
-                    className="w-5 h-5 mr-2"
+                    className="w-4 h-4 mr-2 flex-shrink-0"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -556,11 +556,11 @@ const AdminProduct = () => {
               )}
 
               {/* Filters */}
-              <div className="mb-6 bg-white p-6 rounded-lg shadow-sm border">
+              <div className="mb-6 bg-white p-4 lg:p-6 rounded-lg shadow-sm border">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   Search & Filter
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Search Products
@@ -570,7 +570,7 @@ const AdminProduct = () => {
                       placeholder="Search by name, brand, or description..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -580,7 +580,7 @@ const AdminProduct = () => {
                     <select
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
                       <option value="">All Categories</option>
                       {categories.map((cat) => (
@@ -594,8 +594,8 @@ const AdminProduct = () => {
               </div>
 
               {/* Products Count */}
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-gray-600">
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <p className="text-gray-600 text-sm">
                   Showing {filteredProducts.length} of {products.length}{" "}
                   products
                 </p>
@@ -614,17 +614,17 @@ const AdminProduct = () => {
 
               {/* Products Grid */}
               {filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
                   {filteredProducts.map((product) => (
                     <div
                       key={product._id}
                       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 border"
                     >
-                      <div className="h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
+                      <div className="h-40 sm:h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
                         {/* Out of stock overlay */}
                         {product.stockStatus === "out_of_stock" && (
                           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10">
-                            <span className="bg-red-600 text-white px-3 py-2 rounded-md font-bold">
+                            <span className="bg-red-600 text-white px-2 py-1 text-xs sm:text-sm rounded-md font-bold">
                               Out of Stock
                             </span>
                           </div>
@@ -633,7 +633,7 @@ const AdminProduct = () => {
                         {/* Low stock overlay */}
                         {product.stockStatus === "low_stock" && (
                           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-10">
-                            <span className="bg-amber-500 text-white px-3 py-2 rounded-md font-bold">
+                            <span className="bg-amber-500 text-white px-2 py-1 text-xs sm:text-sm rounded-md font-bold">
                               Low Stock
                             </span>
                           </div>
@@ -658,7 +658,7 @@ const AdminProduct = () => {
                           }}
                         >
                           <svg
-                            className="w-12 h-12"
+                            className="w-8 h-8 sm:w-12 sm:h-12"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -694,21 +694,21 @@ const AdminProduct = () => {
                         </div>
                       </div>
 
-                      <div className="p-4">
-                        <h3 className="font-semibold text-lg mb-2 text-gray-900 line-clamp-2 hover:text-green-600 transition-colors">
+                      <div className="p-3 sm:p-4">
+                        <h3 className="font-semibold text-base sm:text-lg mb-2 text-gray-900 line-clamp-2 hover:text-green-600 transition-colors min-h-[3rem]">
                           {product.productName}
                         </h3>
 
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                        <p className="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-2 min-h-[2.5rem]">
                           {product.description}
                         </p>
 
-                        <div className="mb-4">
-                          <p className="text-green-600 font-bold text-xl">
+                        <div className="mb-3 sm:mb-4">
+                          <p className="text-green-600 font-bold text-lg sm:text-xl">
                             Rs. {parseFloat(product.price).toLocaleString()}
                           </p>
                           <div className="text-xs text-gray-500 space-y-1 mt-2">
-                            <p>
+                            <p className="truncate">
                               <span className="font-medium">Brand:</span>{" "}
                               {product.brand}
                             </p>
@@ -719,13 +719,13 @@ const AdminProduct = () => {
                               </p>
                             )}
                             {product.color && (
-                              <p>
+                              <p className="truncate">
                                 <span className="font-medium">Color:</span>{" "}
                                 {product.color}
                               </p>
                             )}
                             {product.size && (
-                              <p>
+                              <p className="truncate">
                                 <span className="font-medium">Size:</span>{" "}
                                 {product.size}
                               </p>
@@ -736,10 +736,10 @@ const AdminProduct = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEdit(product)}
-                            className="flex-1 hover: bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                            className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-2 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center justify-center"
                           >
                             <svg
-                              className="w-4 h-4 mr-1"
+                              className="w-3 h-3 sm:w-4 sm:h-4 mr-1"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -755,10 +755,10 @@ const AdminProduct = () => {
                           </button>
                           <button
                             onClick={() => handleDelete(product._id)}
-                            className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                            className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-2 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center justify-center"
                           >
                             <svg
-                              className="w-4 h-4 mr-1"
+                              className="w-3 h-3 sm:w-4 sm:h-4 mr-1"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -778,9 +778,9 @@ const AdminProduct = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-16">
+                <div className="text-center py-8 sm:py-16">
                   <svg
-                    className="mx-auto h-24 w-24 text-gray-400"
+                    className="mx-auto h-16 w-16 sm:h-24 sm:w-24 text-gray-400"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -792,12 +792,12 @@ const AdminProduct = () => {
                       d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 009.586 13H7"
                     />
                   </svg>
-                  <h3 className="mt-4 text-lg font-medium text-gray-900">
+                  <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900">
                     {searchTerm || selectedCategory
                       ? "No products match your filters"
                       : "No products found"}
                   </h3>
-                  <p className="mt-2 text-gray-500">
+                  <p className="mt-2 text-gray-500 text-sm sm:text-base max-w-sm mx-auto">
                     {searchTerm || selectedCategory
                       ? "Try adjusting your search or filter criteria."
                       : "Get started by adding your first product to the inventory."}
@@ -808,7 +808,7 @@ const AdminProduct = () => {
                         resetForm();
                         setIsModalOpen(true);
                       }}
-                      className="mt-6 bg-[#8DC53E] hover:bg-[#76A337] text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl"
+                      className="mt-4 sm:mt-6 bg-[#8DC53E] hover:bg-[#76A337] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl text-sm sm:text-base"
                     >
                       Add Your First Product
                     </button>
@@ -818,11 +818,11 @@ const AdminProduct = () => {
 
               {/* Modal */}
               {isModalOpen && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                    <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+                  <div className="bg-white rounded-lg max-w-3xl w-full max-h-[95vh] overflow-y-auto">
+                    <div className="sticky top-0 bg-white px-4 sm:px-6 py-4 border-b border-gray-200">
                       <div className="flex justify-between items-center">
-                        <h2 className="text-2xl font-bold text-gray-900">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                           {editingProduct ? "Edit Product" : "Add New Product"}
                         </h2>
                         <button
@@ -830,18 +830,18 @@ const AdminProduct = () => {
                             setIsModalOpen(false);
                             resetForm();
                           }}
-                          className="text-gray-400 hover:text-gray-600 text-3xl font-light"
+                          className="text-gray-400 hover:text-gray-600 text-2xl sm:text-3xl font-light"
                         >
                           ×
                         </button>
                       </div>
                     </div>
 
-                    <div className="p-6">
+                    <div className="p-4 sm:p-6">
                       {error && (
-                        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
+                        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center text-sm">
                           <svg
-                            className="w-5 h-5 mr-2"
+                            className="w-4 h-4 mr-2 flex-shrink-0"
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >
@@ -857,11 +857,11 @@ const AdminProduct = () => {
 
                       <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Basic Information */}
-                        <div className="bg-gray-50 p-6 rounded-lg">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                        <div className="bg-gray-50 p-4 sm:p-6 rounded-lg">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-6">
                             Basic Information
                           </h3>
-                          <div className="mb-6">
+                          <div className="mb-4 sm:mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Link to Inventory Item
                             </label>
@@ -869,7 +869,7 @@ const AdminProduct = () => {
                               name="inventory"
                               value={formData.inventory || ""}
                               onChange={handleInputChange}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             >
                               <option value="">
                                 Select Inventory Item (Optional)
@@ -903,10 +903,10 @@ const AdminProduct = () => {
                           </div>
 
                           {/* Product Flags Section */}
-                          <div className="bg-white p-4 rounded-lg border border-gray-200 mb-6">
-                            <h4 className="text-md font-medium text-gray-800 mb-4 flex items-center">
+                          <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 mb-4 sm:mb-6">
+                            <h4 className="text-md font-medium text-gray-800 mb-3 sm:mb-4 flex items-center">
                               <svg
-                                className="w-5 h-5 mr-2 text-amber-500"
+                                className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-amber-500"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -918,7 +918,7 @@ const AdminProduct = () => {
                               </svg>
                               Product Highlights
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                               {/* Featured Product */}
                               <div className="relative">
                                 <label className="flex items-center cursor-pointer group">
@@ -932,7 +932,7 @@ const AdminProduct = () => {
                                       className="sr-only"
                                     />
                                     <div
-                                      className={`w-6 h-6 rounded-md border-2 transition-all duration-200 ${
+                                      className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md border-2 transition-all duration-200 ${
                                         formData.isFeatured
                                           ? "bg-gradient-to-r from-purple-500 to-pink-500 border-purple-500"
                                           : "border-gray-300 group-hover:border-purple-400"
@@ -940,7 +940,7 @@ const AdminProduct = () => {
                                     >
                                       {formData.isFeatured && (
                                         <svg
-                                          className="w-4 h-4 text-white absolute top-0.5 left-0.5"
+                                          className="w-3 h-3 sm:w-4 sm:h-4 text-white absolute top-0.5 left-0.5 sm:top-0.5 sm:left-0.5"
                                           fill="currentColor"
                                           viewBox="0 0 20 20"
                                         >
@@ -953,10 +953,10 @@ const AdminProduct = () => {
                                       )}
                                     </div>
                                   </div>
-                                  <div className="ml-3">
+                                  <div className="ml-2 sm:ml-3">
                                     <span className="text-sm font-medium text-gray-900 flex items-center">
                                       <svg
-                                        className="w-4 h-4 mr-1.5 text-purple-500"
+                                        className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 text-purple-500"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
                                       >
@@ -988,7 +988,7 @@ const AdminProduct = () => {
                                       className="sr-only"
                                     />
                                     <div
-                                      className={`w-6 h-6 rounded-md border-2 transition-all duration-200 ${
+                                      className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md border-2 transition-all duration-200 ${
                                         formData.isHotThisWeek
                                           ? "bg-gradient-to-r from-red-500 to-orange-500 border-red-500"
                                           : "border-gray-300 group-hover:border-red-400"
@@ -996,7 +996,7 @@ const AdminProduct = () => {
                                     >
                                       {formData.isHotThisWeek && (
                                         <svg
-                                          className="w-4 h-4 text-white absolute top-0.5 left-0.5"
+                                          className="w-3 h-3 sm:w-4 sm:h-4 text-white absolute top-0.5 left-0.5 sm:top-0.5 sm:left-0.5"
                                           fill="currentColor"
                                           viewBox="0 0 20 20"
                                         >
@@ -1009,10 +1009,10 @@ const AdminProduct = () => {
                                       )}
                                     </div>
                                   </div>
-                                  <div className="ml-3">
+                                  <div className="ml-2 sm:ml-3">
                                     <span className="text-sm font-medium text-gray-900 flex items-center">
                                       <svg
-                                        className="w-4 h-4 mr-1.5 text-red-500"
+                                        className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 text-red-500"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
                                       >
@@ -1033,7 +1033,7 @@ const AdminProduct = () => {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Category *
@@ -1043,7 +1043,7 @@ const AdminProduct = () => {
                                 value={formData.category}
                                 onChange={handleInputChange}
                                 required
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                               >
                                 <option value="">Select Category</option>
                                 {categories.map((cat) => (
@@ -1069,7 +1069,7 @@ const AdminProduct = () => {
                                 value={formData.productName}
                                 onChange={handleInputChange}
                                 required
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 placeholder={
                                   formData.inventory
                                     ? "Auto-filled from selected inventory"
@@ -1079,7 +1079,7 @@ const AdminProduct = () => {
                             </div>
                           </div>
 
-                          <div className="mt-6">
+                          <div className="mt-4 sm:mt-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Description *
                             </label>
@@ -1089,11 +1089,11 @@ const AdminProduct = () => {
                               onChange={handleInputChange}
                               required
                               rows={3}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             />
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Price (Rs.) *
@@ -1111,7 +1111,7 @@ const AdminProduct = () => {
                                 required
                                 min="0"
                                 step="0.01"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 placeholder={
                                   formData.inventory
                                     ? "Auto-filled from selected inventory"
@@ -1130,18 +1130,18 @@ const AdminProduct = () => {
                                 value={formData.brand}
                                 onChange={handleInputChange}
                                 required
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                               />
                             </div>
                           </div>
                         </div>
 
                         {/* Additional Details */}
-                        <div className="bg-gray-50 p-6 rounded-lg">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                        <div className="bg-gray-50 p-4 sm:p-6 rounded-lg">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-6">
                             Additional Details
                           </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Weight (kg)
@@ -1153,7 +1153,7 @@ const AdminProduct = () => {
                                 onChange={handleInputChange}
                                 min="0"
                                 step="0.1"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                               />
                             </div>
 
@@ -1167,7 +1167,7 @@ const AdminProduct = () => {
                                 value={formData.dimensions}
                                 onChange={handleInputChange}
                                 placeholder="e.g., 10x5x3"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                               />
                             </div>
 
@@ -1180,7 +1180,7 @@ const AdminProduct = () => {
                                 name="color"
                                 value={formData.color}
                                 onChange={handleInputChange}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                               />
                             </div>
 
@@ -1194,26 +1194,26 @@ const AdminProduct = () => {
                                 value={formData.size}
                                 onChange={handleInputChange}
                                 placeholder="e.g., M, L, XL or specific dimensions"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                               />
                             </div>
                           </div>
                         </div>
 
                         {/* Image Upload */}
-                        <div className="bg-gray-50 p-6 rounded-lg">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                        <div className="bg-gray-50 p-4 sm:p-6 rounded-lg">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-6">
                             Product Images
                           </h3>
-                          <div className="mb-6">
+                          <div className="mb-4 sm:mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Upload Images
                             </label>
                             <div className="flex items-center justify-center w-full">
-                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 transition-colors bg-white">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <label className="flex flex-col items-center justify-center w-full h-28 sm:h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 transition-colors bg-white">
+                                <div className="flex flex-col items-center justify-center pt-4 sm:pt-5 pb-4 sm:pb-6">
                                   <svg
-                                    className="w-8 h-8 mb-4 text-gray-500"
+                                    className="w-6 h-6 sm:w-8 sm:h-8 mb-2 sm:mb-4 text-gray-500"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -1225,7 +1225,7 @@ const AdminProduct = () => {
                                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                                     />
                                   </svg>
-                                  <p className="mb-2 text-sm text-gray-500">
+                                  <p className="mb-1 sm:mb-2 text-xs sm:text-sm text-gray-500">
                                     <span className="font-semibold">
                                       Click to upload
                                     </span>{" "}
@@ -1250,11 +1250,11 @@ const AdminProduct = () => {
                           {/* Image Previews */}
                           {(imagePreviews.length > 0 ||
                             existingImages.length > 0) && (
-                            <div className="mt-6">
-                              <h4 className="text-sm font-medium text-gray-700 mb-4">
+                            <div className="mt-4 sm:mt-6">
+                              <h4 className="text-sm font-medium text-gray-700 mb-3 sm:mb-4">
                                 Image Previews (Drag to reorder)
                               </h4>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                                 {/* Existing Images */}
                                 {existingImages.map((img, index) => (
                                   <div
@@ -1272,17 +1272,17 @@ const AdminProduct = () => {
                                     <img
                                       src={`${BASE_URL}${img}`}
                                       alt={`Existing ${index}`}
-                                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                      className="w-full h-20 sm:h-24 object-cover rounded-lg border border-gray-200"
                                     />
                                     <button
                                       type="button"
                                       onClick={() =>
                                         handleRemoveImage(index, true)
                                       }
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white rounded-full p-0.5 sm:p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                       <svg
-                                        className="w-4 h-4"
+                                        className="w-3 h-3 sm:w-4 sm:h-4"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -1318,17 +1318,17 @@ const AdminProduct = () => {
                                     <img
                                       src={preview}
                                       alt={`Preview ${index}`}
-                                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                      className="w-full h-20 sm:h-24 object-cover rounded-lg border border-gray-200"
                                     />
                                     <button
                                       type="button"
                                       onClick={() =>
                                         handleRemoveImage(index, false)
                                       }
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white rounded-full p-0.5 sm:p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                       <svg
-                                        className="w-4 h-4"
+                                        className="w-3 h-3 sm:w-4 sm:h-4"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -1352,26 +1352,26 @@ const AdminProduct = () => {
                         </div>
 
                         {/* Form Actions */}
-                        <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-200">
                           <button
                             type="button"
                             onClick={() => {
                               setIsModalOpen(false);
                               resetForm();
                             }}
-                            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                            className="px-4 sm:px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm sm:text-base order-2 sm:order-1"
                           >
                             Cancel
                           </button>
                           <button
                             type="submit"
                             disabled={loading}
-                            className="px-6 py-2 bg-[#8DC53E] hover:bg-[#76A337] text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center"
+                            className="px-4 sm:px-6 py-2 bg-[#8DC53E] hover:bg-[#76A337] text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center text-sm sm:text-base order-1 sm:order-2"
                           >
                             {loading ? (
                               <>
                                 <svg
-                                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                  className="animate-spin -ml-1 mr-2 h-3 w-3 sm:h-4 sm:w-4 text-white"
                                   fill="none"
                                   viewBox="0 0 24 24"
                                 >

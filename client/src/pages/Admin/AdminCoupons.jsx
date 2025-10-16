@@ -21,6 +21,8 @@ import {
   Tag,
   AlertCircle,
 } from "lucide-react";
+import Sidebar from "../../components/Sidebar";
+import { useNavigate } from "react-router-dom";
 
 const AdminCoupons = () => {
   const [coupons, setCoupons] = useState([]);
@@ -46,9 +48,12 @@ const AdminCoupons = () => {
   });
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
+  const [userProfile, setUserProfile] = useState(null);
+  const [currentSidebarPage, setSidebarPage] = useState("coupons");
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
   const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
 
   // Get today's date in YYYY-MM-DD format for date inputs
   const getTodayString = () => {
@@ -56,7 +61,45 @@ const AdminCoupons = () => {
     return today.toISOString().split("T")[0];
   };
 
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/users/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      if (data.success) setUserProfile(data.data);
+    } catch (err) {
+      console.error("Error fetching user profile:", err);
+    }
+  };
+
+  const handleNavClick = (key) => {
+    setSidebarPage(key);
+    const routes = {
+      dashboard: "/AdminDashboard",
+      users: "/Admin/User",
+      products: "/Admin/AdminProduct",
+      orders: "/Admin/OrderManagement",
+      inventory: "/Admin/Inventory",
+      reviews: "/Admin/ReviewList",
+      coupons: "/Admin/AdminCoupons",
+      events: "/Admin/EventManagement",
+      content: "/Admin/ContentManagement",
+      reports: "/Admin/ReportGeneration/productReport",
+    };
+
+    if (routes[key]) {
+      navigate(routes[key]);
+    }
+  };
+
   useEffect(() => {
+    fetchUserProfile();
+
     if (!user) {
       return;
     }
@@ -406,507 +449,539 @@ const AdminCoupons = () => {
 
   if (!authChecked && loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8DC53E]"></div>
-          <p className="text-gray-600">Loading...</p>
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar
+          currentPage={currentSidebarPage}
+          onPageChange={handleNavClick}
+          userProfile={userProfile}
+        />
+        <div className="flex-1 p-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
+            <div className="grid grid-cols-4 gap-6 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
+              ))}
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between ">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Coupon Management
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Create and manage discount coupons for your store
-              </p>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar
+        currentPage={currentSidebarPage}
+        onPageChange={handleNavClick}
+        userProfile={userProfile}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Coupon Management
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Create and manage discount coupons for your store
+                </p>
+              </div>
+              <button
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#8DC53E] hover:bg-[#7AB82D] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8DC53E] transition-colors"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                New Coupon
+              </button>
             </div>
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#8DC53E] hover:bg-[#7AB82D] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8DC53E] transition-colors"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              New Coupon
-            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Success/Error Messages */}
-        {successMessage && (
-          <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
-            <div className="flex">
-              <CheckCircle className="w-5 h-5 text-green-400" />
-              <p className="ml-3 text-green-700">{successMessage}</p>
-            </div>
-          </div>
-        )}
-
-        {errors.submit && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
-            <div className="flex">
-              <XCircle className="w-5 h-5 text-red-400" />
-              <p className="ml-3 text-red-700">{errors.submit}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          {/* Main Content */}
-          <div className="xl:col-span-3">
-            {/* Filters */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Search coupons..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
-                  />
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Filter className="w-5 h-5 text-gray-400" />
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] text-sm"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="active">Active</option>
-                      <option value="scheduled">Scheduled</option>
-                      <option value="expired">Expired</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
-                </div>
+        <div className="max-w-7xl mx-auto px-8 py-8">
+          {/* Success/Error Messages */}
+          {successMessage && (
+            <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
+              <div className="flex">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <p className="ml-3 text-green-700">{successMessage}</p>
               </div>
             </div>
+          )}
 
-            {/* Coupons Grid */}
-            <div className="grid gap-6">
-              {filteredCoupons.map((coupon) => (
-                <div
-                  key={coupon._id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="bg-[#8DC53E] bg-opacity-10 p-2 rounded-lg">
-                          <Tag className="w-5 h-5 text-[#8DC53E]" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {coupon.code}
-                          </h3>
-                          <p className="text-gray-600 text-sm">
-                            {coupon.description}
-                          </p>
-                        </div>
-                        {getStatusBadge(coupon)}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div className="flex items-center space-x-2">
-                          {coupon.discountType === "percentage" ? (
-                            <Percent className="w-4 h-4 text-gray-400" />
-                          ) : (
-                            <DollarSign className="w-4 h-4 text-gray-400" />
-                          )}
-                          <span className="text-sm text-gray-600">
-                            {coupon.discountType === "percentage"
-                              ? `${coupon.discountValue}% off`
-                              : `Rs. ${coupon.discountValue} off`}
-                          </span>
-                          {coupon.maxDiscountAmount &&
-                            coupon.discountType === "percentage" && (
-                              <span className="text-xs text-gray-500">
-                                (max Rs. {coupon.maxDiscountAmount})
-                              </span>
-                            )}
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            {formatDate(coupon.startDate)} -{" "}
-                            {formatDate(coupon.endDate)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <Users className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            {coupon.usedCount || 0} used
-                            {coupon.usageLimit && ` / ${coupon.usageLimit}`}
-                          </span>
-                        </div>
-                      </div>
-
-                      {coupon.minOrderAmount > 0 && (
-                        <div className="flex items-center space-x-2 mb-4">
-                          <TrendingUp className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            Min order: Rs. {coupon.minOrderAmount}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-2 ml-4">
-                      <button
-                        onClick={() => handleEdit(coupon)}
-                        className="p-2 text-[#8DC53E] hover:bg-[#8DC53E] hover:bg-opacity-10 rounded-lg transition-colors"
-                        title="Edit Coupon"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(coupon._id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Coupon"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          {errors.submit && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+              <div className="flex">
+                <XCircle className="w-5 h-5 text-red-400" />
+                <p className="ml-3 text-red-700">{errors.submit}</p>
+              </div>
             </div>
+          )}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex justify-center">
-                <nav className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      currentPage === 1
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  <span className="px-4 py-2 text-sm text-gray-600">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      currentPage === totalPages
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    Next
-                  </button>
-                </nav>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar Form */}
-          <div className="xl:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-6">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {editingCoupon ? "Edit Coupon" : "Create Coupon"}
-                </h2>
-              </div>
-
-              {showForm ? (
-                <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-                  {/* Coupon Code */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Coupon Code <span className="text-red-500">*</span>
-                    </label>
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+            {/* Main Content */}
+            <div className="xl:col-span-3">
+              {/* Filters */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                     <input
                       type="text"
-                      name="code"
-                      value={formData.code}
-                      onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors ${
-                        errors.code ? "border-red-300" : "border-gray-300"
-                      }`}
-                      placeholder="SUMMER2024"
+                      placeholder="Search coupons..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
                     />
-                    {errors.code && (
-                      <p className="mt-1 text-sm text-red-600">{errors.code}</p>
-                    )}
                   </div>
-
-                  {/* Description */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors resize-none ${
-                        errors.description
-                          ? "border-red-300"
-                          : "border-gray-300"
-                      }`}
-                      placeholder="Summer sale discount"
-                    />
-                    {errors.description && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.description}
-                      </p>
-                    )}
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <Filter className="w-5 h-5 text-gray-400" />
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] text-sm"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="expired">Expired</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
                   </div>
+                </div>
+              </div>
 
-                  {/* Discount Type */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Discount Type <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="discountType"
-                      value={formData.discountType}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
-                    >
-                      <option value="percentage">Percentage (%)</option>
-                      <option value="fixed">Fixed Amount (Rs.)</option>
-                    </select>
-                  </div>
+              {/* Coupons Grid */}
+              <div className="grid gap-6">
+                {filteredCoupons.map((coupon) => (
+                  <div
+                    key={coupon._id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <div className="bg-[#8DC53E] bg-opacity-10 p-2 rounded-lg">
+                            <Tag className="w-5 h-5 text-[#8DC53E]" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {coupon.code}
+                            </h3>
+                            <p className="text-gray-600 text-sm">
+                              {coupon.description}
+                            </p>
+                          </div>
+                          {getStatusBadge(coupon)}
+                        </div>
 
-                  {/* Discount Value */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Discount Value <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="discountValue"
-                        value={formData.discountValue}
-                        onChange={handleDiscountValueChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors ${
-                          errors.discountValue
-                            ? "border-red-300"
-                            : "border-gray-300"
-                        }`}
-                        placeholder={
-                          formData.discountType === "percentage" ? "10" : "100"
-                        }
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        {formData.discountType === "percentage" ? (
-                          <Percent className="w-4 h-4 text-gray-400" />
-                        ) : (
-                          <span className="text-gray-400 text-sm">Rs.</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div className="flex items-center space-x-2">
+                            {coupon.discountType === "percentage" ? (
+                              <Percent className="w-4 h-4 text-gray-400" />
+                            ) : (
+                              <DollarSign className="w-4 h-4 text-gray-400" />
+                            )}
+                            <span className="text-sm text-gray-600">
+                              {coupon.discountType === "percentage"
+                                ? `${coupon.discountValue}% off`
+                                : `Rs. ${coupon.discountValue} off`}
+                            </span>
+                            {coupon.maxDiscountAmount &&
+                              coupon.discountType === "percentage" && (
+                                <span className="text-xs text-gray-500">
+                                  (max Rs. {coupon.maxDiscountAmount})
+                                </span>
+                              )}
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              {formatDate(coupon.startDate)} -{" "}
+                              {formatDate(coupon.endDate)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Users className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              {coupon.usedCount || 0} used
+                              {coupon.usageLimit && ` / ${coupon.usageLimit}`}
+                            </span>
+                          </div>
+                        </div>
+
+                        {coupon.minOrderAmount > 0 && (
+                          <div className="flex items-center space-x-2 mb-4">
+                            <TrendingUp className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              Min order: Rs. {coupon.minOrderAmount}
+                            </span>
+                          </div>
                         )}
                       </div>
+
+                      <div className="flex items-center space-x-2 ml-4">
+                        <button
+                          onClick={() => handleEdit(coupon)}
+                          className="p-2 text-[#8DC53E] hover:bg-[#8DC53E] hover:bg-opacity-10 rounded-lg transition-colors"
+                          title="Edit Coupon"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(coupon._id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Coupon"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    {errors.discountValue && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.discountValue}
-                      </p>
-                    )}
                   </div>
+                ))}
+              </div>
 
-                  {/* Max Discount Amount (for percentage) */}
-                  {formData.discountType === "percentage" && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Maximum Discount (Rs.)
-                      </label>
-                      <input
-                        type="number"
-                        name="maxDiscountAmount"
-                        value={formData.maxDiscountAmount}
-                        onChange={handleInputChange}
-                        min="0"
-                        step="0.01"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
-                        placeholder="500"
-                      />
-                    </div>
-                  )}
-
-                  {/* Min Order Amount */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Minimum Order Amount (Rs.)
-                    </label>
-                    <input
-                      type="number"
-                      name="minOrderAmount"
-                      value={formData.minOrderAmount}
-                      onChange={handleInputChange}
-                      min="0"
-                      step="0.01"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
-                      placeholder="0"
-                    />
-                  </div>
-
-                  {/* Start Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Start Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="startDate"
-                      value={formData.startDate}
-                      onChange={handleInputChange}
-                      min={getTodayString()}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors ${
-                        errors.startDate ? "border-red-300" : "border-gray-300"
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                  <nav className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                        currentPage === 1
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                       }`}
-                    />
-                    {errors.startDate && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.startDate}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* End Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      End Date <span className="text-red-500"></span>
-                    </label>
-                    <input
-                      type="date"
-                      name="endDate"
-                      value={formData.endDate}
-                      onChange={handleInputChange}
-                      min={formData.startDate || getTodayString()}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors ${
-                        errors.endDate ? "border-red-300" : "border-gray-300"
+                    >
+                      Previous
+                    </button>
+                    <span className="px-4 py-2 text-sm text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                        currentPage === totalPages
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                       }`}
-                    />
-                    {errors.endDate && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.endDate}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Usage Limit */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Usage Limit
-                    </label>
-                    <input
-                      type="number"
-                      name="usageLimit"
-                      value={formData.usageLimit}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
-                      placeholder="Leave empty for unlimited"
-                    />
-                    {errors.usageLimit && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.usageLimit}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Active Status */}
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="isActive"
-                      checked={formData.isActive}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 text-[#8DC53E] focus:ring-[#8DC53E] border-gray-300 rounded"
-                    />
-                    <label className="ml-2 block text-sm text-gray-900">
-                      Active coupon
-                    </label>
-                  </div>
-
-                  {/* Form Actions */}
-                  <div className="pt-6 border-t border-gray-200">
-                    <div className="flex space-x-3">
-                      <button
-                        type="submit"
-                        className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#8DC53E] hover:bg-[#7AB82D] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8DC53E] transition-colors"
-                      >
-                        {editingCoupon ? "Update" : "Create"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={resetForm}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8DC53E] transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              ) : (
-                <div className="px-6 py-8 text-center">
-                  <div className="bg-gray-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <Tag className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Create New Coupon
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    Add discount coupons to boost sales and reward customers
-                  </p>
-                  <button
-                    onClick={() => setShowForm(true)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#8DC53E] hover:bg-[#7AB82D] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8DC53E] transition-colors"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Get Started
-                  </button>
+                    >
+                      Next
+                    </button>
+                  </nav>
                 </div>
               )}
             </div>
 
-            {/* Quick Stats */}
-            <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-sm font-medium text-gray-900 mb-4">
-                Quick Stats
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Total Coupons</span>
-                  <span className="font-medium">{coupons.length}</span>
+            {/* Sidebar Form */}
+            <div className="xl:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 sticky top-6">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {editingCoupon ? "Edit Coupon" : "Create Coupon"}
+                  </h2>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Active Coupons</span>
-                  <span className="font-medium text-green-600">
-                    {coupons.filter((c) => isCouponActive(c)).length}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Expired Coupons</span>
-                  <span className="font-medium text-red-600">
-                    {
-                      coupons.filter((c) => new Date() > new Date(c.endDate))
-                        .length
-                    }
-                  </span>
+
+                {showForm ? (
+                  <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+                    {/* Coupon Code */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Coupon Code <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="code"
+                        value={formData.code}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors ${
+                          errors.code ? "border-red-300" : "border-gray-300"
+                        }`}
+                        placeholder="SUMMER2024"
+                      />
+                      {errors.code && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.code}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Description <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors resize-none ${
+                          errors.description
+                            ? "border-red-300"
+                            : "border-gray-300"
+                        }`}
+                        placeholder="Summer sale discount"
+                      />
+                      {errors.description && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Discount Type */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Discount Type <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="discountType"
+                        value={formData.discountType}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
+                      >
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="fixed">Fixed Amount (Rs.)</option>
+                      </select>
+                    </div>
+
+                    {/* Discount Value */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Discount Value <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="discountValue"
+                          value={formData.discountValue}
+                          onChange={handleDiscountValueChange}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors ${
+                            errors.discountValue
+                              ? "border-red-300"
+                              : "border-gray-300"
+                          }`}
+                          placeholder={
+                            formData.discountType === "percentage"
+                              ? "10"
+                              : "100"
+                          }
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          {formData.discountType === "percentage" ? (
+                            <Percent className="w-4 h-4 text-gray-400" />
+                          ) : (
+                            <span className="text-gray-400 text-sm">Rs.</span>
+                          )}
+                        </div>
+                      </div>
+                      {errors.discountValue && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.discountValue}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Max Discount Amount (for percentage) */}
+                    {formData.discountType === "percentage" && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Maximum Discount (Rs.)
+                        </label>
+                        <input
+                          type="number"
+                          name="maxDiscountAmount"
+                          value={formData.maxDiscountAmount}
+                          onChange={handleInputChange}
+                          min="0"
+                          step="0.01"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
+                          placeholder="500"
+                        />
+                      </div>
+                    )}
+
+                    {/* Min Order Amount */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Minimum Order Amount (Rs.)
+                      </label>
+                      <input
+                        type="number"
+                        name="minOrderAmount"
+                        value={formData.minOrderAmount}
+                        onChange={handleInputChange}
+                        min="0"
+                        step="0.01"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
+                        placeholder="0"
+                      />
+                    </div>
+
+                    {/* Start Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Start Date <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="startDate"
+                        value={formData.startDate}
+                        onChange={handleInputChange}
+                        min={getTodayString()}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors ${
+                          errors.startDate
+                            ? "border-red-300"
+                            : "border-gray-300"
+                        }`}
+                      />
+                      {errors.startDate && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.startDate}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* End Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        End Date <span className="text-red-500"></span>
+                      </label>
+                      <input
+                        type="date"
+                        name="endDate"
+                        value={formData.endDate}
+                        onChange={handleInputChange}
+                        min={formData.startDate || getTodayString()}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors ${
+                          errors.endDate ? "border-red-300" : "border-gray-300"
+                        }`}
+                      />
+                      {errors.endDate && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.endDate}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Usage Limit */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Usage Limit
+                      </label>
+                      <input
+                        type="number"
+                        name="usageLimit"
+                        value={formData.usageLimit}
+                        onChange={handleInputChange}
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8DC53E] focus:border-[#8DC53E] transition-colors"
+                        placeholder="Leave empty for unlimited"
+                      />
+                      {errors.usageLimit && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.usageLimit}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Active Status */}
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="isActive"
+                        checked={formData.isActive}
+                        onChange={handleInputChange}
+                        className="h-4 w-4 text-[#8DC53E] focus:ring-[#8DC53E] border-gray-300 rounded"
+                      />
+                      <label className="ml-2 block text-sm text-gray-900">
+                        Active coupon
+                      </label>
+                    </div>
+
+                    {/* Form Actions */}
+                    <div className="pt-6 border-t border-gray-200">
+                      <div className="flex space-x-3">
+                        <button
+                          type="submit"
+                          className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#8DC53E] hover:bg-[#7AB82D] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8DC53E] transition-colors"
+                        >
+                          {editingCoupon ? "Update" : "Create"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={resetForm}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8DC53E] transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="px-6 py-8 text-center">
+                    <div className="bg-gray-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                      <Tag className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Create New Coupon
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Add discount coupons to boost sales and reward customers
+                    </p>
+                    <button
+                      onClick={() => setShowForm(true)}
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#8DC53E] hover:bg-[#7AB82D] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8DC53E] transition-colors"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Get Started
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Stats */}
+              <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-4">
+                  Quick Stats
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Total Coupons</span>
+                    <span className="font-medium">{coupons.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Active Coupons</span>
+                    <span className="font-medium text-green-600">
+                      {coupons.filter((c) => isCouponActive(c)).length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Expired Coupons</span>
+                    <span className="font-medium text-red-600">
+                      {
+                        coupons.filter((c) => new Date() > new Date(c.endDate))
+                          .length
+                      }
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

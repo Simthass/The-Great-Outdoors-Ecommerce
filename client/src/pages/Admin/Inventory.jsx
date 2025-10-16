@@ -619,27 +619,14 @@ const InventoryDashboard = () => {
 
   if (loading && inventoryData.length === 0) {
     return (
-      <div>
-        {/* Header */}
-        <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-            Inventory
-          </p>
-        </div>
-
-        <div className="flex rounded-lg mt-6">
-          {/* Sidebar Loading */}
-          <aside className="bg-green-600 text-white h-screen sticky top-0 w-20 rounded-lg">
-            <div className="animate-pulse p-4">
-              <div className="w-12 h-12 bg-white rounded-lg mx-auto mb-8"></div>
-              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                <div
-                  key={i}
-                  className="h-12 bg-green-500 rounded-lg mb-3"
-                ></div>
-              ))}
-            </div>
-          </aside>
+      <div data-testid="admin-inventoryData-management-loading">
+        <div className="flex bg-gray-50 min-h-screen mt-6 rounded-2xl">
+          {/* Sidebar - Use the actual Sidebar component */}
+          <Sidebar
+            currentPage={currentSidebarPage}
+            onPageChange={handleNavClick}
+            userProfile={userProfile}
+          />
 
           {/* Main Content Loading */}
           <div className="flex-1 p-6">
@@ -661,16 +648,8 @@ const InventoryDashboard = () => {
       </div>
     );
   }
-
   return (
     <div>
-      {/* Header */}
-      <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-        <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-          Inventory
-        </p>
-      </div>
-
       <div className="flex bg-gray-50 min-h-screen mt-6 rounded-2xl">
         {/* Sidebar */}
         <Sidebar
@@ -1205,8 +1184,7 @@ const InventoryDashboard = () => {
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  disabled={loading}
+                  typehttps:disabled={loading}
                   className="px-4 py-2.5 bg-[#7BC043] text-white rounded text-sm font-medium transition-all hover:bg-[#6aab39] disabled:opacity-70"
                 >
                   {loading

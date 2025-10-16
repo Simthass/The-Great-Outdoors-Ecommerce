@@ -316,13 +316,6 @@ const ContentManagement = () => {
   if (bannerLoading && banners.length === 0 && activeTab === "banners") {
     return (
       <div>
-        {/* Header */}
-        <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-          <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-            Content Management
-          </p>
-        </div>
-
         <div className="flex rounded-lg mt-6">
           {/* Sidebar Loading */}
           <aside className="bg-green-600 text-white h-screen sticky top-0 w-20 rounded-lg">
@@ -360,13 +353,6 @@ const ContentManagement = () => {
 
   return (
     <div>
-      {/* Header */}
-      <div className="w-full h-[150px] bg-[url(/page-name.png)] bg-cover bg-center bg-no-repeat flex flex-wrap items-center">
-        <p className="text-[50px] pl-[70px] text-[#ffffff] m-[0px]">
-          Content Management
-        </p>
-      </div>
-
       <div className="flex bg-gray-50 min-h-screen mt-6 rounded-2xl">
         {/* Sidebar */}
         <Sidebar
