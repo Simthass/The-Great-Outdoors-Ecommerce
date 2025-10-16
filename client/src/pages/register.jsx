@@ -1,8 +1,5 @@
-// Updated Register.jsx - Fixed Google OAuth implementation
-
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -16,47 +13,111 @@ const Register = () => {
     password: "",
     agreeToTerms: false,
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({});
+
+  const [formErrors, setFormErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
 
-  // Debug logging
-  useEffect(() => {
-    console.log("Environment check:");
-    console.log(
-      "VITE_GOOGLE_CLIENT_ID:",
-      import.meta.env.VITE_GOOGLE_CLIENT_ID
-    );
+  // Constants
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+  // Brand colors using #8DC53E and its shades/tints
+  const BRAND_COLORS = {
+    primary: "#8DC53E",
+    primaryDark: "#7AB535",
+    primaryLight: "#A3D15E",
+    primaryLighter: "#C4E394",
+    primaryLightest: "#E6F2D8",
+    text: "#1A2E05",
+    textLight: "#4A5D34",
+    background: "#F8FBEF",
+    border: "#DAE8C3",
+    error: "#DC2626",
+  };
+
+  // Validation rules
+  const validationRules = {
+    firstName: {
+      required: true,
+      minLength: 2,
+      message: "First name must be at least 2 characters",
+    },
+    lastName: {
+      required: true,
+      minLength: 2,
+      message: "Last name must be at least 2 characters",
+    },
+    email: {
+      required: true,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: "Please enter a valid email address",
+    },
+    phoneNumber: {
+      pattern: /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/,
+      message: "Please enter a valid phone number",
+    },
+    password: {
+      required: true,
+      minLength: 6,
+      message: "Password must be at least 6 characters",
+    },
+  };
+
+  // Validate field
+  const validateField = useCallback((name, value) => {
+    const rules = validationRules[name];
+    if (!rules) return "";
+
+    if (rules.required && !value.trim()) {
+      return "This field is required";
+    }
+
+    if (rules.minLength && value.length < rules.minLength) {
+      return rules.message;
+    }
+
+    if (
+      rules.pattern &&
+      value &&
+      !rules.pattern.test(value.replace(/\s/g, ""))
+    ) {
+      return rules.message;
+    }
+
+    return "";
   }, []);
+
+  // Validate all fields
+  const validateForm = useCallback(() => {
+    const errors = {};
+    Object.keys(validationRules).forEach((key) => {
+      if (validationRules[key].required || formData[key]) {
+        errors[key] = validateField(key, formData[key]);
+      }
+    });
+    setFormErrors(errors);
+    return !Object.values(errors).some((error) => error);
+  }, [formData, validateField]);
 
   // Load Google Identity Services script
   useEffect(() => {
     const loadGoogleScript = () => {
       if (window.google) {
-        console.log("Google SDK already loaded");
         initializeGoogleAuth();
         return;
       }
 
-      console.log("Loading Google SDK...");
       const script = document.createElement("script");
       script.src = "https://accounts.google.com/gsi/client";
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        console.log("Google SDK script loaded successfully");
-        // Add a small delay to ensure the SDK is fully initialized
-        setTimeout(() => {
-          initializeGoogleAuth();
-        }, 100);
+        setTimeout(() => initializeGoogleAuth(), 100);
       };
-      script.onerror = (error) => {
-        console.error("Failed to load Google SDK script:", error);
-        setError(
-          "Failed to load Google authentication. Please check your internet connection."
-        );
+      script.onerror = () => {
+        console.error("Failed to load Google SDK");
       };
       document.head.appendChild(script);
     };
@@ -64,24 +125,16 @@ const Register = () => {
     loadGoogleScript();
   }, []);
 
-  // Initialize Google OAuth
-  const initializeGoogleAuth = () => {
-    console.log("Initializing Google Auth...");
-
+  // Initialize Google OAuth - FIXED VERSION
+  const initializeGoogleAuth = useCallback(() => {
     if (!window.google?.accounts?.id) {
-      console.error("Google SDK not fully available");
-      setTimeout(() => initializeGoogleAuth(), 500); // Retry after 500ms
+      setTimeout(() => initializeGoogleAuth(), 500);
       return;
     }
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    console.log("Using Client ID:", clientId);
-
     if (!clientId) {
-      console.error("Google Client ID not found in environment variables");
-      setError(
-        "Google Client ID not configured. Please check your environment variables."
-      );
+      console.error("Google Client ID not configured");
       return;
     }
 
@@ -91,43 +144,31 @@ const Register = () => {
         callback: handleGoogleResponse,
         auto_select: false,
         cancel_on_tap_outside: true,
-        // Additional configuration for better popup behavior
-        use_fedcm_for_prompt: false,
-        itp_support: true,
       });
 
-      console.log("Google OAuth initialized successfully");
       setGoogleReady(true);
+      console.log("Google OAuth initialized successfully");
     } catch (error) {
       console.error("Google OAuth initialization error:", error);
-      setError("Failed to initialize Google authentication: " + error.message);
     }
-  };
+  }, []);
 
-  // Handle Google OAuth response
+  // Handle Google OAuth response - FIXED VERSION
   const handleGoogleResponse = async (response) => {
     console.log("Google response received:", response);
     setGoogleLoading(true);
-    setError("");
+    setFormErrors({});
 
     try {
       if (!response.credential) {
         throw new Error("No credential received from Google");
       }
 
-      console.log("Sending credential to backend...");
-
-      // Send credential token to backend
-      const backendResponse = await fetch(
-        "http://localhost:5000/api/auth/google",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token: response.credential }),
-        }
-      );
+      const backendResponse = await fetch(`${API_URL}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: response.credential }),
+      });
 
       const data = await backendResponse.json();
       console.log("Backend response:", data);
@@ -141,38 +182,42 @@ const Register = () => {
       if (data.success) {
         localStorage.setItem("token", data.data.token);
         navigate("/", {
+          replace: true,
           state: { message: "Registration successful! Welcome." },
         });
-        window.location.reload();
       } else {
-        setError(data.message || "Google authentication failed");
+        setFormErrors({
+          general: data.message || "Google authentication failed",
+        });
       }
     } catch (error) {
       console.error("Google sign-in error:", error);
-      setError(error.message || "Google authentication failed");
+      setFormErrors({
+        general: error.message || "Google authentication failed",
+      });
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  // FIXED: Updated Google sign-in method using renderButton instead of prompt
+  // Google sign-in method - FIXED VERSION (using your working approach)
   const handleGoogleSignIn = () => {
     console.log("Google sign-in button clicked");
     console.log("Google ready state:", googleReady);
     console.log("Window.google available:", !!window.google);
 
     if (!window.google?.accounts?.id) {
-      setError("Google SDK not loaded properly");
+      setFormErrors({ general: "Google SDK not loaded properly" });
       return;
     }
 
     if (!googleReady) {
-      setError("Google OAuth not initialized");
+      setFormErrors({ general: "Google OAuth not initialized" });
       return;
     }
 
     setGoogleLoading(true);
-    setError("");
+    setFormErrors({});
 
     try {
       // Create a temporary container for the Google button
@@ -206,11 +251,13 @@ const Register = () => {
             setGoogleLoading(false);
 
             if (notification.isNotDisplayed()) {
-              setError("Please allow popups for this site or try again");
+              setFormErrors({
+                general: "Please allow popups for this site or try again",
+              });
             } else if (notification.isSkipped()) {
-              setError("Google sign-in was cancelled");
+              setFormErrors({ general: "Google sign-in was cancelled" });
             } else if (notification.isDismissedMoment()) {
-              setError("Google sign-in was dismissed");
+              setFormErrors({ general: "Google sign-in was dismissed" });
             }
           });
         }
@@ -224,101 +271,14 @@ const Register = () => {
       }, 100);
     } catch (error) {
       console.error("Google sign-in trigger error:", error);
-      setError("Failed to start Google authentication: " + error.message);
+      setFormErrors({
+        general: "Failed to start Google authentication: " + error.message,
+      });
       setGoogleLoading(false);
     }
   };
 
-  // Alternative method: Create a proper Google button
-  const createGoogleButton = () => {
-    if (!googleReady || !window.google?.accounts?.id) {
-      return null;
-    }
-
-    const buttonRef = React.useRef(null);
-
-    React.useEffect(() => {
-      if (buttonRef.current && window.google?.accounts?.id) {
-        try {
-          window.google.accounts.id.renderButton(buttonRef.current, {
-            theme: "outline",
-            size: "large",
-            type: "standard",
-            shape: "rectangular",
-            text: "continue_with",
-            logo_alignment: "left",
-            width: buttonRef.current.offsetWidth || 250,
-          });
-        } catch (error) {
-          console.error("Error rendering Google button:", error);
-        }
-      }
-    }, [googleReady]);
-
-    return <div ref={buttonRef} className="w-full"></div>;
-  };
-
-  // Validation functions (keeping existing ones)
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
-
-  const validatePassword = (password) => {
-    return password.length >= 6;
-  };
-
-  const validatePhone = (phone) => {
-    if (!phone) return true;
-    const re = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/;
-    return re.test(phone.replace(/\s/g, ""));
-  };
-
-  const validateField = (name, value) => {
-    const errors = { ...fieldErrors };
-
-    switch (name) {
-      case "firstName":
-      case "lastName":
-        if (!value.trim()) {
-          errors[name] = "This field is required";
-        } else {
-          delete errors[name];
-        }
-        break;
-      case "email":
-        if (!value) {
-          errors[name] = "Email is required";
-        } else if (!validateEmail(value)) {
-          errors[name] = "Please enter a valid email address";
-        } else {
-          delete errors[name];
-        }
-        break;
-      case "password":
-        if (!value) {
-          errors[name] = "Password is required";
-        } else if (!validatePassword(value)) {
-          errors[name] = "Password must be at least 6 characters";
-        } else {
-          delete errors[name];
-        }
-        break;
-      case "phoneNumber":
-        if (value && !validatePhone(value)) {
-          errors[name] = "Please enter a valid phone number";
-        } else {
-          delete errors[name];
-        }
-        break;
-      default:
-        break;
-    }
-
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
+  // Handle input changes with validation
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -326,87 +286,66 @@ const Register = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
 
-    if (type !== "checkbox") {
-      validateField(name, value);
+    // Real-time validation after user has touched the field
+    if (touched[name]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: validateField(name, value),
+      }));
     }
   };
 
+  // Handle blur events
   const handleBlur = (e) => {
     const { name, value } = e.target;
-    validateField(name, value);
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    setFormErrors((prev) => ({
+      ...prev,
+      [name]: validateField(name, value),
+    }));
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setIsSubmitting(true);
 
-    // Validation logic (keeping existing)
-    let isValid = true;
-    const errors = {};
+    // Mark all fields as touched
+    const allTouched = {};
+    Object.keys(validationRules).forEach((key) => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
 
-    if (!formData.firstName.trim()) {
-      errors.firstName = "First name is required";
-      isValid = false;
-    }
-
-    if (!formData.lastName.trim()) {
-      errors.lastName = "Last name is required";
-      isValid = false;
-    }
-
-    if (!formData.email) {
-      errors.email = "Email is required";
-      isValid = false;
-    } else if (!validateEmail(formData.email)) {
-      errors.email = "Please enter a valid email address";
-      isValid = false;
-    }
-
-    if (!formData.password) {
-      errors.password = "Password is required";
-      isValid = false;
-    } else if (!validatePassword(formData.password)) {
-      errors.password = "Password must be at least 6 characters";
-      isValid = false;
-    }
-
-    if (formData.phoneNumber && !validatePhone(formData.phoneNumber)) {
-      errors.phoneNumber = "Please enter a valid phone number";
-      isValid = false;
-    }
-
-    if (!formData.agreeToTerms) {
-      setError("Please agree to the Terms and Conditions");
+    // Validate form
+    if (!validateForm() || !formData.agreeToTerms) {
+      if (!formData.agreeToTerms) {
+        setFormErrors((prev) => ({
+          ...prev,
+          agreeToTerms: "You must agree to the Terms and Conditions",
+        }));
+      }
+      setIsSubmitting(false);
       return;
     }
-
-    setFieldErrors(errors);
-    if (!isValid) {
-      setError(
-        "Please provide all required fields: First name, Last name, Email, and Password."
-      );
-      return;
-    }
-
-    setLoading(true);
 
     try {
       // Health check
       try {
-        await fetch("http://localhost:5000/api/health");
+        await fetch(`${API_URL}/health`);
       } catch (healthError) {
-        throw new Error("Cannot reach server - health check failed");
+        throw new Error("Cannot reach server. Please check your connection.");
       }
 
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          address: formData.address,
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim(),
+          phoneNumber: formData.phoneNumber.trim(),
+          address: formData.address.trim(),
           password: formData.password,
         }),
       });
@@ -421,37 +360,43 @@ const Register = () => {
 
       if (responseData.success) {
         navigate("/login", {
+          replace: true,
           state: {
             message: "Registration successful! Please log in to continue.",
           },
         });
       } else {
-        setError(
-          responseData.message || "Registration failed. Please try again."
-        );
+        setFormErrors({
+          general:
+            responseData.message || "Registration failed. Please try again.",
+        });
       }
     } catch (error) {
       if (
         error.message.includes("Failed to fetch") ||
-        error.message.includes("Cannot connect")
+        error.message.includes("Cannot reach")
       ) {
-        setError(
-          "Cannot connect to our servers. Please check your internet connection and try again."
-        );
-      } else if (error.message.includes("User already exists")) {
-        setError(
-          "An account with this email already exists. Please try logging in or use a different email."
-        );
+        setFormErrors({
+          general:
+            "Cannot connect to our servers. Please check your internet connection.",
+        });
+      } else if (error.message.includes("already exists")) {
+        setFormErrors({
+          general:
+            "An account with this email already exists. Please try logging in.",
+        });
       } else {
-        setError(
-          error.message || "An unexpected error occurred. Please try again."
-        );
+        setFormErrors({
+          general:
+            error.message || "An unexpected error occurred. Please try again.",
+        });
       }
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  // Handle cancel
   const handleCancel = () => {
     setFormData({
       firstName: "",
@@ -462,294 +407,481 @@ const Register = () => {
       password: "",
       agreeToTerms: false,
     });
-    setError("");
-    setFieldErrors({});
+    setFormErrors({});
+    setTouched({});
     navigate(-1);
   };
 
+  // Handle key events
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSubmit(e);
+    }
+  };
+
+  const isLoading = isSubmitting;
+
   return (
-    <div
-      className="m-[100px] bg-[#ECEAEA] rounded-[20px] overflow-hidden shadow-xl"
-      data-testid="register-page"
-    >
-      <div className="flex md:flex-row">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-green-50 p-4 lg:p-8">
+      <div className="w-full max-w-6xl flex flex-col lg:flex-row rounded-2xl lg:rounded-3xl shadow-2xl overflow-hidden bg-white">
         {/* Left Side - Image */}
-        <div className="md:w-1/2 w-full relative overflow-hidden">
-          <div className="absolute inset-0 z-10"></div>
-          <img
-            src="/Register.png"
-            alt="Adventure"
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-            style={{ minHeight: "600px", maxHeight: "1000px" }}
-            data-testid="register-image"
-          />
+        <div className="w-full lg:w-1/2 relative overflow-hidden">
+          <div className="relative h-64 lg:h-full min-h-[400px]">
+            <img
+              src="/Register.png"
+              alt="Outdoor adventure - Join the community"
+              className="w-full h-full object-cover"
+              data-testid="register-image"
+            />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent lg:bg-gradient-to-r lg:from-black/40 lg:via-transparent lg:to-transparent" />
+
+            {/* Mobile-only content overlay */}
+            <div className="absolute bottom-6 left-6 right-6 lg:hidden">
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Start Your Adventure
+              </h2>
+              <p className="text-white/90 text-sm">
+                Join thousands of outdoor enthusiasts exploring nature
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Right Side - Form */}
-        <div className="md:w-1/2 w-full flex flex-col justify-center items-center p-[50px] bg-gradient-to-br from-[#ECEAEA] to-[#F5F5F5]">
-          <div className="w-full max-w-[550px]">
-            <h2
-              className="text-[48px] font-bold mb-[15px] text-center leading-tight"
-              style={{ color: "#7d9d49ff" }}
-              data-testid="register-title"
-            >
-              Join The <br />
-              <span style={{ color: "#6B8E3D" }}>Adventure Challenge</span>
-            </h2>
-            <p
-              className="text-[16px] mb-[40px] text-center font-medium"
-              style={{ color: "#4f4f4f" }}
-              data-testid="register-subtitle"
-            >
-              Sign Up To Embark On An Unforgettable Outdoor Experience
-            </p>
+        <div className="w-full lg:w-1/2 p-6 sm:p-8 lg:p-12 xl:p-16 flex items-center justify-center">
+          <div className="w-full max-w-md">
+            {/* Header */}
+            <div className="text-center lg:text-left mb-8 lg:mb-12">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 lg:mb-4">
+                Join the{" "}
+                <span style={{ color: BRAND_COLORS.primary }}>Adventure</span>
+              </h1>
+              <p className="text-base sm:text-lg text-gray-600 font-medium">
+                Create your account and start exploring the great outdoors
+              </p>
+            </div>
 
-            {error && (
+            {/* Error Alert */}
+            {formErrors.general && (
               <div
-                className="w-full mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm"
+                className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm"
+                role="alert"
                 data-testid="error-alert"
               >
-                <div className="flex items-center">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <svg
+                      className="w-5 h-5 text-red-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-red-800">
+                      {formErrors.general}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Registration Form */}
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              {/* Name Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* First Name */}
+                <div>
+                  <label
+                    htmlFor="firstName"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    onKeyPress={handleKeyPress}
+                    disabled={isLoading}
+                    autoComplete="given-name"
+                    placeholder="Enter your first name"
+                    className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-lg outline-none transition-all duration-200 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
+                      formErrors.firstName
+                        ? "border-red-300 focus:border-red-500"
+                        : "border-gray-200 focus:border-[#8DC53E] focus:shadow-lg"
+                    }`}
+                    data-testid="firstName-input"
+                  />
+                  {formErrors.firstName && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center space-x-1">
+                      <svg
+                        className="w-4 h-4"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>{formErrors.firstName}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Last Name */}
+                <div>
+                  <label
+                    htmlFor="lastName"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    onKeyPress={handleKeyPress}
+                    disabled={isLoading}
+                    autoComplete="family-name"
+                    placeholder="Enter your last name"
+                    className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-lg outline-none transition-all duration-200 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
+                      formErrors.lastName
+                        ? "border-red-300 focus:border-red-500"
+                        : "border-gray-200 focus:border-[#8DC53E] focus:shadow-lg"
+                    }`}
+                    data-testid="lastName-input"
+                  />
+                  {formErrors.lastName && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center space-x-1">
+                      <svg
+                        className="w-4 h-4"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>{formErrors.lastName}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading}
+                  autoComplete="email"
+                  placeholder="Enter your email address"
+                  className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-lg outline-none transition-all duration-200 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
+                    formErrors.email
+                      ? "border-red-300 focus:border-red-500"
+                      : "border-gray-200 focus:border-[#8DC53E] focus:shadow-lg"
+                  }`}
+                  data-testid="email-input"
+                />
+                {formErrors.email && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center space-x-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span>{formErrors.email}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Phone and Address Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Phone Number */}
+                <div>
+                  <label
+                    htmlFor="phoneNumber"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    onKeyPress={handleKeyPress}
+                    disabled={isLoading}
+                    autoComplete="tel"
+                    placeholder="Enter your phone number"
+                    className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-lg outline-none transition-all duration-200 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
+                      formErrors.phoneNumber
+                        ? "border-red-300 focus:border-red-500"
+                        : "border-gray-200 focus:border-[#8DC53E] focus:shadow-lg"
+                    }`}
+                    data-testid="phone-input"
+                  />
+                  {formErrors.phoneNumber && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center space-x-1">
+                      <svg
+                        className="w-4 h-4"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>{formErrors.phoneNumber}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Address */}
+                <div>
+                  <label
+                    htmlFor="address"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    onKeyPress={handleKeyPress}
+                    disabled={isLoading}
+                    autoComplete="street-address"
+                    placeholder="Enter your address"
+                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg outline-none transition-all duration-200 focus:bg-white focus:border-[#8DC53E] focus:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-testid="address-input"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading}
+                  autoComplete="new-password"
+                  placeholder="Create a password"
+                  className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-lg outline-none transition-all duration-200 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
+                    formErrors.password
+                      ? "border-red-300 focus:border-red-500"
+                      : "border-gray-200 focus:border-[#8DC53E] focus:shadow-lg"
+                  }`}
+                  data-testid="password-input"
+                />
+                {formErrors.password && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center space-x-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span>{formErrors.password}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Terms and Conditions */}
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="agreeToTerms"
+                  name="agreeToTerms"
+                  checked={formData.agreeToTerms}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  className="mt-1 w-4 h-4 text-[#8DC53E] bg-gray-100 border-gray-300 rounded focus:ring-[#8DC53E] focus:ring-2 disabled:opacity-50"
+                  data-testid="terms-checkbox"
+                />
+                <label
+                  htmlFor="agreeToTerms"
+                  className="text-sm text-gray-600 leading-relaxed"
+                >
+                  I agree to the{" "}
+                  <button
+                    type="button"
+                    className="text-[#8DC53E] hover:text-[#7AB535] font-medium underline focus:outline-none focus:ring-2 focus:ring-[#8DC53E] rounded"
+                  >
+                    Terms and Conditions
+                  </button>{" "}
+                  and{" "}
+                  <button
+                    type="button"
+                    className="text-[#8DC53E] hover:text-[#7AB535] font-medium underline focus:outline-none focus:ring-2 focus:ring-[#8DC53E] rounded"
+                  >
+                    Privacy Policy
+                  </button>
+                </label>
+              </div>
+              {formErrors.agreeToTerms && (
+                <p className="text-sm text-red-600 flex items-center space-x-1">
                   <svg
-                    className="w-5 h-5 mr-2"
+                    className="w-4 h-4"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
                     <path
                       fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                       clipRule="evenodd"
                     />
                   </svg>
-                  {error}
-                </div>
-              </div>
-            )}
+                  <span>{formErrors.agreeToTerms}</span>
+                </p>
+              )}
 
-            <form
-              className="w-full space-y-[25px]"
-              onSubmit={handleSubmit}
-              data-testid="register-form"
-              noValidate
-            >
-              {/* Form fields (keeping existing structure) */}
-              <div className="flex gap-[30px] w-full">
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    name="firstName"
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    required
-                    data-testid="firstName-input"
-                    className={`w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 placeholder:text-gray-500 outline-none rounded-[8px] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md ${
-                      fieldErrors.firstName
-                        ? "border-red-500"
-                        : "border-gray-200 focus:border-[#7d9d49ff]"
-                    }`}
-                  />
-                  {fieldErrors.firstName && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {fieldErrors.firstName}
-                    </p>
-                  )}
-                </div>
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    name="lastName"
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    required
-                    data-testid="lastName-input"
-                    className={`w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 placeholder:text-gray-500 outline-none rounded-[8px] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md ${
-                      fieldErrors.lastName
-                        ? "border-red-500"
-                        : "border-gray-200 focus:border-[#7d9d49ff]"
-                    }`}
-                  />
-                  {fieldErrors.lastName && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {fieldErrors.lastName}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-[30px] w-full">
-                <div className="flex-1 relative">
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Email Address"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    required
-                    data-testid="email-input"
-                    className={`w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 placeholder:text-gray-500 outline-none rounded-[8px] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md ${
-                      fieldErrors.email
-                        ? "border-red-500"
-                        : "border-gray-200 focus:border-[#7d9d49ff]"
-                    }`}
-                  />
-                  {fieldErrors.email && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {fieldErrors.email}
-                    </p>
-                  )}
-                </div>
-                <div className="flex-1 relative">
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    placeholder="Phone Number (Optional)"
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    data-testid="phone-input"
-                    className={`w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 placeholder:text-gray-500 outline-none rounded-[8px] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md ${
-                      fieldErrors.phoneNumber
-                        ? "border-red-500"
-                        : "border-gray-200 focus:border-[#7d9d49ff]"
-                    }`}
-                  />
-                  {fieldErrors.phoneNumber && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {fieldErrors.phoneNumber}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-[30px] w-full">
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    name="address"
-                    placeholder="Address (Optional)"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    data-testid="address-input"
-                    className="w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 border-gray-200 placeholder:text-gray-500 outline-none rounded-[8px] focus:border-[#7d9d49ff] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md"
-                  />
-                </div>
-                <div className="flex-1 relative">
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    required
-                    minLength="6"
-                    data-testid="password-input"
-                    className={`w-full h-[48px] pl-[20px] pr-[20px] bg-white/80 backdrop-blur-sm border-2 placeholder:text-gray-500 outline-none rounded-[8px] focus:bg-white transition-all duration-300 shadow-sm hover:shadow-md ${
-                      fieldErrors.password
-                        ? "border-red-500"
-                        : "border-gray-200 focus:border-[#7d9d49ff]"
-                    }`}
-                  />
-                  {fieldErrors.password && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {fieldErrors.password}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pt-2">
-                <input
-                  type="checkbox"
-                  name="agreeToTerms"
-                  checked={formData.agreeToTerms}
-                  onChange={handleInputChange}
-                  className="mt-1 w-4 h-4 accent-[#7d9d49ff] rounded focus:ring-2 focus:ring-[#7d9d49ff]/50"
-                  required
-                  data-testid="terms-checkbox"
-                />
-                <label
-                  className="text-[15px] leading-relaxed"
-                  style={{ color: "#4f4f4f" }}
-                >
-                  By signing up, you agree to our{" "}
-                  <span
-                    className="font-semibold cursor-pointer hover:underline transition-all duration-200"
-                    style={{ color: "#7d9d49ff" }}
-                  >
-                    Terms and Conditions
-                  </span>
-                </label>
-              </div>
-
-              <div className="flex justify-between mt-[40px] gap-[30px]">
+              {/* Action Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                 <button
                   type="button"
                   onClick={handleCancel}
-                  disabled={loading}
-                  className="w-full h-[50px] text-[16px] font-semibold rounded-[8px] outline-none border-2 border-[#79a730ff] disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95"
-                  style={{ backgroundColor: "transparent", color: "#79a730ff" }}
+                  disabled={isLoading}
+                  className="w-full py-3 px-6 border-2 border-[#8DC53E] text-[#8DC53E] hover:bg-[#F8FBEF] disabled:border-[#C4E394] disabled:text-[#C4E394] font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-[#E6F2D8]"
                   data-testid="cancel-btn"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || Object.keys(fieldErrors).length > 0}
-                  className="w-full h-[50px] text-[16px] font-semibold rounded-[8px] outline-none border-2 border-[#79a730ff] disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 relative overflow-hidden"
-                  style={{ backgroundColor: "#79a730ff", color: "#ffffff" }}
+                  disabled={isLoading}
+                  className="w-full py-3 px-6 bg-[#8DC53E] hover:bg-[#7AB535] disabled:bg-[#C4E394] text-white font-semibold rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-[#E6F2D8]"
                   data-testid="submit-btn"
                 >
-                  <span className="relative z-10">
-                    {loading ? "Registering..." : "Submit"}
-                  </span>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <span>Creating Account...</span>
+                    </div>
+                  ) : (
+                    "Create Account"
+                  )}
                 </button>
               </div>
+            </form>
 
-              {/* OPTION 1: Use the custom button approach */}
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={loading || googleLoading || !googleReady}
-                data-testid="google-btn"
-                className="w-full h-[50px] text-[16px] font-semibold rounded-[8px] outline-none border-2 border-[#79a730ff] flex items-center justify-center gap-[12px] disabled:opacity-50 transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95 relative overflow-hidden"
-                style={{
-                  backgroundColor: "transparent",
-                  color: "#79a730ff",
-                }}
-              >
+            {/* Divider */}
+            <div className="my-8 flex items-center">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="mx-4 text-sm font-medium text-gray-500 bg-white px-3 py-1 rounded-full">
+                OR
+              </span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            {/* Google Sign In - FIXED VERSION */}
+            <button
+              onClick={handleGoogleSignIn}
+              disabled={isLoading || googleLoading || !googleReady}
+              className="w-full py-3 px-6 border-2 border-gray-300 hover:border-gray-400 disabled:border-gray-200 bg-white text-gray-700 font-medium rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-gray-100"
+              data-testid="google-btn"
+            >
+              <div className="flex items-center justify-center space-x-3">
                 <img
                   src="/Google.png"
                   alt="Google"
-                  className="w-[25px] h-[25px] object-contain"
+                  className="w-5 h-5"
                   data-testid="google-icon"
                 />
                 <span>
-                  {googleLoading
-                    ? "Connecting..."
-                    : googleReady
-                    ? "Continue with Google"
-                    : "Loading Google..."}
+                  {googleLoading ? "Connecting..." : "Continue with Google"}
                 </span>
-              </button>
-              <div className="text-center pt-[25px]" data-testid="login-link">
-                <p className="text-[15px]" style={{ color: "#4f4f4f" }}>
-                  Already have an account?{" "}
-                  <Link
-                    to="/login"
-                    className="font-semibold cursor-pointer no-underline hover:underline transition-all duration-200"
-                    style={{ color: "#7d9d49ff" }}
-                  >
-                    Login Here
-                  </Link>
-                </p>
               </div>
-            </form>
+            </button>
+
+            {/* Login Link */}
+            <div className="text-center mt-8 pt-6 border-t border-gray-200">
+              <p className="text-gray-600">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="font-semibold text-[#8DC53E] hover:text-[#7AB535] transition-colors duration-200 focus:outline-none focus:underline"
+                  data-testid="login-link"
+                >
+                  Sign in here
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>
