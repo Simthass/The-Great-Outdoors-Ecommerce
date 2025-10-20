@@ -432,7 +432,7 @@ const Home = () => {
               {/* Content Side */}
               <div className="p-8 lg:p-12">
                 <div className="inline-flex items-center gap-2 bg-[#8DC53E]/10 text-[#8DC53E] px-4 py-1 rounded-full text-sm font-semibold mb-4">
-                  📧 Stay Updated
+                  ✉ Stay Updated
                 </div>
                 <h2 className="text-3xl lg:text-4xl font-black text-gray-900 mb-4 leading-tight">
                   Never Miss an{" "}
