@@ -168,6 +168,200 @@ const About = () => {
         </div>
       </div>
 
+      {/* Modern Gallery Section */}
+      <div
+        className="py-24 bg-gradient-to-b from-white via-gray-50 to-white relative overflow-hidden"
+        data-testid="about-gallery"
+      >
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Gallery Banner Hero */}
+          <div className="mb-20 relative">
+            <div className="relative h-96 rounded-[3rem] overflow-hidden group shadow-2xl">
+              <img
+                src="/About 1.jpg"
+                alt="Shop Gallery"
+                className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
+              />
+
+              {/* Overlay Content */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent flex flex-col justify-center items-start p-12 md:p-16">
+                <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 leading-tight">
+                  OUR SHOP
+                </h2>
+                <p className="text-xl md:text-2xl text-emerald-300 font-light mb-2">
+                  Experience Adventure in Every Corner
+                </p>
+                <div className="flex items-center gap-2 text-gray-300 mt-6 group/scroll cursor-pointer hover:text-white transition-colors">
+                  <span className="text-sm tracking-widest">EXPLORE MORE</span>
+                  <svg
+                    className="w-5 h-5 animate-bounce"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Decorative shapes - top right */}
+              <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl"></div>
+            </div>
+          </div>
+
+          {/* Image Grid - Modern Staggered Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[250px] md:auto-rows-[280px]">
+            {/* Image 1: Small Square - Row 1 */}
+            <div
+              className="col-span-1 md:col-span-4 group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
+              data-testid="gallery-item-1"
+            >
+              <img
+                src="/About 1.jpg"
+                alt="Shop entrance"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-semibold text-lg">
+                    Shop Design
+                  </h3>
+                  <p className="text-gray-300 text-sm">Modern aesthetic</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Image 2: Large Landscape - Row 1 */}
+            <div
+              className="col-span-1 md:col-span-8 group relative cursor-pointer rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
+              data-testid="gallery-item-2"
+            >
+              <img
+                src="/About 7.jpg"
+                alt="Product showcase"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
+                <div>
+                  <h3 className="text-white font-semibold text-xl">Products</h3>
+                  <p className="text-gray-300 text-sm">Curated Collection</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Image 3: Medium Wide - Row 2 */}
+            <div
+              className="col-span-1 md:col-span-5 group relative cursor-pointer rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
+              data-testid="gallery-item-3"
+            >
+              <img
+                src="/About 10.jpg"
+                alt="Customer experience"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
+                <div>
+                  <h3 className="text-white font-semibold text-xl">
+                    Experience
+                  </h3>
+                  <p className="text-gray-300 text-sm">Customer First</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Image 4: Medium Square - Row 2 */}
+            <div
+              className="col-span-1 md:col-span-3 group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
+              data-testid="gallery-item-4"
+            >
+              <img
+                src="/About 6.jpg"
+                alt="Adventure gear"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Gear</h3>
+                  <p className="text-gray-300 text-sm">Premium Quality</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Image 5: Medium Square - Row 2 */}
+            <div
+              className="col-span-1 md:col-span-2 group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
+              data-testid="gallery-item-5"
+            >
+              <img
+                src="/About 8.jpg"
+                alt="Team collaboration"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Team</h3>
+                  <p className="text-gray-300 text-sm">Dedicated</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Image 6: Medium Square - Row 2 */}
+            <div
+              className="col-span-1 md:col-span-2 group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
+              data-testid="gallery-item-6"
+            >
+              <img
+                src="/About 9.jpg"
+                alt="Store interior"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Interior</h3>
+                  <p className="text-gray-300 text-sm">Welcoming Space</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="mt-20 text-center">
+            <p className="text-gray-600 text-lg mb-6">
+              Discover the full experience of our shop
+            </p>
+            <button
+              onClick={() =>
+                window.open(
+                  "https://maps.app.goo.gl/xyBXWuyT62Yp9reo9",
+                  "_blank"
+                )
+              }
+              className="group relative px-8 py-3 bg-[#8DC53E] text-white font-semibold rounded-full hover:bg-[#7AB82E] transition-all duration-300 shadow-lg hover:shadow-xl inline-flex items-center gap-2"
+            >
+              <span>Visit Us Today</span>
+              <svg
+                className="w-5 h-5 group-hover:translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Customer Reviews */}
       <div className="py-20 bg-white" data-testid="about-reviews">
         <div className="max-w-6xl mx-auto px-6">
