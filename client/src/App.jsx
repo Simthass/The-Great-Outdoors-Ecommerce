@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,6 +8,7 @@ import {
 import { Provider } from "react-redux";
 import store from "./store/store";
 import { ToastContainer } from "react-toastify";
+import { HelmetProvider } from "react-helmet-async";
 
 // Components
 import ScrollToTop from "./components/ScrollToTop";
@@ -18,7 +19,6 @@ import Footer from "./components/footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import AuthInitializer from "./components/AuthInitializer";
-import { HelmetProvider } from "react-helmet-async";
 
 // Pages
 import Home from "./pages/Home";
@@ -65,84 +65,93 @@ const BackgroundSlider = ({ children }) => {
     "/hero-background-5.png",
   ];
 
-  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
-  const [imagesLoaded, setImagesLoaded] = React.useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
   useEffect(() => {
     const preloadImages = async () => {
-      const imagePromises = backgroundImages.map((src) => {
-        return new Promise((resolve, reject) => {
+      const promises = backgroundImages.map((src) => {
+        return new Promise((resolve) => {
           const img = new Image();
-          img.onload = () => resolve(src);
-          img.onerror = () => reject(src);
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // continue even if one fails
           img.src = src;
         });
       });
-
-      try {
-        await Promise.all(imagePromises);
-        setImagesLoaded(true);
-      } catch (error) {
-        console.error("Some images failed to load:", error);
-        setImagesLoaded(true);
-      }
+      await Promise.all(promises);
+      setImagesLoaded(true);
     };
-
     preloadImages();
   }, []);
 
   useEffect(() => {
-    if (!imagesLoaded || backgroundImages.length <= 1) return;
-
+    if (!imagesLoaded) return;
     const interval = setInterval(() => {
-      setCurrentImageIndex(
-        (prevIndex) => (prevIndex + 1) % backgroundImages.length
-      );
-    }, 6000);
-
+      setActiveIndex((current) => (current + 1) % backgroundImages.length);
+    }, 7000); // Slower interval for a more cinematic feel
     return () => clearInterval(interval);
-  }, [backgroundImages.length, imagesLoaded]);
-
-  if (!imagesLoaded || backgroundImages.length === 1) {
-    return (
-      <div
-        className="relative min-h-screen bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('${backgroundImages[0]}')`,
-        }}
-      >
-        <div className="relative z-10">{children}</div>
-      </div>
-    );
-  }
+  }, [imagesLoaded]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#0a0a0a]">
+      {/* Advanced Liquid Morph CSS */}
       <style>
         {`
-          @keyframes smooth-zoom {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.3); }
+          .morph-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            transition: opacity 2.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                        transform 7s cubic-bezier(0.25, 1, 0.5, 1), 
+                        filter 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: scale(1.15) rotate(1deg);
+            filter: blur(20px) saturate(150%) brightness(1.2);
+            z-index: 10;
+            will-change: transform, opacity, filter;
+          }
+          
+          .morph-slide.active {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+            filter: blur(0px) saturate(100%) brightness(1);
+            z-index: 20;
+          }
+
+          .morph-slide.previous {
+            opacity: 0;
+            transform: scale(0.95) rotate(-1deg);
+            filter: blur(15px) saturate(50%) brightness(0.8);
+            z-index: 15;
           }
         `}
       </style>
 
-      {backgroundImages.map((image, index) => (
-        <div
-          key={index}
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[1000ms] ease-in-out ${
-            index === currentImageIndex
-              ? "opacity-100 z-20 animate-[smooth-zoom_6s_linear_forwards]"
-              : "opacity-0 z-10"
-          }`}
-          style={{
-            backgroundImage: `url('${image}')`,
-          }}
-        />
-      ))}
+      {backgroundImages.map((img, index) => {
+        let positionClass = "";
+        if (index === activeIndex) positionClass = "active";
+        else if (
+          index ===
+          (activeIndex - 1 + backgroundImages.length) % backgroundImages.length
+        )
+          positionClass = "previous";
 
-      <div className="absolute inset-0 bg-black/50 z-30" />
-      <div className="relative z-40">{children}</div>
+        return (
+          <div
+            key={img}
+            className={`morph-slide ${positionClass}`}
+            style={{ backgroundImage: `url('${img}')` }}
+          />
+        );
+      })}
+
+      {/* Atmospheric Overlays */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/80 z-30 pointer-events-none mix-blend-multiply" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/20 to-black/60 z-30 pointer-events-none" />
+
+      {/* Content Container */}
+      <div className="relative z-40 h-full w-full">{children}</div>
     </div>
   );
 };
@@ -152,7 +161,7 @@ const Layout = ({ children }) => {
   const isHome = location.pathname === "/";
 
   return (
-    <div className="min-h-screen font-sans text-gray-800">
+    <div className="min-h-screen font-sans text-gray-800 selection:bg-[#8DC53E] selection:text-white">
       {isHome ? (
         <BackgroundSlider>
           <TopBar />
@@ -160,10 +169,7 @@ const Layout = ({ children }) => {
           <HomeHero />
         </BackgroundSlider>
       ) : (
-        <>
-          {/* Only Header on non-home pages - TopBar removed */}
-          <Header />
-        </>
+        <Header />
       )}
       <div className="bg-white">{children}</div>
       <Footer />
@@ -180,7 +186,7 @@ const App = () => {
           <Layout>
             <ScrollToTop />
             <Routes>
-              {/* Public Routes */}
+              {/* Keep all your existing routes exactly as they were */}
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/aboutUs" element={<About />} />
@@ -198,7 +204,6 @@ const App = () => {
               <Route path="/events" element={<Events />} />
               <Route path="/events/:id" element={<EventDetail />} />
 
-              {/* Protected User Routes */}
               <Route
                 path="/userProfile"
                 element={
@@ -240,7 +245,6 @@ const App = () => {
                 }
               />
 
-              {/* Admin Only Routes */}
               <Route
                 path="/admin/*"
                 element={
@@ -370,7 +374,6 @@ const App = () => {
                 }
               />
 
-              {/* Catch all route */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <ToastContainer position="top-right" autoClose={3000} />
