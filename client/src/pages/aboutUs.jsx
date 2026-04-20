@@ -1,520 +1,346 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, useInView } from "framer-motion";
+import {
+  Users,
+  Package,
+  Award,
+  Shield,
+  Leaf,
+  Compass,
+  TrendingUp,
+  Star,
+  ArrowRight,
+} from "lucide-react";
+import ScrollToTop from "../components/ScrollToTop";
 
+// ── Scroll-triggered reveal wrapper ──────────────────────────────────────────
+const FadeIn = ({ children, delay = 0, y = 24, className = "" }) => {
+  const ref = React.useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y, filter: "blur(5px)" }}
+      animate={inView ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
+      transition={{ duration: 0.55, delay, ease: [0.33, 1, 0.68, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+// ── Section heading ──────────────────────────────────────────────────────────
+const SectionHead = ({ eyebrow, title, accent, sub, center = true }) => (
+  <div className={`mb-12 ${center ? "text-center" : ""}`}>
+    {eyebrow && (
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8DC53E]/8 border border-[#8DC53E]/15 text-[#4a8a14] text-[9px] font-black uppercase tracking-[0.22em] mb-4">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#8DC53E] animate-pulse" />
+        {eyebrow}
+      </div>
+    )}
+    <h2
+      className="font-black text-gray-900 leading-tight mb-3"
+      style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)" }}
+    >
+      {title} {accent && <span className="text-[#8DC53E]">{accent}</span>}
+    </h2>
+    {sub && (
+      <p className="text-gray-400 text-base max-w-2xl mx-auto leading-relaxed">
+        {sub}
+      </p>
+    )}
+  </div>
+);
+
+// ── Stat Card ────────────────────────────────────────────────────────────────
+const StatCard = ({ value, label, icon: Icon, delay = 0 }) => (
+  <FadeIn delay={delay}>
+    <div className="text-center p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+      <div className="w-12 h-12 rounded-xl bg-[#8DC53E]/10 flex items-center justify-center mx-auto mb-3">
+        <Icon size={22} className="text-[#8DC53E]" />
+      </div>
+      <div className="text-3xl font-black text-gray-900 mb-1">{value}</div>
+      <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">{label}</div>
+    </div>
+  </FadeIn>
+);
+
+// ── Value Card ───────────────────────────────────────────────────────────────
+const ValueCard = ({ title, description, icon: Icon, delay = 0 }) => (
+  <FadeIn delay={delay}>
+    <div className="group p-6 rounded-2xl bg-white border border-gray-100 hover:border-[#8DC53E]/20 hover:shadow-lg transition-all duration-300">
+      <div className="w-12 h-12 rounded-xl bg-[#8DC53E]/10 flex items-center justify-center mb-4 group-hover:bg-[#8DC53E] transition-colors duration-300">
+        <Icon size={22} className="text-[#8DC53E] group-hover:text-white transition-colors duration-300" />
+      </div>
+      <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-500 text-sm leading-relaxed">{description}</p>
+    </div>
+  </FadeIn>
+);
+
+// ── Review Card ──────────────────────────────────────────────────────────────
+const ReviewCard = ({ name, location, role, text, rating, image, delay = 0 }) => (
+  <FadeIn delay={delay}>
+    <div className="p-6 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+      <div className="flex items-center gap-3 mb-4">
+        <img
+          src={image}
+          alt={name}
+          className="w-12 h-12 rounded-full object-cover border-2 border-[#8DC53E]/20"
+          onError={(e) => {
+            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8DC53E&color=fff`;
+          }}
+        />
+        <div>
+          <h4 className="text-sm font-bold text-gray-900">{name}</h4>
+          <p className="text-xs text-gray-400">{role}</p>
+          <p className="text-[10px] text-[#8DC53E] font-medium mt-0.5">{location}</p>
+        </div>
+      </div>
+      <div className="flex gap-0.5 mb-3">
+        {Array(rating).fill().map((_, i) => (
+          <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
+        ))}
+      </div>
+      <p className="text-gray-500 text-sm leading-relaxed">"{text}"</p>
+    </div>
+  </FadeIn>
+);
+
+// ── Main About Page ──────────────────────────────────────────────────────────
 const About = () => {
   const navigate = useNavigate();
+  ScrollToTop();
+
+  const stats = [
+    { value: "10K+", label: "Happy Adventurers", icon: Users },
+    { value: "200+", label: "Premium Products", icon: Package },
+    { value: "15", label: "Years Experience", icon: Award },
+    { value: "100%", label: "Satisfaction", icon: Shield },
+  ];
+
+  const values = [
+    {
+      title: "Quality First",
+      description: "Every product is tested in real conditions before it reaches our shelves.",
+      icon: Shield,
+    },
+    {
+      title: "Sustainability",
+      description: "Committed to eco-friendly materials and ethical manufacturing.",
+      icon: Leaf,
+    },
+    {
+      title: "Expert Knowledge",
+      description: "Our team lives and breathes outdoor adventure every day.",
+      icon: Compass,
+    },
+    {
+      title: "Community Driven",
+      description: "Built by explorers, for explorers. Your feedback shapes our gear.",
+      icon: TrendingUp,
+    },
+  ];
+
+  // Mix of Sri Lankan and international adventurers
+  const reviews = [
+    {
+      name: "Nuwan Perera",
+      location: "Kandy, Sri Lanka",
+      role: "Mountain Guide",
+      text: "The gear from TGO has been my trusted companion on every Knuckles hike. Durable, comfortable, and built for our tropical terrain.",
+      rating: 5,
+      image: "https://randomuser.me/api/portraits/men/32.jpg",
+    },
+    {
+      name: "Sarah Chen",
+      location: "Singapore",
+      role: "Trail Runner",
+      text: "I discovered TGO during my Sri Lanka trip. Their equipment quality rivals top international brands at better prices.",
+      rating: 5,
+      image: "https://randomuser.me/api/portraits/women/68.jpg",
+    },
+    {
+      name: "Dilani Fernando",
+      location: "Colombo, Sri Lanka",
+      role: "Camping Enthusiast",
+      text: "The camping gear is fantastic! Spent a week in Yala and everything held up perfectly. Highly recommend!",
+      rating: 5,
+      image: "https://randomuser.me/api/portraits/women/44.jpg",
+    },
+    {
+      name: "Marcus Rodriguez",
+      location: "Spain",
+      role: "Wildlife Photographer",
+      text: "Lightweight yet incredibly sturdy. Perfect for long expeditions where every gram counts. TGO never disappoints.",
+      rating: 5,
+      image: "https://randomuser.me/api/portraits/men/45.jpg",
+    },
+    {
+      name: "Amal Wickramasinghe",
+      location: "Nuwara Eliya, Sri Lanka",
+      role: "Adventure Club Lead",
+      text: "We've outfitted our entire adventure club with TGO gear. Exceptional value and outstanding customer service.",
+      rating: 5,
+      image: "https://randomuser.me/api/portraits/men/67.jpg",
+    },
+    {
+      name: "Elena Volkov",
+      location: "Russia",
+      role: "Arctic Explorer",
+      text: "I've tested gear in extreme cold conditions. TGO's thermal technology is impressive and reliable.",
+      rating: 5,
+      image: "https://randomuser.me/api/portraits/women/89.jpg",
+    },
+  ];
+
+  const PX = "px-6 lg:px-[75px]";
+  const SECTION_PY = "py-16 lg:py-20";
+
   return (
-    <section data-testid="about-page" className="bg-white">
-      {/* Hero Section */}
-      <div
-        className="w-full h-48 md:h-64 bg-gradient-to-r from-gray-900 to-gray-700 flex items-center justify-center relative overflow-hidden"
-        data-testid="about-hero"
-      >
-        <div className="absolute inset-0 bg-[url(/page-name.png)] bg-cover bg-center opacity-30"></div>
-        <div className="relative z-10 text-center px-4">
-          <h1
-            className="text-4xl md:text-6xl font-bold text-white mb-2"
-            data-testid="about-hero-title"
-          >
-            About Us
-          </h1>
-          <p className="text-gray-200 text-sm md:text-base">
-            Fueling adventures with passion and outdoor spirit
-          </p>
+    <div className="bg-white min-h-screen">
+      {/* Hero Section - Updated with Climbing Photo */}
+      <section className="relative bg-gray-900 overflow-hidden">
+        <div className="absolute inset-0">
         </div>
-      </div>
+        <div className={`relative ${SECTION_PY} ${PX}`}>
+          <FadeIn>
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-2 text-[#8DC53E] text-xs font-bold uppercase tracking-wider mb-4">
+                <span className="w-8 h-px bg-[#8DC53E]" />
+                Our Story
+              </div>
+              <h1 className="text-4xl lg:text-6xl font-black text-white leading-tight mb-4">
+                Fueling Adventures
+                <br />
+                <span className="text-[#8DC53E]">Since 2010</span>
+              </h1>
+              <p className="text-gray-300 text-lg leading-relaxed max-w-xl">
+                We're passionate explorers on a mission to equip every adventurer with reliable, 
+                sustainable gear that enhances their connection with nature.
+              </p>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
 
       {/* Mission Statement */}
-      <div
-        className="max-w-6xl mx-auto px-6 py-20"
-        data-testid="about-tagline-block"
-      >
-        <div className="text-center mb-16">
-          <h2
-            data-testid="about-tagline"
-            className="text-4xl md:text-5xl font-light text-gray-800 leading-tight mb-8"
-          >
-            Fueling Your Adventures with Passion{" "}
-            <br className="hidden md:block" />
-            and Relentless Outdoor Spirit
-          </h2>
-          <div className="w-20 h-1 bg-[#8DC53E] mx-auto"></div>
-        </div>
-
-        <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-          <img
-            src="/About us.png"
-            alt="Adventure team in nature"
-            data-testid="about-hero-image"
-            className="w-full h-[500px] object-cover transform hover:scale-105 transition-transform duration-700"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-        </div>
-      </div>
-
-      {/* Values Section */}
-      <div className="bg-gray-50 py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 mb-20">
-            {/* Inception Vision */}
-            <div
-              className="flex flex-col md:flex-row items-start gap-8 group"
-              data-testid="about-inception-section"
-            >
-              <div className="relative flex-shrink-0">
-                <div className="w-20 h-20 bg-[#8DC53E] rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-300">
-                  <svg
-                    className="w-10 h-10 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                </div>
+      <section className={`${SECTION_PY} bg-white`}>
+        <div className={PX}>
+          <div className="max-w-4xl mx-auto text-center">
+            <FadeIn>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8DC53E]/8 border border-[#8DC53E]/15 text-[#4a8a14] text-[9px] font-black uppercase tracking-[0.22em] mb-4">
+                Our Mission
               </div>
-              <div className="flex-1">
-                <h3
-                  data-testid="about-inception-title"
-                  className="text-2xl font-semibold text-gray-800 mb-4"
-                >
-                  Our Vision
-                </h3>
-                <p
-                  data-testid="about-inception-text"
-                  className="text-gray-600 leading-relaxed text-lg"
-                >
-                  Founded by passionate outdoor enthusiasts, we set out to
-                  redefine adventure gear. Our vision is to equip every explorer
-                  with reliable, sustainable, and innovative gear that enhances
-                  their connection with nature while minimizing environmental
-                  impact.
-                </p>
-              </div>
-            </div>
-
-            {/* Commitment */}
-            <div
-              className="flex flex-col md:flex-row items-start gap-8 group"
-              data-testid="about-commitment-section"
-            >
-              <div className="relative flex-shrink-0">
-                <div className="w-20 h-20 bg-[#8DC53E] rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-300">
-                  <svg
-                    className="w-10 h-10 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3
-                  data-testid="about-commitment-title"
-                  className="text-2xl font-semibold text-gray-800 mb-4"
-                >
-                  Our Commitment
-                </h3>
-                <p
-                  data-testid="about-commitment-text"
-                  className="text-gray-600 leading-relaxed text-lg"
-                >
-                  We're committed to sustainable practices, ethical
-                  manufacturing, and creating gear that lasts. Every product is
-                  designed with attention to detail, tested in real conditions,
-                  and backed by our lifetime warranty promise.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="p-6">
-              <div className="text-4xl font-bold text-[#8DC53E] mb-2">10K+</div>
-              <div className="text-gray-600">Happy Adventurers</div>
-            </div>
-            <div className="p-6">
-              <div className="text-4xl font-bold text-[#8DC53E] mb-2">200+</div>
-              <div className="text-gray-600">Products Available</div>
-            </div>
-            <div className="p-6">
-              <div className="text-4xl font-bold text-[#8DC53E] mb-2">15</div>
-              <div className="text-gray-600">Years Experience</div>
-            </div>
-            <div className="p-6">
-              <div className="text-4xl font-bold text-[#8DC53E] mb-2">100%</div>
-              <div className="text-gray-600">Satisfaction Guarantee</div>
-            </div>
+              <h2 className="text-3xl lg:text-4xl font-black text-gray-900 leading-tight mb-6">
+                To inspire and equip{" "}
+                <span className="text-[#8DC53E]">every outdoor journey</span>
+              </h2>
+              <p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">
+                Founded by passionate outdoor enthusiasts, we set out to redefine adventure gear. 
+                Every product is designed with attention to detail, tested in real conditions, 
+                and backed by our commitment to quality and sustainability.
+              </p>
+            </FadeIn>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Modern Gallery Section */}
-      <div
-        className="py-24 bg-gradient-to-b from-white via-gray-50 to-white relative overflow-hidden"
-        data-testid="about-gallery"
-      >
-        <div className="max-w-7xl mx-auto px-6">
-          {/* Gallery Banner Hero */}
-          <div className="mb-20 relative">
-            <div className="relative h-96 rounded-[3rem] overflow-hidden group shadow-2xl">
-              <img
-                src="/About 1.jpg"
-                alt="Shop Gallery"
-                className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
-              />
-
-              {/* Overlay Content */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent flex flex-col justify-center items-start p-12 md:p-16">
-                <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 leading-tight">
-                  OUR SHOP
-                </h2>
-                <p className="text-xl md:text-2xl text-emerald-300 font-light mb-2">
-                  Experience Adventure in Every Corner
-                </p>
-                <div className="flex items-center gap-2 text-gray-300 mt-6 group/scroll cursor-pointer hover:text-white transition-colors">
-                  <span className="text-sm tracking-widest">EXPLORE MORE</span>
-                  <svg
-                    className="w-5 h-5 animate-bounce"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Decorative shapes - top right */}
-              <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl"></div>
-            </div>
-          </div>
-
-          {/* Image Grid - Modern Staggered Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[250px] md:auto-rows-[280px]">
-            {/* Image 1: Small Square - Row 1 */}
-            <div
-              className="col-span-1 md:col-span-4 group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
-              data-testid="gallery-item-1"
-            >
-              <img
-                src="/About 1.jpg"
-                alt="Shop entrance"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
-                <div>
-                  <h3 className="text-white font-semibold text-lg">
-                    Shop Design
-                  </h3>
-                  <p className="text-gray-300 text-sm">Modern aesthetic</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Image 2: Large Landscape - Row 1 */}
-            <div
-              className="col-span-1 md:col-span-8 group relative cursor-pointer rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
-              data-testid="gallery-item-2"
-            >
-              <img
-                src="/About 7.jpg"
-                alt="Product showcase"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
-                <div>
-                  <h3 className="text-white font-semibold text-xl">Products</h3>
-                  <p className="text-gray-300 text-sm">Curated Collection</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Image 3: Medium Wide - Row 2 */}
-            <div
-              className="col-span-1 md:col-span-5 group relative cursor-pointer rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
-              data-testid="gallery-item-3"
-            >
-              <img
-                src="/About 10.jpg"
-                alt="Customer experience"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
-                <div>
-                  <h3 className="text-white font-semibold text-xl">
-                    Experience
-                  </h3>
-                  <p className="text-gray-300 text-sm">Customer First</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Image 4: Medium Square - Row 2 */}
-            <div
-              className="col-span-1 md:col-span-3 group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
-              data-testid="gallery-item-4"
-            >
-              <img
-                src="/About 6.jpg"
-                alt="Adventure gear"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
-                <div>
-                  <h3 className="text-white font-semibold text-lg">Gear</h3>
-                  <p className="text-gray-300 text-sm">Premium Quality</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Image 5: Medium Square - Row 2 */}
-            <div
-              className="col-span-1 md:col-span-2 group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
-              data-testid="gallery-item-5"
-            >
-              <img
-                src="/About 8.jpg"
-                alt="Team collaboration"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
-                <div>
-                  <h3 className="text-white font-semibold text-lg">Team</h3>
-                  <p className="text-gray-300 text-sm">Dedicated</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Image 6: Medium Square - Row 2 */}
-            <div
-              className="col-span-1 md:col-span-2 group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
-              data-testid="gallery-item-6"
-            >
-              <img
-                src="/About 9.jpg"
-                alt="Store interior"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
-                <div>
-                  <h3 className="text-white font-semibold text-lg">Interior</h3>
-                  <p className="text-gray-300 text-sm">Welcoming Space</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom CTA */}
-          <div className="mt-20 text-center">
-            <p className="text-gray-600 text-lg mb-6">
-              Discover the full experience of our shop
-            </p>
-            <button
-              onClick={() =>
-                window.open(
-                  "https://maps.app.goo.gl/xyBXWuyT62Yp9reo9",
-                  "_blank"
-                )
-              }
-              className="group relative px-8 py-3 bg-[#8DC53E] text-white font-semibold rounded-full hover:bg-[#7AB82E] transition-all duration-300 shadow-lg hover:shadow-xl inline-flex items-center gap-2"
-            >
-              <span>Visit Us Today</span>
-              <svg
-                className="w-5 h-5 group-hover:translate-x-1 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Customer Reviews */}
-      <div className="py-20 bg-white" data-testid="about-reviews">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2
-              className="text-4xl font-bold text-gray-800 mb-4"
-              data-testid="about-reviews-title"
-            >
-              What Adventurers Say
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Join thousands of satisfied explorers who trust our gear for their
-              most challenging adventures
-            </p>
-          </div>
-
-          {/* Reviews Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                id: 1,
-                name: "Sarah Chen",
-                role: "Mountain Guide",
-                image: "/AK.jpg",
-                text: "The durability of this gear is unmatched. Survived the toughest Himalayan conditions with ease.",
-                rating: 5,
-              },
-              {
-                id: 2,
-                name: "Marcus Rivera",
-                role: "Wildlife Photographer",
-                image: "/prabhas.jpg",
-                text: "Lightweight yet incredibly sturdy. Perfect for long expeditions where every gram counts.",
-                rating: 5,
-              },
-              {
-                id: 3,
-                name: "Elena Petrova",
-                role: "Arctic Explorer",
-                image: "/vijay.png",
-                text: "Exceptional quality and attention to detail. This gear has never let me down in extreme conditions.",
-                rating: 5,
-              },
-              {
-                id: 4,
-                name: "James Wilson",
-                role: "National Geographic",
-                image: "/rajini.jpg",
-                text: "Sustainable materials and superior craftsmanship. Exactly what modern explorers need.",
-                rating: 5,
-              },
-              {
-                id: 5,
-                name: "Lisa Zhang",
-                role: "Rock Climbing Pro",
-                image: "/dhanush.jpg",
-                text: "Innovative designs that actually work. The comfort and functionality are game-changing.",
-                rating: 5,
-              },
-              {
-                id: 6,
-                name: "David Kim",
-                role: "Adventure Film Maker",
-                image: "/Surya.jpg",
-                text: "Reliable gear that performs when it matters most. My go-to for all major expeditions.",
-                rating: 5,
-              },
-            ].map((review) => (
-              <div
-                key={review.id}
-                data-testid={`review-card-${review.id}`}
-                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 border border-gray-100"
-              >
-                <div className="flex items-center mb-6">
-                  <img
-                    src={review.image}
-                    alt={review.name}
-                    data-testid={`review-image-${review.id}`}
-                    className="w-16 h-16 rounded-full object-cover border-4 border-[#8DC53E]/20"
-                  />
-                  <div className="ml-4">
-                    <h4
-                      data-testid={`review-name-${review.id}`}
-                      className="text-xl font-semibold text-gray-800"
-                    >
-                      {review.name}
-                    </h4>
-                    <p
-                      data-testid={`review-role-${review.id}`}
-                      className="text-[#8DC53E] font-medium"
-                    >
-                      {review.role}
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  data-testid={`review-stars-${review.id}`}
-                  className="flex mb-4"
-                >
-                  {Array(review.rating)
-                    .fill()
-                    .map((_, i) => (
-                      <svg
-                        key={i}
-                        className="w-5 h-5 text-[#FFA81D] mr-1"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.178 3.63a1 1 0 00.95.69h3.813c.969 0 1.371 1.24.588 1.81l-3.084 2.24a1 1 0 00-.364 1.118l1.178 3.63c.3.921-.755 1.688-1.54 1.118l-3.084-2.24a1 1 0 00-1.176 0l-3.084 2.24c-.784.57-1.838-.197-1.54-1.118l1.178-3.63a1 1 0 00-.364-1.118L2.33 9.057c-.783-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.178-3.63z" />
-                      </svg>
-                    ))}
-                </div>
-
-                <p
-                  data-testid={`review-text-${review.id}`}
-                  className="text-gray-600 leading-relaxed"
-                >
-                  "{review.text}"
-                </p>
-              </div>
+      {/* Stats Section */}
+      <section className="py-12 bg-gray-50">
+        <div className={PX}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {stats.map((stat, i) => (
+              <StatCard key={stat.label} {...stat} delay={i * 0.08} />
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* CTA Section */}
-      <div className="bg-gradient-to-r from-[#8DC53E] to-[#7AB82E] py-16">
-        <div className="max-w-4xl mx-auto text-center px-6">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Ready for Your Next Adventure?
-          </h2>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Join our community of explorers and experience the difference with
-            gear designed for the wild.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              className="bg-white text-[#8DC53E] px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105"
-              onClick={() => (window.location.href = "/#hot-this-week")}
-            >
-              Explore Our Gear
-            </button>
-            <button
-              className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white/10 transition-colors duration-300 cursor-pointer"
-              onClick={() => navigate(`/contactus`)}
-            >
-              Contact Us
-            </button>
+      {/* Values Section */}
+      <section className={`${SECTION_PY} bg-white`}>
+        <div className={PX}>
+          <SectionHead
+            eyebrow="What We Believe"
+            title="Our Core"
+            accent="Values"
+            sub="The principles that guide everything we do"
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {values.map((value, i) => (
+              <ValueCard key={value.title} {...value} delay={i * 0.08} />
+            ))}
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Feature Image Section - Climbing Photo */}
+      <section className="relative overflow-hidden">
+        <div className="relative h-[400px] md:h-[500px]">
+          <img
+            src="https://images.unsplash.com/photo-1522163182402-834f871fd851?w=1600&h=500&fit=crop"
+            alt="Rock climber on mountain cliff"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 text-center pb-12">
+            <FadeIn>
+              <p className="text-white/80 text-sm tracking-wider mb-2">EXPERIENCE THE DIFFERENCE</p>
+              <p className="text-white text-xl md:text-2xl font-medium max-w-2xl mx-auto px-4">
+                "Gear designed for the wild, tested by the boldest explorers"
+              </p>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Reviews (Sri Lankan + International) */}
+      <section className={`${SECTION_PY} bg-gray-50`}>
+        <div className={PX}>
+          <SectionHead
+            eyebrow="Testimonials"
+            title="What Adventurers"
+            accent="Say"
+            sub="Join thousands of satisfied explorers from Sri Lanka and around the world who trust our gear"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reviews.map((review, i) => (
+              <ReviewCard key={review.name} {...review} delay={i * 0.08} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-[#8DC53E]">
+        <div className={PX}>
+          <FadeIn className="text-center">
+            <h2 className="text-2xl md:text-3xl font-black text-white mb-3">
+              Ready for Your Next Adventure?
+            </h2>
+            <p className="text-white/80 text-base max-w-md mx-auto mb-6">
+              Join our community of explorers and experience the difference
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => navigate("/shop")}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#8DC53E] text-xs font-bold uppercase tracking-wide hover:bg-gray-100 transition-all"
+              >
+                Shop Now <ArrowRight size={14} />
+              </button>
+              <button
+                onClick={() => navigate("/contactus")}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-white text-white text-xs font-bold uppercase tracking-wide hover:bg-white/10 transition-all"
+              >
+                Contact Us
+              </button>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+    </div>
   );
 };
 

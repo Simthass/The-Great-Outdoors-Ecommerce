@@ -1,590 +1,442 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, useInView, AnimatePresence } from "framer-motion";
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  Send,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  ArrowRight,
+} from "lucide-react";
+import ScrollToTop from "../components/ScrollToTop";
 
-const Contact = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
-
-  const [formErrors, setFormErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [status, setStatus] = useState({ message: "", error: false });
-  const [submitting, setSubmitting] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Check screen size for responsive behavior
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  // Brand colors using #8DC53E and its shades
-  const BRAND_COLORS = {
-    primary: "#8DC53E",
-    primaryDark: "#7AB535",
-    primaryLight: "#A3D15E",
-    primaryLighter: "#C4E394",
-    primaryLightest: "#E6F2D8",
-    text: "#1A2E05",
-    textLight: "#4A5D34",
-    background: "#F8FBEF",
-    border: "#DAE8C3",
-    error: "#DC2626",
-  };
-
-  // Validation rules
-  const validationRules = {
-    name: {
-      required: true,
-      minLength: 2,
-      message: "Name must be at least 2 characters",
-    },
-    phone: {
-      required: true,
-      pattern: /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/,
-      message: "Please enter a valid phone number",
-    },
-    email: {
-      required: true,
-      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      message: "Please enter a valid email address",
-    },
-    subject: {
-      required: true,
-      minLength: 3,
-      message: "Subject must be at least 3 characters",
-    },
-    message: {
-      required: true,
-      minLength: 10,
-      message: "Message must be at least 10 characters",
-    },
-  };
-
-  // Validate field
-  const validateField = (name, value) => {
-    const rules = validationRules[name];
-    if (!rules) return "";
-
-    if (rules.required && !value.trim()) {
-      return "This field is required";
-    }
-
-    if (rules.minLength && value.length < rules.minLength) {
-      return rules.message;
-    }
-
-    if (
-      rules.pattern &&
-      value &&
-      !rules.pattern.test(value.replace(/\s/g, ""))
-    ) {
-      return rules.message;
-    }
-
-    return "";
-  };
-
-  // Handle input changes with validation
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-
-    // Real-time validation after user has touched the field
-    if (touched[name]) {
-      setFormErrors((prev) => ({
-        ...prev,
-        [name]: validateField(name, value),
-      }));
-    }
-
-    // Clear status when user starts typing
-    if (status.message) {
-      setStatus({ message: "", error: false });
-    }
-  };
-
-  // Handle blur events
-  const handleBlur = (e) => {
-    const { name, value } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
-    setFormErrors((prev) => ({
-      ...prev,
-      [name]: validateField(name, value),
-    }));
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    // Mark all fields as touched
-    const allTouched = {};
-    Object.keys(formData).forEach((key) => {
-      allTouched[key] = true;
-    });
-    setTouched(allTouched);
-
-    // Validate all fields
-    const errors = {};
-    Object.keys(formData).forEach((key) => {
-      errors[key] = validateField(key, formData[key]);
-    });
-    setFormErrors(errors);
-
-    // Check if form is valid
-    const isValid = !Object.values(errors).some((error) => error);
-    if (!isValid) {
-      setStatus({ message: "Please fix the errors above", error: true });
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
-      }
-
-      // Reset form on success
-      setFormData({ name: "", phone: "", email: "", subject: "", message: "" });
-      setTouched({});
-      setFormErrors({});
-      setStatus({
-        message:
-          data.message ||
-          "Message sent successfully! We'll get back to you soon.",
-        error: false,
-      });
-    } catch (err) {
-      setStatus({
-        message: err.message || "Failed to send message. Please try again.",
-        error: true,
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Contact Info Component
-  const ContactInfo = ({ icon, title, children, delay = 0 }) => (
+// ── Scroll-triggered reveal wrapper ──────────────────────────────────────────
+const FadeIn = ({ children, delay = 0, y = 24, className = "" }) => {
+  const ref = React.useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay }}
-      className="flex items-start space-x-4 p-4 rounded-xl hover:bg-white/50 transition-all duration-300 group cursor-pointer"
-      whileHover={{ scale: 1.02 }}
+      ref={ref}
+      initial={{ opacity: 0, y, filter: "blur(5px)" }}
+      animate={inView ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
+      transition={{ duration: 0.55, delay, ease: [0.33, 1, 0.68, 1] }}
+      className={className}
     >
-      <div className="flex-shrink-0">
-        <div className="w-12 h-12 bg-gradient-to-br from-[#8DC53E] to-[#7AB535] rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
-          {icon}
-        </div>
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-[#1A2E05] transition-colors">
-          {title}
-        </h3>
-        <div className="text-gray-600 leading-relaxed">{children}</div>
-      </div>
+      {children}
     </motion.div>
   );
+};
 
-  // Input Field Component
-  const InputField = ({
-    label,
-    name,
-    type = "text",
-    placeholder,
-    required = false,
-    multiline = false,
-  }) => (
-    <div className="space-y-2">
-      <label
-        htmlFor={name}
-        className="block text-sm font-semibold text-gray-700"
-      >
-        {label} {required && <span className="text-red-500">*</span>}
+// ── Section heading ──────────────────────────────────────────────────────────
+const SectionHead = ({ eyebrow, title, accent, sub, center = true }) => (
+  <div className={`mb-12 ${center ? "text-center" : ""}`}>
+    {eyebrow && (
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8DC53E]/8 border border-[#8DC53E]/15 text-[#4a8a14] text-[9px] font-black uppercase tracking-[0.22em] mb-4">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#8DC53E] animate-pulse" />
+        {eyebrow}
+      </div>
+    )}
+    <h2
+      className="font-black text-gray-900 leading-tight mb-3"
+      style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)" }}
+    >
+      {title} {accent && <span className="text-[#8DC53E]">{accent}</span>}
+    </h2>
+    {sub && (
+      <p className="text-gray-400 text-base max-w-2xl mx-auto leading-relaxed">
+        {sub}
+      </p>
+    )}
+  </div>
+);
+
+// ── Contact Info Card ────────────────────────────────────────────────────────
+const ContactInfoCard = ({ icon: Icon, title, children, delay = 0 }) => (
+  <FadeIn delay={delay}>
+    <div className="flex items-start gap-4 p-5 rounded-xl bg-white border border-gray-100 hover:shadow-md transition-all duration-300 group">
+      <div className="w-11 h-11 rounded-xl bg-[#8DC53E]/10 flex items-center justify-center shrink-0 group-hover:bg-[#8DC53E] transition-colors duration-300">
+        <Icon size={20} className="text-[#8DC53E] group-hover:text-white transition-colors duration-300" />
+      </div>
+      <div>
+        <h3 className="text-sm font-bold text-gray-900 mb-1">{title}</h3>
+        <div className="text-gray-500 text-sm">{children}</div>
+      </div>
+    </div>
+  </FadeIn>
+);
+
+// ── Input Field ──────────────────────────────────────────────────────────────
+const InputField = ({ label, name, type = "text", placeholder, required, multiline = false, value, onChange, onBlur, error, touched }) => {
+  const showError = touched && error;
+  
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={name} className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+        {label} {required && <span className="text-[#8DC53E]">*</span>}
       </label>
       {multiline ? (
         <textarea
           id={name}
           name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
           placeholder={placeholder}
-          rows={5}
-          className={`w-full px-4 py-3 bg-white border-2 rounded-xl outline-none transition-all duration-200 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed resize-vertical min-h-[120px] ${
-            formErrors[name]
+          rows={4}
+          className={`w-full px-4 py-3 bg-gray-50 border rounded-xl outline-none transition-all duration-200 focus:bg-white resize-none ${
+            showError
               ? "border-red-300 focus:border-red-500"
-              : "border-gray-200 focus:border-[#8DC53E] focus:shadow-lg"
+              : "border-gray-200 focus:border-[#8DC53E] focus:ring-1 focus:ring-[#8DC53E]"
           }`}
-          required={required}
         />
       ) : (
         <input
           id={name}
           name={name}
           type={type}
-          value={formData[name]}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
           placeholder={placeholder}
-          className={`w-full px-4 py-3 bg-white border-2 rounded-xl outline-none transition-all duration-200 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
-            formErrors[name]
+          className={`w-full px-4 py-3 bg-gray-50 border rounded-xl outline-none transition-all duration-200 focus:bg-white ${
+            showError
               ? "border-red-300 focus:border-red-500"
-              : "border-gray-200 focus:border-[#8DC53E] focus:shadow-lg"
+              : "border-gray-200 focus:border-[#8DC53E] focus:ring-1 focus:ring-[#8DC53E]"
           }`}
-          required={required}
         />
       )}
-      {formErrors[name] && (
-        <motion.p
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          className="text-sm text-red-600 flex items-center space-x-1"
-        >
-          <svg
-            className="w-4 h-4 flex-shrink-0"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span>{formErrors[name]}</span>
-        </motion.p>
+      {showError && (
+        <p className="text-red-500 text-xs mt-1">{error}</p>
       )}
     </div>
   );
+};
+
+// ── Main Contact Page ────────────────────────────────────────────────────────
+const Contact = () => {
+  const navigate = useNavigate();
+  ScrollToTop();
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+  });
+
+  const [touched, setTouched] = useState({});
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  // Validation rules
+  const validateField = (name, value) => {
+    switch (name) {
+      case "name":
+        if (!value.trim()) return "Name is required";
+        if (value.trim().length < 2) return "Name must be at least 2 characters";
+        return "";
+      case "email":
+        if (!value.trim()) return "Email is required";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Valid email is required";
+        return "";
+      case "phone":
+        if (!value.trim()) return "Phone number is required";
+        return "";
+      case "subject":
+        if (!value.trim()) return "Subject is required";
+        if (value.trim().length < 3) return "Subject must be at least 3 characters";
+        return "";
+      case "message":
+        if (!value.trim()) return "Message is required";
+        if (value.trim().length < 10) return "Message must be at least 10 characters";
+        return "";
+      default:
+        return "";
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (touched[name]) {
+      setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+    }
+    
+    if (toast) setToast(null);
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Mark all as touched
+    const allTouched = {};
+    Object.keys(formData).forEach(key => { allTouched[key] = true; });
+    setTouched(allTouched);
+    
+    // Validate all
+    const newErrors = {};
+    Object.keys(formData).forEach(key => {
+      const error = validateField(key, formData[key]);
+      if (error) newErrors[key] = error;
+    });
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      setToast({ type: "error", message: "Please fix the errors above" });
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      // Simulate API call - replace with actual endpoint
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setToast({ type: "success", message: "Message sent successfully! We'll get back to you soon." });
+      setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+      setTouched({});
+      setErrors({});
+    } catch (error) {
+      setToast({ type: "error", message: "Failed to send message. Please try again." });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const contactInfo = [
+    { icon: MapPin, title: "Visit Us", content: "35T, 1st Floor, Liberty Plaza, Colombo-03" },
+    { icon: Phone, title: "Call Us", content: "+94 764078448" },
+    { icon: Mail, title: "Email Us", content: "tgo@tgolk.com" },
+    { icon: Clock, title: "Opening Hours", content: "Mon - Sat: 10am - 7pm" },
+  ];
+
+  const PX = "px-6 lg:px-[75px]";
+  const SECTION_PY = "py-16 lg:py-20";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-[#F8FBEF]">
-      {/* Hero Section */}
-      <div
-        className="w-full h-48 md:h-64 bg-gradient-to-r from-gray-900 to-gray-700 flex items-center justify-center relative overflow-hidden"
-        data-testid="about-hero"
-      >
-        <div className="absolute inset-0 bg-[url(/page-name.png)] bg-cover bg-center opacity-30"></div>
-        <div className="relative z-10 text-center px-4">
-          <h1
-            className="text-4xl md:text-6xl font-bold text-white mb-2"
-            data-testid="about-hero-title"
-          >
-            Contact Us
-          </h1>
-          <p className="text-gray-200 text-sm md:text-base">
-            {" "}
-            Get in touch with our team of outdoor enthusiasts
-          </p>
+    <div className="bg-white min-h-screen">
+      {/* ── Hero Section (matching About page) ── */}
+      <section className="relative bg-gray-900 overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="/Contact-hero.jpg"
+            alt="Contact background"
+            className="w-full h-full object-cover opacity-40"
+            onError={(e) => { e.target.style.display = "none"; }}
+          />
         </div>
-      </div>
+        <div className={`relative ${SECTION_PY} ${PX}`}>
+          <FadeIn>
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-2 text-[#8DC53E] text-xs font-bold uppercase tracking-wider mb-4">
+                <span className="w-8 h-px bg-[#8DC53E]" />
+                Get In Touch
+              </div>
+              <h1 className="text-4xl lg:text-6xl font-black text-white leading-tight mb-4">
+                Let's Start a
+                <br />
+                <span className="text-[#8DC53E]">Conversation</span>
+              </h1>
+              <p className="text-gray-300 text-lg leading-relaxed max-w-xl">
+                Have questions about our products, your order, or planning your next adventure? 
+                Our team is here to help you gear up for your journey.
+              </p>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
 
-      {/* Main Content */}
-      <section className="py-12 md:py-16 lg:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center mb-12 md:mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 mb-4">
-              Let's Start a <span className="text-[#8DC53E]">Conversation</span>
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Have questions about our products, your order, or planning your
-              next adventure? Our team is here to help you gear up for your
-              journey.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+      {/* ── Main Content ── */}
+      <section className={`${SECTION_PY} bg-white`}>
+        <div className={PX}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Form */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 lg:p-10 border border-gray-100"
-            >
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputField
-                    label="Your Name"
-                    name="name"
-                    placeholder="Enter your full name"
-                    required
-                  />
-                  <InputField
-                    label="Phone Number"
-                    name="phone"
-                    type="tel"
-                    placeholder="Enter your phone number"
-                    required
-                  />
+            <FadeIn delay={0.1}>
+              <div className="bg-gray-50 rounded-2xl p-6 md:p-8">
+                <div className="mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8DC53E]/8 border border-[#8DC53E]/15 text-[#4a8a14] text-[9px] font-black uppercase tracking-[0.22em] mb-4">
+                    Send a Message
+                  </div>
+                  <h2 className="text-2xl font-black text-gray-900">We'd Love to Hear From You</h2>
+                  <p className="text-gray-400 text-sm mt-2">Fill out the form and we'll respond within 24 hours.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <InputField
+                      label="Full Name"
+                      name="name"
+                      placeholder="John Doe"
+                      required
+                      value={formData.name}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={errors.name}
+                      touched={touched.name}
+                    />
+                    <InputField
+                      label="Email Address"
+                      name="email"
+                      type="email"
+                      placeholder="john@example.com"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={errors.email}
+                      touched={touched.email}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <InputField
+                      label="Phone Number"
+                      name="phone"
+                      type="tel"
+                      placeholder="+94 XX XXX XXXX"
+                      required
+                      value={formData.phone}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={errors.phone}
+                      touched={touched.phone}
+                    />
+                    <InputField
+                      label="Subject"
+                      name="subject"
+                      placeholder="How can we help?"
+                      required
+                      value={formData.subject}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={errors.subject}
+                      touched={touched.subject}
+                    />
+                  </div>
+
                   <InputField
-                    label="Email Address"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email address"
+                    label="Message"
+                    name="message"
+                    placeholder="Tell us about your inquiry..."
                     required
+                    multiline
+                    value={formData.message}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={errors.message}
+                    touched={touched.message}
                   />
-                  <InputField
-                    label="Subject"
-                    name="subject"
-                    placeholder="What's this about?"
-                    required
-                  />
-                </div>
 
-                <InputField
-                  label="Your Message"
-                  name="message"
-                  placeholder="Tell us how we can help you..."
-                  required
-                  multiline
-                />
-
-                {/* Status Message */}
-                <AnimatePresence>
-                  {status.message && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className={`p-4 rounded-xl border ${
-                        status.error
-                          ? "bg-red-50 border-red-200 text-red-800"
-                          : "bg-green-50 border-green-200 text-green-800"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <svg
-                          className={`w-5 h-5 ${
-                            status.error ? "text-red-500" : "text-green-500"
-                          }`}
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          {status.error ? (
-                            <path
-                              fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                              clipRule="evenodd"
-                            />
-                          ) : (
-                            <path
-                              fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clipRule="evenodd"
-                            />
-                          )}
-                        </svg>
-                        <span className="font-medium">{status.message}</span>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <motion.button
-                  type="submit"
-                  disabled={submitting}
-                  whileHover={{ scale: submitting ? 1 : 1.02 }}
-                  whileTap={{ scale: submitting ? 1 : 0.98 }}
-                  className="w-full py-4 px-6 bg-gradient-to-r from-[#8DC53E] to-[#7AB535] hover:from-[#7AB535] hover:to-[#6BA83A] disabled:from-[#C4E394] disabled:to-[#A3D15E] text-white font-bold rounded-xl shadow-lg transition-all duration-200 disabled:cursor-not-allowed disabled:shadow-md"
-                >
-                  {submitting ? (
-                    <div className="flex items-center justify-center space-x-3">
-                      <svg
-                        className="animate-spin h-5 w-5 text-white"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="none"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      <span>Sending Message...</span>
-                    </div>
-                  ) : (
-                    "Send Message"
-                  )}
-                </motion.button>
-              </form>
-            </motion.div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full py-3.5 rounded-xl bg-[#8DC53E] text-white text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 hover:bg-[#7ab535] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Send size={16} />
+                    )}
+                    {submitting ? "Sending..." : "Send Message"}
+                  </button>
+                </form>
+              </div>
+            </FadeIn>
 
             {/* Contact Information */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="space-y-6"
-            >
-              <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 lg:p-10 border border-gray-100">
-                <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-6">
-                  Get in Touch
-                </h3>
-                <p className="text-gray-600 mb-8 leading-relaxed">
-                  Come visit or connect with us! We're always excited to meet
-                  fellow adventurers — whether you're stopping by in person or
-                  reaching out from the wild.
-                </p>
-
-                <div className="space-y-6">
-                  <ContactInfo
-                    icon={
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                    }
-                    title="Visit Our Store"
-                    delay={0.1}
-                  >
-                    <p className="font-semibold text-gray-900">
-                      35T, First Floor, Liberty Plaza, Colombo - 03
-                    </p>
-                  </ContactInfo>
-
-                  <ContactInfo
-                    icon={
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 5a2 2 0 012-2h1l2 5-2 1a11 11 0 006 6l1-2 5 2v1a2 2 0 01-2 2h-1c-7.732 0-14-6.268-14-14z"
-                        />
-                      </svg>
-                    }
-                    title="Call Us"
-                    delay={0.2}
-                  >
-                    <p className="font-semibold text-gray-900">
-                      +94 764078448 / +94 705702579
-                    </p>
-                  </ContactInfo>
-
-                  <ContactInfo
-                    icon={
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
-                    }
-                    title="Email Us"
-                    delay={0.3}
-                  >
-                    <p className="font-semibold text-gray-900">
-                      Simthass@outlook.com
-                    </p>
-                  </ContactInfo>
-
-                  <ContactInfo
-                    icon={
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    }
-                    title="Opening Hours"
-                    delay={0.4}
-                  >
-                    <p className="font-semibold text-gray-900">
-                      Monday - Saturday: 10:00 AM – 07:00 PM
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Closed on Sundays and public holidays
-                    </p>
-                  </ContactInfo>
+            <div>
+              <FadeIn delay={0.2}>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8DC53E]/8 border border-[#8DC53E]/15 text-[#4a8a14] text-[9px] font-black uppercase tracking-[0.22em] mb-4">
+                  Contact Info
                 </div>
+                <h2 className="text-2xl font-black text-gray-900 mb-2">Get in Touch</h2>
+                <p className="text-gray-400 text-sm mb-8">
+                  Come visit or connect with us! We're always excited to meet fellow adventurers.
+                </p>
+              </FadeIn>
+
+              <div className="space-y-3">
+                {contactInfo.map((info, i) => (
+                  <ContactInfoCard key={info.title} {...info} delay={0.3 + i * 0.1}>
+                    {info.content}
+                  </ContactInfoCard>
+                ))}
               </div>
 
-              {/* Additional Info Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="bg-gradient-to-br from-[#8DC53E] to-[#7AB535] rounded-2xl p-6 text-white shadow-2xl"
-              >
-                <h4 className="text-xl font-black mb-3">Quick Response</h4>
-                <p className="opacity-90 leading-relaxed">
-                  We typically respond to all inquiries within 2-4 hours during
-                  business days. Your adventure questions are our top priority!
-                </p>
-              </motion.div>
-            </motion.div>
+              {/* Quick Response Card */}
+              <FadeIn delay={0.7}>
+                <div className="mt-8 p-5 rounded-xl bg-[#8DC53E]/5 border border-[#8DC53E]/10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#8DC53E]/10 flex items-center justify-center shrink-0">
+                      <Clock size={18} className="text-[#8DC53E]" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 mb-1">Quick Response</h3>
+                      <p className="text-gray-500 text-sm">
+                        We typically respond to all inquiries within 2-4 hours during business days.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+
+              {/* Map Section */}
+              <FadeIn delay={0.8}>
+                <div className="mt-8">
+                  <div className="rounded-xl overflow-hidden border border-gray-100 h-48">
+                    <iframe
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.945612345678!2d79.86123456789012!3d6.912345678901234!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae2591234567890%3A0x1234567890abcdef!2sLiberty%20Plaza!5e0!3m2!1sen!2slk!4v1234567890123!5m2!1sen!2slk"
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      title="Store Location"
+                    />
+                  </div>
+                </div>
+              </FadeIn>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* ── Toast Notification ── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="fixed bottom-6 right-6 z-[200] flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border bg-white"
+            style={{ borderColor: toast.type === "success" ? "#8DC53E30" : "#ef444430" }}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle size={18} className="text-[#8DC53E]" />
+            ) : (
+              <AlertCircle size={18} className="text-red-500" />
+            )}
+            <p className="text-sm font-medium text-gray-800">{toast.message}</p>
+            <button onClick={() => setToast(null)} className="ml-2 text-gray-400 hover:text-gray-600">
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
