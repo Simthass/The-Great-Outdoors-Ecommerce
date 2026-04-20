@@ -43,6 +43,7 @@ const Header = () => {
   const profileMenuRef = useRef(null);
   const shopRef = useRef(null);
   const lastScrollY = useRef(0);
+  const scrollTimeout = useRef(null);
 
   const navLinks = [
     { name: "Home", path: "/" },
@@ -91,17 +92,33 @@ const Header = () => {
     },
   ];
 
+  // FIXED: Smooth scroll handler with debounce to prevent bouncing
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       setIsScrolled(currentScrollY > 40);
-      if (currentScrollY > lastScrollY.current && currentScrollY > 100)
-        setShowTopBar(false);
-      else setShowTopBar(true);
+      
+      // Debounce the top bar visibility change to prevent bouncing
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+      
+      scrollTimeout.current = setTimeout(() => {
+        if (currentScrollY > lastScrollY.current && currentScrollY > 150) {
+          setShowTopBar(false);
+        } else if (currentScrollY < lastScrollY.current || currentScrollY < 80) {
+          setShowTopBar(true);
+        }
+      }, 50);
+      
       lastScrollY.current = currentScrollY;
     };
+    
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -221,17 +238,23 @@ const Header = () => {
           transition: all 0.25s ease;
           position: relative;
         }
+        
+        /* Prevent layout shift */
+        header, .top-bar, .header-spacer {
+          will-change: transform, top, height;
+          backface-visibility: hidden;
+        }
       `}</style>
 
       <TopBar isVisible={showTopBar} />
 
       <header
-        className={`fixed left-0 right-0 z-50 w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+        className={`fixed left-0 right-0 z-50 w-full transition-all duration-300 ease-out ${
           showTopBar ? "top-[44px]" : "top-0"
         }`}
       >
         <div
-          className={`w-full transition-all duration-500 ${
+          className={`w-full transition-all duration-300 ${
             isScrolled
               ? "bg-white/96 backdrop-blur-3xl shadow-[0_2px_32px_rgba(0,0,0,0.07)] border-b border-black/[0.04] py-3"
               : isHome
@@ -550,7 +573,7 @@ const Header = () => {
         </div>
       </header>
 
-      {/* ── MOBILE MENU ── */}
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
@@ -713,9 +736,11 @@ const Header = () => {
         onClose={() => setIsSearchModalOpen(false)}
       />
 
-      {/* Spacer */}
-      <div
-        className={`transition-all duration-700 ${showTopBar ? "h-[100px]" : "h-[68px]"}`}
+      {/* FIXED: Spacer with smooth transition */}
+      <div 
+        className={`transition-all duration-300 ease-out ${
+          showTopBar ? "h-[100px]" : "h-[56px]"
+        }`} 
       />
     </>
   );

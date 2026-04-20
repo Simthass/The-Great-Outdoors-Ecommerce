@@ -1,9 +1,17 @@
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+// Define __dirname and load .env FIRST before anything else
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, ".env") });
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
-import dotenv from "dotenv";
 import session from "express-session";
 import path from "path";
 import connectDB from "./config/database.js";
@@ -15,8 +23,6 @@ import categoryRoutes from "./routes/categories.js";
 import cartRoutes from "./routes/cart.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import fileUpload from "express-fileupload";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
 import contactRoute from "./routes/contact.js";
 import settingsRoutes from "./routes/settings.js";
 import employeeRoutes from "./routes/employee.js";
@@ -44,13 +50,7 @@ import {
   xssProtection,
 } from "./middleware/security.js";
 
-// Load environment variables
-dotenv.config();
-
 const app = express();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // Trust proxy for rate limiting behind reverse proxies
 app.set("trust proxy", 1);
@@ -167,8 +167,8 @@ app.use(express.static(path.join(process.cwd(), "public")));
 
 // Enhanced Rate limiting configuration
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: {
     success: false,
     message:
@@ -179,8 +179,8 @@ const authLimiter = rateLimit({
 });
 
 const adminLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs for admin routes
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: {
     success: false,
     message:
@@ -191,8 +191,8 @@ const adminLimiter = rateLimit({
 });
 
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
   message: {
     success: false,
     message: "Too many requests from this IP, please try again later.",
@@ -212,20 +212,15 @@ app.use("/api/", generalLimiter);
 app.use((req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress;
   console.log(
-    `🔐 ${req.method} ${
-      req.originalUrl
-    } - IP: ${ip} - ${new Date().toISOString()}`
+    `🔐 ${req.method} ${req.originalUrl} - IP: ${ip} - ${new Date().toISOString()}`
   );
 
-  // Log sensitive actions
   if (req.method === "POST" && req.body) {
     const logBody = { ...req.body };
-    // Hide sensitive information
     if (logBody.password) logBody.password = "[HIDDEN]";
     if (logBody.newPassword) logBody.newPassword = "[HIDDEN]";
     if (logBody.confirmPassword) logBody.confirmPassword = "[HIDDEN]";
     if (logBody.token) logBody.token = "[HIDDEN]";
-
     console.log("📤 Request Body:", logBody);
   }
   next();
@@ -244,7 +239,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Token verification endpoint for frontend - FIXED USAGE
+// Token verification endpoint for frontend
 app.get("/api/auth/verify", verifyToken);
 
 // Connect to database
@@ -355,7 +350,6 @@ const gracefulShutdown = (signal) => {
     process.exit(0);
   });
 
-  // Force close after 10 seconds
   setTimeout(() => {
     console.error("❌ Forced shutdown after 10 seconds");
     process.exit(1);
@@ -365,7 +359,6 @@ const gracefulShutdown = (signal) => {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-// Handle unhandled promise rejections
 process.on("unhandledRejection", (err, promise) => {
   console.error("❌ Unhandled Promise Rejection:", err.message);
   console.log("🛑 Shutting down server due to unhandled promise rejection");
@@ -374,7 +367,6 @@ process.on("unhandledRejection", (err, promise) => {
   });
 });
 
-// Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
   console.error("❌ Uncaught Exception:", err.message);
   console.log("🛑 Shutting down server due to uncaught exception");
