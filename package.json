@@ -10,6 +10,7 @@
     "install-deps": "npm install && cd client && npm install && cd ../server && npm install"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.3",
     "@types/bcryptjs": "^2.4.6",
     "autoprefixer": "^10.4.21",
     "concurrently": "^8.2.2",
@@ -19,7 +20,6 @@
   "main": "index.js",
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
-    "@tailwindcss/vite": "^4.1.11",
     "all": "^0.0.0",
     "ansi-regex": "^5.0.1",
     "ansi-styles": "^4.3.0",
